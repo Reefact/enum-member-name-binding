@@ -23,19 +23,21 @@ public sealed class ParityWithSystemTextJsonTests {
         _api = api;
     }
 
-    public static TheoryData<string> StatusInputs => [
+    // Built with an object initializer rather than a collection expression: the latter trips CA1825
+    // on the 10.0.100 analyzers, which is the SDK floor declared in global.json and the one CI uses.
+    public static TheoryData<string> StatusInputs => new() {
         "available", "out_of_stock", "discontinued",
         "OutOfStock", "outofstock", "OUT_OF_STOCK", "Out_Of_Stock",
         "0", "1", "999", "-1",
         "unknown", "null"
-    ];
+    };
 
-    public static TheoryData<string> PartialInputs => ["one", "One", "Two", "two", "TWO", "unknown"];
+    public static TheoryData<string> PartialInputs => new() { "one", "One", "Two", "two", "TWO", "unknown" };
 
-    public static TheoryData<string> PermissionInputs => [
+    public static TheoryData<string> PermissionInputs => new() {
         "read", "write", "read, write", "read,write", "read, write, delete",
         "Read", "read, bogus", "bogus", "3"
-    ];
+    };
 
     [Theory]
     [MemberData(nameof(StatusInputs))]

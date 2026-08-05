@@ -46,9 +46,12 @@ internal static class EnumMemberNameBindingRegistry {
             if (seen.Add(explicitType)) { yield return explicitType; }
         }
 
-        IEnumerable<Assembly> assemblies = options.Assemblies.Count > 0 || options.EnumTypes.Count > 0
-            ? options.Assemblies
-            : [.. new[] { Assembly.GetEntryAssembly() }.OfType<Assembly>()];
+        IEnumerable<Assembly> assemblies = options.Assemblies;
+
+        if (options.Assemblies.Count == 0 && options.EnumTypes.Count == 0) {
+            Assembly? entry = Assembly.GetEntryAssembly();
+            assemblies = entry is null ? Array.Empty<Assembly>() : new[] { entry };
+        }
 
         foreach (Assembly assembly in assemblies.Distinct()) {
             foreach (Type type in GetLoadableTypes(assembly)) {
