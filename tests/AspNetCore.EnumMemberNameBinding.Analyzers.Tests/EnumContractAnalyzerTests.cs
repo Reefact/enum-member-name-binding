@@ -99,6 +99,37 @@ public sealed class EnumContractAnalyzerTests {
         Assert.Empty(ids);
     }
 
+    /// <summary>
+    /// The runtime looks up an unannotated member's C# name case-insensitively, so the analyzer must
+    /// compare the same way. An ordinal comparison let the lower-case form slip through unreported.
+    /// </summary>
+    [Theory]
+    [InlineData("Blue")]
+    [InlineData("blue")]
+    [InlineData("BLUE")]
+    public async Task EMN0005_ignores_casing_when_looking_for_the_collision(string declared) {
+        IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + $$"""
+            public enum Colour {
+                [JsonStringEnumMemberName("{{declared}}")] Red,
+                Blue
+            }
+            """);
+
+        Assert.Contains(diagnostics, d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public async Task a_public_name_colliding_with_nothing_is_not_reported() {
+        IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + """
+            public enum Colour {
+                [JsonStringEnumMemberName("crimson")] Red,
+                [JsonStringEnumMemberName("azure")]   Blue
+            }
+            """);
+
+        Assert.Empty(ids);
+    }
+
     [Fact]
     public async Task EMN0005_reports_a_public_name_that_shadows_another_member() {
         IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """

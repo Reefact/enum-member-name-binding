@@ -29,14 +29,18 @@ public sealed class ParityWithSystemTextJsonTests {
         "available", "out_of_stock", "discontinued",
         "OutOfStock", "outofstock", "OUT_OF_STOCK", "Out_Of_Stock",
         "0", "1", "999", "-1",
-        "unknown", "null"
+        "unknown", "null",
+        " available", "available ", " available ", "avail able"
     };
 
     public static TheoryData<string> PartialInputs => new() { "one", "One", "Two", "two", "TWO", "unknown" };
 
     public static TheoryData<string> PermissionInputs => new() {
         "read", "write", "read, write", "read,write", "read, delete", "read, write, delete",
-        "Read", "read, bogus", "bogus", "3"
+        "Read", "read, bogus", "bogus", "3",
+        // Whitespace and comma handling, characterized against System.Text.Json rather than assumed.
+        " read", "read ", " read ", " read,write", "read,write ", " read, write ",
+        "read , write", "read,  write", "read,", "read,write,", ",read", "read,,write", "read, ,write", "read,,"
     };
 
     [Theory]

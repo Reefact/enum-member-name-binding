@@ -163,8 +163,15 @@ public enum Permissions
 | `GET /tokens?perms=read, write` | ✅ `Read \| Write` |
 | `GET /tokens?perms=read,write` | ✅ same — the space is optional |
 | `GET /tokens?perms=read, delete` | ✅ `Read \| Delete` |
+| `GET /tokens?perms=%20read,%20write%20` | ✅ — the value and each element are trimmed |
+| `GET /tokens?perms=read,` | ✅ — one trailing comma is tolerated |
+| `GET /tokens?perms=,read` | ❌ 400 — a leading or repeated comma is not |
 | `GET /tokens?perms=read, bogus` | ❌ 400 — one unknown member rejects the whole value |
 | `GET /tokens?perms=Read` | ❌ 400 |
+
+Those whitespace and comma rules are not a choice made here — they were measured against
+`System.Text.Json` and reproduced, down to the trailing comma. The same holds for a simple enum:
+`?status=%20available%20` is accepted, because the body accepts `" available "`.
 
 ### Empty and absent values
 
@@ -254,13 +261,20 @@ public enum Colour
 }
 ```
 
-A declared public name is matched first, and case-sensitively. So `?colour=Blue` binds to **`Red`**,
-while `?colour=blue` and `?colour=BLUE` bind to `Blue`. The member answers to every casing of its
-name except its own — which no reader of that enum would ever guess.
+A declared public name is matched first and case-sensitively, while an unannotated member's C# name
+is matched case-insensitively. So `?colour=Blue` binds to **`Red`**, while `?colour=blue` and
+`?colour=BLUE` bind to `Blue`. The member answers to every casing of its name except its own — which
+no reader of that enum would ever guess.
+
+The casing of the declared name changes nothing, so the rule ignores case: `[JsonStringEnumMemberName("blue")]`
+next to a `Blue` member is the mirror image of the same trap and is reported too.
 
 It only fires next to `EMN0003`, since it needs an unannotated member. That is precisely why it is
 its own rule: turn `EMN0003` off to allow partial contracts and `EMN0005` is the only protection
-left, so it is an error rather than a warning.
+left, so it is an error rather than a warning — and unlike `EMN0003`, it is still enforced at
+start-up even when `AllowPartialContracts` is set.
+
+Each rule has a page under [`docs/rules`](docs/rules), which is where the help link in your IDE goes.
 
 **An enum carrying no `[JsonStringEnumMemberName]` at all is never analysed.** The rules only apply
 once you have declared a contract, so adding this package to an existing solution does not light up

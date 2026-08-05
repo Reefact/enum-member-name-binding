@@ -39,6 +39,7 @@ internal sealed class EnumContract {
         List<(object, string)>     ordered        = [];
         List<string>               problems       = [];
         List<string>               unannotated    = [];
+        Dictionary<string, string> declaredBy     = new(StringComparer.Ordinal);
 
         foreach (FieldInfo field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static)) {
             object value = field.GetValue(null)!;
@@ -79,6 +80,20 @@ internal sealed class EnumContract {
 
             names.TryAdd(value, name);
             ordered.Add((value, name));
+            declaredBy[name] = field.Name;
+        }
+
+        // A declared name is matched before an unannotated member's C# name, and case-sensitively,
+        // so the shadowed member ends up answering to every casing of its name except its own.
+        // The comparison is case-insensitive because that is how the C# names are looked up.
+        foreach (KeyValuePair<string, string> declared in declaredBy) {
+            string? shadowed = unannotated.Find(member => string.Equals(member, declared.Key, StringComparison.OrdinalIgnoreCase));
+            if (shadowed is null) { continue; }
+
+            problems.Add($"member '{declared.Value}' declares the public name '{declared.Key}', which is also the C# name " +
+                         $"of member '{shadowed}'. The value '{declared.Key}' resolves to '{declared.Value}', leaving " +
+                         $"'{shadowed}' reachable only through a different casing. Rename the public name, or annotate " +
+                         $"'{shadowed}' as well.");
         }
 
         if (problems.Count > 0) {
@@ -122,12 +137,25 @@ internal sealed class EnumContract {
     }
 
     /// <summary>Parses a public name into its enum value.</summary>
+    /// <remarks>
+    /// Whitespace handling mirrors <c>System.Text.Json</c>, which was characterized rather than
+    /// assumed: the value as a whole is trimmed, each element of a <c>[Flags]</c> list is trimmed,
+    /// and a single trailing comma is tolerated while a leading or repeated one is not.
+    /// </remarks>
     internal bool TryParse(string value, out object result) {
-        if (_isFlags && value.Contains(',', StringComparison.Ordinal)) {
-            return TryParseFlags(value, out result);
+        ReadOnlySpan<char> trimmed = value.AsSpan().Trim();
+
+        if (trimmed.IsEmpty) {
+            result = null!;
+
+            return false;
         }
 
-        return TryParseSingle(value, out result);
+        if (_isFlags && trimmed.Contains(',')) {
+            return TryParseFlags(trimmed, out result);
+        }
+
+        return TryParseSingle(trimmed.ToString(), out result);
     }
 
     /// <summary>Renders an enum value as its public name, or <see langword="null" /> if it has none.</summary>
@@ -168,16 +196,27 @@ internal sealed class EnumContract {
         return false;
     }
 
-    private bool TryParseFlags(string value, out object result) {
-        ulong accumulator = 0;
+    private bool TryParseFlags(ReadOnlySpan<char> value, out object result) {
+        result = null!;
 
-        foreach (Range range in value.AsSpan().Split(',')) {
-            string token = value.AsSpan(range).Trim().ToString();
-            if (!TryParseSingle(token, out object part)) {
-                result = null!;
+        int count = 0;
+        foreach (Range _ in value.Split(',')) { count++; }
+
+        ulong accumulator = 0;
+        int   index       = 0;
+
+        foreach (Range range in value.Split(',')) {
+            index++;
+            ReadOnlySpan<char> token = value[range].Trim();
+
+            if (token.IsEmpty) {
+                // "read," parses; ",read" and "read,,write" do not.
+                if (index == count) { continue; }
 
                 return false;
             }
+
+            if (!TryParseSingle(token.ToString(), out object part)) { return false; }
 
             accumulator |= ToUInt64(part);
         }

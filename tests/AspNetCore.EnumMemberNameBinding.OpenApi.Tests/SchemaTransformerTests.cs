@@ -42,6 +42,25 @@ public sealed class SchemaTransformerTests(OpenApiTestApi api) {
         Assert.DoesNotMatch(pattern, "Read");
     }
 
+    /// <summary>
+    /// The binder trims the value and tolerates one trailing comma, because System.Text.Json does.
+    /// A pattern that excluded those forms would advertise a stricter contract than the server keeps.
+    /// </summary>
+    [Theory]
+    [InlineData(" read", true)]
+    [InlineData("read ", true)]
+    [InlineData(" read, write ", true)]
+    [InlineData("read,", true)]
+    [InlineData("read, write,", true)]
+    [InlineData(",read", false)]
+    [InlineData("read,,write", false)]
+    [InlineData("read, ,write", false)]
+    public void the_flags_pattern_covers_the_whitespace_the_binder_accepts(string value, bool expected) {
+        string pattern = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
+
+        Assert.Equal(expected, Regex.IsMatch(value, pattern));
+    }
+
     [Fact]
     public void a_flags_enum_explains_the_combination_syntax() {
         Assert.Contains("comma", api.Schema(nameof(Scopes)).GetProperty("description").GetString()!, StringComparison.OrdinalIgnoreCase);
@@ -97,6 +116,10 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
     [InlineData("read, write")]
     [InlineData("read,write")]
     [InlineData("read, write, delete")]
+    [InlineData(" read ")]
+    [InlineData(" read, write ")]
+    [InlineData("read,")]
+    [InlineData("read, write,")]
     public async Task every_value_matching_the_flags_pattern_is_accepted_by_the_server(string value) {
         string pattern = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
         Assert.Matches(pattern, value);

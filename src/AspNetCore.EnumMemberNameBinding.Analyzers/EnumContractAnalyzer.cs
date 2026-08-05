@@ -147,9 +147,11 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
 
             declared.Add(name, member);
 
+            // Case-insensitive, because that is how the runtime looks up an unannotated member's C#
+            // name. An ordinal comparison here would let [JsonStringEnumMemberName("blue")] Red sit
+            // next to a Blue member unreported, which is the very shape this rule exists to catch.
             Member? shadowed = members.FirstOrDefault(m => m.Attribute is null
-                                                        && !SymbolEqualityComparer.Default.Equals(m.Field, member.Field)
-                                                        && string.Equals(m.Field.Name, name, System.StringComparison.Ordinal));
+                                                        && string.Equals(m.Field.Name, name, System.StringComparison.OrdinalIgnoreCase));
             if (shadowed is not null) {
                 context.ReportDiagnostic(Diagnostic.Create(PublicNameShadowsAnotherMember, location,
                                                            member.Field.Name, name, shadowed.Field.Name));

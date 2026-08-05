@@ -49,7 +49,10 @@ public sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer 
     private static string BuildFlagsPattern(IReadOnlyList<string> names) {
         string alternatives = string.Join('|', names.Select(Regex.Escape));
 
-        return $"^({alternatives})(\\s*,\\s*({alternatives}))*$";
+        // Surrounding whitespace and a single trailing comma are accepted by the binder, because
+        // System.Text.Json accepts them. A pattern that excluded them would advertise a contract
+        // stricter than the one the server honours.
+        return $"^\\s*({alternatives})(\\s*,\\s*({alternatives}))*\\s*,?\\s*$";
     }
 
     private static string Append(string? description, string addition) {

@@ -45,6 +45,24 @@ The package version is independent of the .NET version it targets.
 
 ### Fixed
 
+- **`EMN0005` missed most of the shape it exists to catch.** The analyzer compared a declared public
+  name against another member's C# name ordinally, while the runtime looks those names up
+  case-insensitively — so `[JsonStringEnumMemberName("blue")]` next to a `Blue` member went
+  unreported. Both now compare case-insensitively.
+- **The shadowing check did not exist at run time at all**, although the documentation claimed every
+  analyzer rule was also enforced at start-up. `EnumContract` now rejects it, including when
+  `AllowPartialContracts` is set: the collision is an ambiguity, not a policy choice.
+- **Whitespace handling diverged from `System.Text.Json` in three ways.** A value was matched without
+  being trimmed, so `" available "` and `" read "` were refused where the request body accepts them;
+  and a trailing comma in a `[Flags]` list was refused where the body tolerates one. The behaviour was
+  characterized against `JsonSerializer` and reproduced, and the whole matrix is now in the parity
+  suite.
+- **The `[Flags]` pattern in the OpenAPI document excluded forms the binder accepts** — leading and
+  trailing whitespace, and the trailing comma. The document advertised a stricter contract than the
+  server honoured.
+- **The five analyzer help links pointed at pages that did not exist**, so the IDE link led to a 404.
+  Every rule now has a page under `docs/rules`, and a test fails if a rule and its page ever diverge.
+
 - `Microsoft.AspNetCore.OpenApi` and minimal API serialization read `Http.Json.JsonOptions`, while
   MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described
   as an integer in the generated document. Both are now configured, still one converter per contract
