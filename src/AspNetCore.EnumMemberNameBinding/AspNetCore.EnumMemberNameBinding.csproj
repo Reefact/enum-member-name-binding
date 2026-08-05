@@ -17,6 +17,20 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
+  <!--
+    The analyzers ship inside this package: a contract mistake should be a build error in the editor,
+    not an exception discovered when the application starts.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../AspNetCore.EnumMemberNameBinding.Analyzers/AspNetCore.EnumMemberNameBinding.Analyzers.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <None Include="../AspNetCore.EnumMemberNameBinding.Analyzers/bin/$(Configuration)/netstandard2.0/AspNetCore.EnumMemberNameBinding.Analyzers.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="AspNetCore.EnumMemberNameBinding.Tests" />
   </ItemGroup>

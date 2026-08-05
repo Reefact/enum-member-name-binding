@@ -38,6 +38,7 @@ internal sealed class EnumContract {
         Dictionary<object, string> names          = [];
         List<(object, string)>     ordered        = [];
         List<string>               problems       = [];
+        List<string>               unannotated    = [];
 
         foreach (FieldInfo field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static)) {
             object value = field.GetValue(null)!;
@@ -47,6 +48,7 @@ internal sealed class EnumContract {
                 byClrName.TryAdd(field.Name, value);
                 names.TryAdd(value, field.Name);
                 ordered.Add((value, field.Name));
+                unannotated.Add(field.Name);
                 continue;
             }
 
@@ -86,9 +88,10 @@ internal sealed class EnumContract {
         _byContractName = byContractName.ToFrozenDictionary(StringComparer.Ordinal);
         _byClrName      = byClrName.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
         _names          = names.ToFrozenDictionary();
-        _ordered        = [.. ordered];
-        PublicNames     = [.. ordered.Select(static o => o.Item2)];
-        AllowedValues   = string.Join(", ", PublicNames);
+        _ordered            = [.. ordered];
+        PublicNames         = [.. ordered.Select(static o => o.Item2)];
+        UnannotatedMembers  = [.. unannotated];
+        AllowedValues       = string.Join(", ", PublicNames);
     }
 
     /// <summary>The described enum type.</summary>
@@ -102,6 +105,9 @@ internal sealed class EnumContract {
 
     /// <summary>The public names, in declaration order.</summary>
     internal IReadOnlyList<string> PublicNames { get; }
+
+    /// <summary>The C# names of the members that carry no <c>[JsonStringEnumMemberName]</c>.</summary>
+    internal IReadOnlyList<string> UnannotatedMembers { get; }
 
     /// <summary>The public names joined for use in error messages.</summary>
     internal string AllowedValues { get; }

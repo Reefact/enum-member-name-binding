@@ -107,10 +107,15 @@ public sealed class TestApi : IAsyncLifetime {
                .AddApplicationPart(typeof(BindingController).Assembly)
                // Registered explicitly: this assembly also holds the deliberately invalid enums
                // used by ContractValidationTests, which a scan would — correctly — reject.
-               .AddEnumMemberNameBinding(options => options
-                                             .AddEnum<ProductStatus>()
-                                             .AddEnum<PartiallyAnnotated>()
-                                             .AddEnum<Permissions>());
+               .AddEnumMemberNameBinding(options => {
+                    options.AddEnum<ProductStatus>()
+                           .AddEnum<PartiallyAnnotated>()
+                           .AddEnum<Permissions>();
+                    // Opted in, so the parity suite can exercise the System.Text.Json-exact
+                    // behaviour of an unannotated member. The default rejects it — see
+                    // ContractValidationTests.
+                    options.AllowPartialContracts = true;
+                });
 
         _app = builder.Build();
         _app.MapControllers();

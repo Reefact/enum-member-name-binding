@@ -20,8 +20,12 @@ The package version is independent of the .NET version it targets.
 - `[Flags]` support: comma-separated lists, matching `System.Text.Json`.
 - A parity test suite that uses `JsonSerializer` itself as the oracle — for each candidate input,
   the HTTP outcome must equal the body outcome.
-- A CI check that fails the build if the produced package does not declare its
-  `Microsoft.AspNetCore.App` framework reference.
+- Roslyn analyzers, shipped inside the package under `analyzers/dotnet/cs`, so a contract mistake is
+  a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
+  public name, `EMN0003` incomplete contract, `EMN0004` comma in a `[Flags]` name, `EMN0005` a public
+  name shadowing another member's C# name. An enum that declares no contract is never analysed.
+- CI checks that fail the build if the produced package does not declare its
+  `Microsoft.AspNetCore.App` framework reference, or does not ship the analyzers.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the
   generated document describe what the server accepts: an explicit `string` type, the declared public
   names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
@@ -29,6 +33,14 @@ The package version is independent of the .NET version it targets.
   replaying every advertised value against the running server.
 - The companion raises the floor of `Microsoft.OpenApi` to 2.11.0. `Microsoft.AspNetCore.OpenApi`
   10.0.x resolves 2.0.0, which carries advisory GHSA-v5pm-xwqc-g5wc.
+
+### Changed
+
+- A partially annotated enum is now **rejected by default**, at build time by `EMN0003` and at
+  start-up by `EnumContractException`. A member without `[JsonStringEnumMemberName]` answers to its
+  C# name, which puts an internal identifier into the public contract — the opposite of the point.
+  `EnumMemberNameBindingOptions.AllowPartialContracts` opts back in for enums you do not own, and
+  restores behaviour identical to `System.Text.Json`.
 
 ### Fixed
 

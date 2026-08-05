@@ -85,4 +85,33 @@ public sealed class ContractValidationTests {
         Assert.Equal("available, out_of_stock, discontinued", EnumContract.For(typeof(ProductStatus)).AllowedValues);
     }
 
+    [Fact]
+    public void a_partial_contract_is_rejected_by_default() {
+        EnumMemberNameBindingOptions options = new();
+        options.AddEnum<PartiallyAnnotated>();
+
+        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+
+        Assert.Equal(typeof(PartiallyAnnotated), exception.EnumType);
+        Assert.Contains(exception.Problems, p => p.Contains("'Two'", StringComparison.Ordinal));
+        Assert.Contains("public contract", exception.Message, StringComparison.Ordinal);
+        Assert.Contains(nameof(EnumMemberNameBindingOptions.AllowPartialContracts), exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void a_partial_contract_is_accepted_when_explicitly_allowed() {
+        EnumMemberNameBindingOptions options = new() { AllowPartialContracts = true };
+        options.AddEnum<PartiallyAnnotated>();
+
+        IReadOnlyList<Type> registered = EnumMemberNameBindingRegistry.Register(options);
+
+        Assert.Contains(typeof(PartiallyAnnotated), registered);
+    }
+
+    [Fact]
+    public void a_fully_annotated_contract_is_never_partial() {
+        Assert.Empty(EnumContract.For(typeof(ProductStatus)).UnannotatedMembers);
+        Assert.Equal(["Two"], EnumContract.For(typeof(PartiallyAnnotated)).UnannotatedMembers);
+    }
+
 }

@@ -112,18 +112,31 @@ public IActionResult Search([FromQuery] ProductStatus status) => Ok(status);
 | `GET /products?status=` | ❌ 400 — see *empty and absent values* below |
 | `GET /products` (no value) | ⚠️ 200 `Available` — see *empty and absent values* below |
 
-### A partially annotated enum
+### A partially annotated enum — rejected
 
-An attribute **replaces** a member's name, it does not add an alias. A member without the attribute
-keeps its C# name — which is exactly what `System.Text.Json` does.
+An attribute **replaces** a member's name, it does not add an alias. So a member left unannotated
+answers to its C# name, and that internal identifier silently becomes part of your public contract —
+the exact opposite of why you declared a contract. Forgetting one member is a mistake, not a choice.
 
 ```csharp
 public enum Shipping
 {
     [JsonStringEnumMemberName("express")] Express,
-    Standard                                        // no attribute
+    Standard                                        // EMN0003: build error
 }
 ```
+
+It fails twice, as early as possible: the analyzer reports **`EMN0003` at build time**, and if the
+enum reaches the runtime unannotated anyway — from an assembly built without the analyzer, say —
+registration throws `EnumContractException` at start-up rather than serving a leaky contract.
+
+If the enum is not yours to annotate, opt in explicitly:
+
+```csharp
+.AddEnumMemberNameBinding(options => options.AllowPartialContracts = true);
+```
+
+The behaviour then matches `System.Text.Json` exactly:
 
 | Request | Result |
 |---|---|
@@ -217,16 +230,44 @@ builder.Services
 global `JsonStringEnumConverter` factory is never installed, so enums outside your contract keep
 their existing representation. Set it to `false` if you configure `System.Text.Json` yourself.
 
-## Contract validation
+## Analyzers
 
-A malformed contract fails at start-up with an `EnumContractException` naming the type, every
-problem and the expected fix — never at request time:
+The package ships Roslyn analyzers — no extra install. A contract mistake is a build error in your
+editor, not an exception found when the application starts.
 
-- two members declaring the same public name;
-- a name that is empty or has leading/trailing whitespace;
-- a comma inside the name of a `[Flags]` member.
+| ID | Severity | Reported when |
+|---|---|---|
+| `EMN0001` | Error | Two members declare the same public name |
+| `EMN0002` | Error | A public name is empty, or has leading or trailing whitespace |
+| `EMN0003` | Error | A contract enum leaves some members unannotated |
+| `EMN0004` | Error | A `[Flags]` public name contains a comma |
+| `EMN0005` | Warning | A public name is also the C# name of another member |
 
-Two members may share the same numeric value as long as their public names differ.
+`EMN0005` catches a genuinely nasty one. Here `?colour=Blue` binds to `Red`, because a declared
+public name wins over an unannotated member's C# name — leaving `Blue` unreachable:
+
+```csharp
+public enum Colour
+{
+    [JsonStringEnumMemberName("Blue")] Red,   // EMN0005
+    Blue
+}
+```
+
+**An enum carrying no `[JsonStringEnumMemberName]` at all is never analysed.** The rules only apply
+once you have declared a contract, so adding this package to an existing solution does not light up
+enums it has nothing to do with.
+
+Adjust a severity in `.editorconfig` if you must:
+
+```ini
+[*.cs]
+dotnet_diagnostic.EMN0005.severity = error
+```
+
+Every rule is also enforced at start-up, for enums that reach the runtime from an assembly built
+without the analyzers. `EnumContractException` then names the type, every problem and the expected
+fix. Two members may share the same numeric value as long as their public names differ.
 
 ## OpenAPI
 

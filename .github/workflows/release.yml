@@ -43,6 +43,8 @@ jobs:
           unzip -p "$package" 'AspNetCore.EnumMemberNameBinding.nuspec' \
             | grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' \
             || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
+          unzip -l "$package" | grep -q 'analyzers/dotnet/cs/AspNetCore.EnumMemberNameBinding.Analyzers.dll' \
+            || { echo "::error::the package does not ship the analyzers"; exit 1; }
 
       # Trusted publishing: short-lived OIDC credentials, no long-lived API key in secrets.
       # Requires a trusted publishing policy configured on nuget.org for this repository.

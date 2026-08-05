@@ -1,9 +1,11 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/AspNetCore.EnumMemberNameBinding.Analyzers/AspNetCore.EnumMemberNameBinding.Analyzers.csproj" />
     <Project Path="src/AspNetCore.EnumMemberNameBinding.OpenApi/AspNetCore.EnumMemberNameBinding.OpenApi.csproj" />
     <Project Path="src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/AspNetCore.EnumMemberNameBinding.Analyzers.Tests/AspNetCore.EnumMemberNameBinding.Analyzers.Tests.csproj" />
     <Project Path="tests/AspNetCore.EnumMemberNameBinding.OpenApi.Tests/AspNetCore.EnumMemberNameBinding.OpenApi.Tests.csproj" />
     <Project Path="tests/AspNetCore.EnumMemberNameBinding.Tests/AspNetCore.EnumMemberNameBinding.Tests.csproj" />
   </Folder>

@@ -19,7 +19,12 @@ internal static class EnumMemberNameBindingRegistry {
         List<Type> registered = [];
 
         foreach (Type enumType in Discover(options)) {
-            EnumContract.For(enumType);
+            EnumContract contract = EnumContract.For(enumType);
+
+            if (!options.AllowPartialContracts && contract.UnannotatedMembers.Count > 0) {
+                throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
+            }
+
             TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
             registered.Add(enumType);
         }
@@ -33,6 +38,16 @@ internal static class EnumMemberNameBindingRegistry {
         Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
 
         return (JsonConverter)Activator.CreateInstance(converterType, null, false)!;
+    }
+
+    private static string BuildPartialContractProblem(EnumContract contract) {
+        string members = string.Join(", ", contract.UnannotatedMembers.Select(static m => $"'{m}'"));
+        string plural  = contract.UnannotatedMembers.Count == 1 ? " carries" : " carry";
+
+        return $"{members}{plural} no [JsonStringEnumMemberName], so the C# name becomes part of the " +
+               "public contract of the API. Annotate every member, or set " +
+               $"{nameof(EnumMemberNameBindingOptions)}.{nameof(EnumMemberNameBindingOptions.AllowPartialContracts)} " +
+               "if the enum is not yours to annotate.";
     }
 
     private static IEnumerable<Type> Discover(EnumMemberNameBindingOptions options) {
