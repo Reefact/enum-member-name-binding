@@ -42,6 +42,9 @@ The package version is independent of the .NET version it targets.
 - **Minimal APIs are not covered.** Their parameter binding uses neither MVC model binders nor
   `TypeDescriptor`; it requires a `static TryParse`/`BindAsync` on the bound type, which cannot be
   added to an `enum`. This is a platform-level constraint, not an implementation gap.
+- **An empty value on a nullable enum parameter binds `null`** rather than being rejected, where
+  `System.Text.Json` rejects `""`. ASP.NET Core resolves it before any `TypeConverter` is consulted.
+  A test pins the behaviour.
 - **Not compatible with trimming or Native AOT.** `TypeDescriptor` and the assembly scan rely on
   reflection. The public entry point is annotated accordingly rather than silently suppressing the
   warnings.

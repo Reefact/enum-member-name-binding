@@ -81,18 +81,105 @@ GET /products?status=OutOfStock   → 400   { "errors": { "status": ["The value 
 The rules are not invented here: they are a port of the ones `System.Text.Json` applies to the
 request body, so that every channel of your API accepts exactly the same vocabulary.
 
-| Input | Accepted | Why |
-|---|:--:|---|
-| `out_of_stock` | ✅ | the declared public name |
-| `OutOfStock` | ❌ | the C# name of an **annotated** member is not a public name |
-| `OUT_OF_STOCK` | ❌ | a declared name matches case-sensitively |
-| `1`, `999`, `-1` | ❌ | numeric values are never accepted |
-| `Two` / `two` | ✅ | a member **without** the attribute keeps its C# name, matched case-insensitively |
-| `read, write` | ✅ | `[Flags]` enums accept a comma-separated list |
+Everything below is the **raw text of an incoming request**, not a C# value — a route segment, a
+query string value, a form field or a header. `?status=1` is the three characters `?`, `s`… and the
+character `1`, not the integer.
 
-This is verified rather than declared: the test suite runs every candidate input through both
-`JsonSerializer` and a live HTTP request, and asserts the two outcomes are identical. If .NET
-changes its matching rules, the build fails.
+### A fully annotated enum
+
+```csharp
+public enum ProductStatus
+{
+    [JsonStringEnumMemberName("available")]    Available,
+    [JsonStringEnumMemberName("out_of_stock")] OutOfStock,
+    [JsonStringEnumMemberName("discontinued")] Discontinued
+}
+```
+
+```csharp
+[HttpGet("/products")]
+public IActionResult Search([FromQuery] ProductStatus status) => Ok(status);
+```
+
+| Request | Result |
+|---|---|
+| `GET /products?status=out_of_stock` | ✅ `ProductStatus.OutOfStock` |
+| `GET /products?status=available` | ✅ `ProductStatus.Available` |
+| `GET /products?status=OutOfStock` | ❌ 400 — the C# name of an annotated member is not a public name |
+| `GET /products?status=OUT_OF_STOCK` | ❌ 400 — a declared name matches case-sensitively |
+| `GET /products?status=1` | ❌ 400 — a numeric value is never accepted |
+| `GET /products?status=999` | ❌ 400 |
+| `GET /products?status=` | ❌ 400 — see *empty and absent values* below |
+| `GET /products` (no value) | ⚠️ 200 `Available` — see *empty and absent values* below |
+
+### A partially annotated enum
+
+An attribute **replaces** a member's name, it does not add an alias. A member without the attribute
+keeps its C# name — which is exactly what `System.Text.Json` does.
+
+```csharp
+public enum Shipping
+{
+    [JsonStringEnumMemberName("express")] Express,
+    Standard                                        // no attribute
+}
+```
+
+| Request | Result |
+|---|---|
+| `GET /orders?mode=express` | ✅ `Shipping.Express` |
+| `GET /orders?mode=Express` | ❌ 400 — annotated, so only `express` is public |
+| `GET /orders?mode=Standard` | ✅ `Shipping.Standard` — no attribute, the C# name is the public name |
+| `GET /orders?mode=standard` | ✅ `Shipping.Standard` — an unannotated name matches case-insensitively |
+
+### A `[Flags]` enum
+
+```csharp
+[Flags]
+public enum Permissions
+{
+    [JsonStringEnumMemberName("read")]   Read   = 1,
+    [JsonStringEnumMemberName("write")]  Write  = 2,
+    [JsonStringEnumMemberName("delete")] Delete = 4
+}
+```
+
+| Request | Result |
+|---|---|
+| `GET /tokens?perms=read` | ✅ `Read` |
+| `GET /tokens?perms=read, write` | ✅ `Read \| Write` |
+| `GET /tokens?perms=read,write` | ✅ same — the space is optional |
+| `GET /tokens?perms=read, delete` | ✅ `Read \| Delete` |
+| `GET /tokens?perms=read, bogus` | ❌ 400 — one unknown member rejects the whole value |
+| `GET /tokens?perms=Read` | ❌ 400 |
+
+### Empty and absent values
+
+| Parameter | Request | Result |
+|---|---|---|
+| `ProductStatus` | `?status=out_of_stock` | ✅ `OutOfStock` |
+| `ProductStatus` | `?status=` | ❌ 400 |
+| `ProductStatus` | no value at all | ⚠️ 200, binds `Available` — the first member |
+| `ProductStatus?` | `?status=` | ⚠️ 200, binds `null` |
+| `ProductStatus?` | no value at all | ✅ 200, binds `null` |
+| `[FromHeader] ProductStatus` | `X-Status:` empty | ❌ 400 |
+
+Two rows deserve attention, and **neither is introduced by this package**:
+
+- **An absent value on a non-nullable parameter binds the first member instead of failing.** This is
+  stock ASP.NET Core behaviour for value types; a test asserts that an enum this package never
+  touches behaves identically. Use `ProductStatus?` or `[Required]` if you want a 400.
+- **An empty value on a nullable parameter binds `null`,** where `System.Text.Json` rejects `""`.
+  ASP.NET Core treats it as an absent value before any `TypeConverter` is consulted, so it is out of
+  reach from here.
+
+Both are covered by tests, so they stay visible rather than becoming folklore.
+
+### Verified, not declared
+
+Apart from that one row, none of this is asserted by hand. The test suite runs every candidate input
+through both `JsonSerializer` and a live HTTP request, and requires the two outcomes to be identical.
+If .NET changes its matching rules, the build fails.
 
 ## Covered channels
 

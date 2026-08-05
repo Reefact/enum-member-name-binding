@@ -35,7 +35,7 @@ public sealed class ParityWithSystemTextJsonTests {
     public static TheoryData<string> PartialInputs => new() { "one", "One", "Two", "two", "TWO", "unknown" };
 
     public static TheoryData<string> PermissionInputs => new() {
-        "read", "write", "read, write", "read,write", "read, write, delete",
+        "read", "write", "read, write", "read,write", "read, delete", "read, write, delete",
         "Read", "read, bogus", "bogus", "3"
     };
 
