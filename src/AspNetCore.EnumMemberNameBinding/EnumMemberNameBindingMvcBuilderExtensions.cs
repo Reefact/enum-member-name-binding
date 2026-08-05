@@ -40,6 +40,15 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
                     json.JsonSerializerOptions.Converters.Add(EnumMemberNameBindingRegistry.CreateJsonConverter(enumType));
                 }
             });
+
+            // MVC and the rest of the stack read two different option objects. Microsoft.AspNetCore.OpenApi
+            // and minimal API serialization use Http.Json.JsonOptions, so configuring only the MVC one
+            // leaves the generated OpenAPI document describing every contract enum as an integer.
+            builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(json => {
+                foreach (Type enumType in contractEnums) {
+                    json.SerializerOptions.Converters.Add(EnumMemberNameBindingRegistry.CreateJsonConverter(enumType));
+                }
+            });
         }
 
         return builder;

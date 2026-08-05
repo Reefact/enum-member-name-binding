@@ -114,6 +114,11 @@ public sealed class TestApi : IAsyncLifetime {
 
         _app = builder.Build();
         _app.MapControllers();
+
+        // Minimal API endpoints serialize through Http.Json.JsonOptions, not the MVC options.
+        _app.MapGet("/minimal/contract-serialized", () => new { value = ProductStatus.OutOfStock });
+        _app.MapGet("/minimal/plain-serialized", () => new { value = PlainPriority.High });
+
         await _app.StartAsync();
 
         string address = _app.Urls.First();

@@ -53,6 +53,26 @@ public sealed class NonInterferenceTests {
     }
 
     [Fact]
+    public async Task a_contract_enum_is_written_with_its_public_name_by_a_minimal_api_too() {
+        // Minimal APIs, and the OpenAPI document generator, read Http.Json.JsonOptions rather than
+        // the MVC options. Configuring only the latter would leave this endpoint writing a number.
+        using HttpResponseMessage response = await _api.Client.GetAsync("/minimal/contract-serialized");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal("out_of_stock", document.RootElement.GetProperty("value").GetString());
+    }
+
+    [Fact]
+    public async Task a_plain_enum_keeps_its_numeric_wire_format_in_a_minimal_api_too() {
+        using HttpResponseMessage response = await _api.Client.GetAsync("/minimal/plain-serialized");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(JsonValueKind.Number, document.RootElement.GetProperty("value").ValueKind);
+    }
+
+    [Fact]
     public async Task a_contract_enum_is_written_with_its_public_name() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/status/serialized");
 

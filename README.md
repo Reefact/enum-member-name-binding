@@ -104,6 +104,7 @@ changes its matching rules, the build fails.
 | Headers (`[FromHeader]`) | ✅ |
 | Nullable enums (`TEnum?`) | ✅ |
 | Request body | ✅ (by `System.Text.Json`) |
+| OpenAPI document | ✅ with the companion package — see below |
 | Minimal APIs | ❌ — see *Limitations* |
 
 An enum that carries no `[JsonStringEnumMemberName]` is **left completely alone**: same binding,
@@ -140,18 +141,45 @@ problem and the expected fix — never at request time:
 
 Two members may share the same numeric value as long as their public names differ.
 
-## Limitations
+## OpenAPI
 
-**Minimal APIs are not supported.** Their parameter binding uses neither MVC model binders nor
+```
+dotnet add package AspNetCore.EnumMemberNameBinding.OpenApi
+```
+
+```csharp
+using Microsoft.AspNetCore.OpenApi;
+
+builder.Services.AddOpenApi(options => options.AddEnumMemberNames());
+```
+
+Left alone, ASP.NET Core describes every enum of an MVC application as a plain integer, because
+`Microsoft.AspNetCore.OpenApi` reads `Http.Json.JsonOptions` while MVC reads its own. The main
+package now configures both, and the companion corrects what remains:
+
+| Schema | ASP.NET Core alone | With the companion |
+|---|---|---|
+| `ProductStatus` | `{"type":"integer"}` | `{"type":"string","enum":["available","out_of_stock","discontinued"]}` |
+| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string","pattern":"^(read\|write\|delete)(\\s*,\\s*(read\|write\|delete))*$"}` |
+| `PlainPriority` (no contract) | `{"type":"integer"}` | `{"type":"integer"}` — untouched |
+
+Two details worth knowing. ASP.NET Core emits enum values **without declaring a type**, which the
+companion fixes. And for a `[Flags]` enum it deliberately emits no value at all — a closed list
+cannot express combinations, so the companion emits a regular expression instead, which is both
+precise and machine-checkable.
+
+The test suite asserts document/runtime coherence directly: every value the document advertises is
+sent to the running server and must be accepted, and every value it excludes must be rejected.
+
+ Their parameter binding uses neither MVC model binders nor
 `TypeDescriptor`: it requires a `static TryParse` or `BindAsync` on the bound type, which cannot be
 added to an `enum`. No third-party package can close this without abandoning `enum`. If you need it
 today, wrap the enum in a `readonly record struct` implementing `IParsable<T>`.
 
-**OpenAPI documents are not corrected yet.** On .NET 10 the generated document advertises the
-contract names for query and route parameters — which stock ASP.NET Core rejects
-([dotnet/aspnetcore#68065](https://github.com/dotnet/aspnetcore/issues/68065), closed as *not
-planned*). From .NET 11 it will advertise C# names instead, which this package makes wrong the other
-way round. A companion package is planned.
+**OpenAPI needs the companion package.** ASP.NET Core has closed the corresponding issue as *not
+planned* ([dotnet/aspnetcore#68065](https://github.com/dotnet/aspnetcore/issues/68065)), and .NET 11
+will start advertising C# names for non-body parameters — so this divergence is expected to widen,
+not shrink.
 
 **Not compatible with trimming or Native AOT.** `TypeDescriptor` and the assembly scan rely on
 reflection. `AddEnumMemberNameBinding` is annotated with `[RequiresDynamicCode]` and

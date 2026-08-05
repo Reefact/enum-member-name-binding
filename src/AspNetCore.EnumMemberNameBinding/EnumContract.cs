@@ -87,7 +87,8 @@ internal sealed class EnumContract {
         _byClrName      = byClrName.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
         _names          = names.ToFrozenDictionary();
         _ordered        = [.. ordered];
-        AllowedValues   = string.Join(", ", ordered.Select(static o => o.Item2));
+        PublicNames     = [.. ordered.Select(static o => o.Item2)];
+        AllowedValues   = string.Join(", ", PublicNames);
     }
 
     /// <summary>The described enum type.</summary>
@@ -96,7 +97,13 @@ internal sealed class EnumContract {
     /// <summary>Whether at least one member carries <c>[JsonStringEnumMemberName]</c>.</summary>
     internal bool IsContract { get; }
 
-    /// <summary>The public names, in declaration order, for use in error messages and OpenAPI schemas.</summary>
+    /// <summary>Whether the enum carries <c>[Flags]</c> and therefore accepts comma-separated combinations.</summary>
+    internal bool IsFlags => _isFlags;
+
+    /// <summary>The public names, in declaration order.</summary>
+    internal IReadOnlyList<string> PublicNames { get; }
+
+    /// <summary>The public names joined for use in error messages.</summary>
     internal string AllowedValues { get; }
 
     /// <summary>Resolves — and validates — the contract of <paramref name="enumType" />.</summary>

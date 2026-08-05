@@ -34,13 +34,14 @@ jobs:
         run: |
           dotnet build -c Release -p:Version=${{ steps.version.outputs.value }}
           dotnet test -c Release --no-build
-          dotnet pack src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj \
-            -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
+          dotnet pack -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
 
       - name: Verify the package declares its ASP.NET Core framework reference
         run: |
           set -euo pipefail
-          unzip -p artifacts/*.nupkg '*.nuspec' | grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' \
+          package=$(ls artifacts/AspNetCore.EnumMemberNameBinding.[0-9]*.nupkg)
+          unzip -p "$package" 'AspNetCore.EnumMemberNameBinding.nuspec' \
+            | grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' \
             || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
 
       # Trusted publishing: short-lived OIDC credentials, no long-lived API key in secrets.

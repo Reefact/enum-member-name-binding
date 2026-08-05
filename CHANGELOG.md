@@ -22,16 +22,26 @@ The package version is independent of the .NET version it targets.
   the HTTP outcome must equal the body outcome.
 - A CI check that fails the build if the produced package does not declare its
   `Microsoft.AspNetCore.App` framework reference.
+- `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the
+  generated document describe what the server accepts: an explicit `string` type, the declared public
+  names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
+  expression covering comma-separated combinations. Its tests assert document/runtime coherence by
+  replaying every advertised value against the running server.
+- The companion raises the floor of `Microsoft.OpenApi` to 2.11.0. `Microsoft.AspNetCore.OpenApi`
+  10.0.x resolves 2.0.0, which carries advisory GHSA-v5pm-xwqc-g5wc.
+
+### Fixed
+
+- `Microsoft.AspNetCore.OpenApi` and minimal API serialization read `Http.Json.JsonOptions`, while
+  MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described
+  as an integer in the generated document. Both are now configured, still one converter per contract
+  type.
 
 ### Known limitations
 
 - **Minimal APIs are not covered.** Their parameter binding uses neither MVC model binders nor
   `TypeDescriptor`; it requires a `static TryParse`/`BindAsync` on the bound type, which cannot be
   added to an `enum`. This is a platform-level constraint, not an implementation gap.
-- **OpenAPI documents are not yet corrected.** On .NET 10 the generated document advertises contract
-  names for query and route parameters that stock ASP.NET Core rejects; from .NET 11 it will
-  advertise C# names instead, which this library makes wrong in the other direction. A companion
-  package is planned.
 - **Not compatible with trimming or Native AOT.** `TypeDescriptor` and the assembly scan rely on
   reflection. The public entry point is annotated accordingly rather than silently suppressing the
   warnings.

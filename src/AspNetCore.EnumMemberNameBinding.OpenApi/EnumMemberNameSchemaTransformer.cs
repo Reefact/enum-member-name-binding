@@ -1,0 +1,59 @@
+using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
+
+namespace AspNetCore.EnumMemberNameBinding.OpenApi;
+
+/// <summary>
+/// Rewrites the schema of every contract enum so the document describes what the server accepts.
+/// </summary>
+/// <remarks>
+/// Three things are corrected:
+/// <list type="bullet">
+///   <item>the schema is explicitly typed as a string — ASP.NET Core emits the enum values without a type;</item>
+///   <item>the values are the declared public names, whichever names the platform chose to emit;</item>
+///   <item>a <c>[Flags]</c> enum, for which ASP.NET Core deliberately emits no value at all, gets a
+///         pattern and a description covering comma-separated combinations.</item>
+/// </list>
+/// </remarks>
+public sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer {
+
+    /// <inheritdoc />
+    public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken cancellationToken) {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(context);
+
+        Type type = context.JsonTypeInfo.Type;
+        IReadOnlyList<string>? names = EnumMemberNames.GetPublicNames(type);
+        if (names is null || names.Count == 0) { return Task.CompletedTask; }
+
+        schema.Type = JsonSchemaType.String;
+
+        if (EnumMemberNames.IsFlagsContract(type)) {
+            // A combination is an open set, so it cannot be enumerated. A pattern describes it exactly.
+            schema.Enum = null;
+            schema.Pattern = BuildFlagsPattern(names);
+            schema.Description = Append(schema.Description,
+                                        $"One or more of: {string.Join(", ", names)}. Combine several with a comma, for example \"{string.Join(", ", names.Take(2))}\".");
+
+            return Task.CompletedTask;
+        }
+
+        schema.Enum = [.. names.Select(static name => (JsonNode)JsonValue.Create(name))];
+
+        return Task.CompletedTask;
+    }
+
+    private static string BuildFlagsPattern(IReadOnlyList<string> names) {
+        string alternatives = string.Join('|', names.Select(Regex.Escape));
+
+        return $"^({alternatives})(\\s*,\\s*({alternatives}))*$";
+    }
+
+    private static string Append(string? description, string addition) {
+        return string.IsNullOrWhiteSpace(description) ? addition : description.TrimEnd() + " " + addition;
+    }
+
+}

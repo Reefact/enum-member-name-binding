@@ -36,7 +36,7 @@ jobs:
         run: dotnet test -c Release --no-build --verbosity normal
 
       - name: Pack
-        run: dotnet pack src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj -c Release --no-build -o artifacts
+        run: dotnet pack -c Release --no-build -o artifacts
 
       # The previous generation of this library shipped for years without its ASP.NET Core
       # framework reference, because the package was assembled by a hand-written .nuspec.
@@ -44,8 +44,8 @@ jobs:
       - name: Verify the package declares its ASP.NET Core framework reference
         run: |
           set -euo pipefail
-          package=$(ls artifacts/*.nupkg)
-          unzip -p "$package" '*.nuspec' > /tmp/packed.nuspec
+          package=$(ls artifacts/AspNetCore.EnumMemberNameBinding.[0-9]*.nupkg)
+          unzip -p "$package" 'AspNetCore.EnumMemberNameBinding.nuspec' > /tmp/packed.nuspec
           echo "--- packed nuspec ---"
           cat /tmp/packed.nuspec
           grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' /tmp/packed.nuspec \
