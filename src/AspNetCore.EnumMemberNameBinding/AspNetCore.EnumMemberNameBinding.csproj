@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>AspNetCore.EnumMemberNameBinding</PackageId>
+    <IsPackable>true</IsPackable>
+    <RootNamespace>AspNetCore.EnumMemberNameBinding</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>Makes ASP.NET Core route, query string, form and header model binding honor the enum member names declared with System.Text.Json's [JsonStringEnumMemberName]. One enum contract, applied consistently on every input channel — not just the request body.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AspNetCore.EnumMemberNameBinding.Tests" />
+  </ItemGroup>
+
+</Project>

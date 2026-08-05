@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      DOTNET_NOLOGO: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build -c Release --no-restore
+
+      - name: Test
+        run: dotnet test -c Release --no-build --verbosity normal
+
+      - name: Pack
+        run: dotnet pack src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj -c Release --no-build -o artifacts
+
+      # The previous generation of this library shipped for years without its ASP.NET Core
+      # framework reference, because the package was assembled by a hand-written .nuspec.
+      # This check makes that class of mistake impossible to merge.
+      - name: Verify the package declares its ASP.NET Core framework reference
+        run: |
+          set -euo pipefail
+          package=$(ls artifacts/*.nupkg)
+          unzip -p "$package" '*.nuspec' > /tmp/packed.nuspec
+          echo "--- packed nuspec ---"
+          cat /tmp/packed.nuspec
+          grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' /tmp/packed.nuspec \
+            || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: artifacts/*

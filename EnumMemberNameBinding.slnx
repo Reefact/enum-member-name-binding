@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AspNetCore.EnumMemberNameBinding.Tests/AspNetCore.EnumMemberNameBinding.Tests.csproj" />
+  </Folder>
+</Solution>

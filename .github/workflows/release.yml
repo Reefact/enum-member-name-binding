@@ -1,0 +1,63 @@
+name: Release
+
+# The Git tag is the single source of truth for the published version.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  id-token: write   # required by NuGet trusted publishing (OIDC)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: nuget
+    env:
+      CI: true
+      DOTNET_NOLOGO: true
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Derive version from tag
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build, test and pack
+        run: |
+          dotnet build -c Release -p:Version=${{ steps.version.outputs.value }}
+          dotnet test -c Release --no-build
+          dotnet pack src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj \
+            -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
+
+      - name: Verify the package declares its ASP.NET Core framework reference
+        run: |
+          set -euo pipefail
+          unzip -p artifacts/*.nupkg '*.nuspec' | grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' \
+            || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
+
+      # Trusted publishing: short-lived OIDC credentials, no long-lived API key in secrets.
+      # Requires a trusted publishing policy configured on nuget.org for this repository.
+      - name: Authenticate to NuGet
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push
+        run: |
+          dotnet nuget push artifacts/*.nupkg \
+            --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json
+
+      - name: Create the GitHub release
+        run: gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
