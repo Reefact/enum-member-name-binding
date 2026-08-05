@@ -109,8 +109,8 @@ public IActionResult Search([FromQuery] ProductStatus status) => Ok(status);
 | `GET /products?status=OUT_OF_STOCK` | ❌ 400 — a declared name matches case-sensitively |
 | `GET /products?status=1` | ❌ 400 — a numeric value is never accepted |
 | `GET /products?status=999` | ❌ 400 |
-| `GET /products?status=` | ❌ 400 — see *empty and absent values* below |
-| `GET /products` (no value) | ⚠️ 200 `Available` — see *empty and absent values* below |
+| `GET /products?status=` | ❌ 400 — see [empty and absent values](#empty-and-absent-values) |
+| `GET /products` (no value) | ⚠️ 200 `Available` — see [empty and absent values](#empty-and-absent-values) |
 
 ### A partially annotated enum — rejected
 
@@ -204,8 +204,9 @@ If .NET changes its matching rules, the build fails.
 | Headers (`[FromHeader]`) | ✅ |
 | Nullable enums (`TEnum?`) | ✅ |
 | Request body | ✅ (by `System.Text.Json`) |
-| OpenAPI document | ✅ with the companion package — see below |
-| Minimal APIs | ❌ — see *Limitations* |
+| OpenAPI document | ✅ with the [companion package](#openapi) |
+| Minimal API responses | ✅ |
+| Minimal API parameters | ❌ — see [Limitations](#limitations) |
 
 An enum that carries no `[JsonStringEnumMemberName]` is **left completely alone**: same binding,
 same validation, same JSON wire format as without this package. Enabling the library never changes
@@ -307,10 +308,20 @@ precise and machine-checkable.
 The test suite asserts document/runtime coherence directly: every value the document advertises is
 sent to the running server and must be accepted, and every value it excludes must be rejected.
 
- Their parameter binding uses neither MVC model binders nor
+## Limitations
+
+**Minimal API parameters are not supported.** Their binding uses neither MVC model binders nor
 `TypeDescriptor`: it requires a `static TryParse` or `BindAsync` on the bound type, which cannot be
 added to an `enum`. No third-party package can close this without abandoning `enum`. If you need it
 today, wrap the enum in a `readonly record struct` implementing `IParsable<T>`.
+
+Minimal API *responses* are covered: an endpoint returning a contract enum writes its public name,
+because the main package configures `Http.Json.JsonOptions` alongside the MVC options. It is the
+input side that is out of reach.
+
+**An empty value on a nullable enum parameter binds `null`** instead of being rejected, where
+`System.Text.Json` rejects `""`. ASP.NET Core resolves it before any `TypeConverter` is consulted.
+See [empty and absent values](#empty-and-absent-values).
 
 **OpenAPI needs the companion package.** ASP.NET Core has closed the corresponding issue as *not
 planned* ([dotnet/aspnetcore#68065](https://github.com/dotnet/aspnetcore/issues/68065)), and .NET 11
