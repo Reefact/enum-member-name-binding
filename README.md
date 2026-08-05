@@ -241,10 +241,9 @@ editor, not an exception found when the application starts.
 | `EMN0002` | Error | A public name is empty, or has leading or trailing whitespace |
 | `EMN0003` | Error | A contract enum leaves some members unannotated |
 | `EMN0004` | Error | A `[Flags]` public name contains a comma |
-| `EMN0005` | Warning | A public name is also the C# name of another member |
+| `EMN0005` | Error | A public name is also the C# name of another member |
 
-`EMN0005` catches a genuinely nasty one. Here `?colour=Blue` binds to `Red`, because a declared
-public name wins over an unannotated member's C# name — leaving `Blue` unreachable:
+`EMN0005` catches a genuinely nasty one:
 
 ```csharp
 public enum Colour
@@ -254,15 +253,24 @@ public enum Colour
 }
 ```
 
+A declared public name is matched first, and case-sensitively. So `?colour=Blue` binds to **`Red`**,
+while `?colour=blue` and `?colour=BLUE` bind to `Blue`. The member answers to every casing of its
+name except its own — which no reader of that enum would ever guess.
+
+It only fires next to `EMN0003`, since it needs an unannotated member. That is precisely why it is
+its own rule: turn `EMN0003` off to allow partial contracts and `EMN0005` is the only protection
+left, so it is an error rather than a warning.
+
 **An enum carrying no `[JsonStringEnumMemberName]` at all is never analysed.** The rules only apply
 once you have declared a contract, so adding this package to an existing solution does not light up
 enums it has nothing to do with.
 
-Adjust a severity in `.editorconfig` if you must:
+The analyzers cannot see your runtime configuration, so if you deliberately use
+`AllowPartialContracts`, turn `EMN0003` off — and keep `EMN0005` on:
 
 ```ini
 [*.cs]
-dotnet_diagnostic.EMN0005.severity = error
+dotnet_diagnostic.EMN0003.severity = none
 ```
 
 Every rule is also enforced at start-up, for enums that reach the runtime from an assembly built

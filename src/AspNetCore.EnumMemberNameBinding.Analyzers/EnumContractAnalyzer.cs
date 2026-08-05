@@ -66,10 +66,13 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     public static readonly DiagnosticDescriptor PublicNameShadowsAnotherMember = new(
         "EMN0005",
         "A public name shadows the C# name of another member",
-        "Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; the value '{1}' will resolve to '{0}'",
-        Category, DiagnosticSeverity.Warning, isEnabledByDefault: true,
-        "A declared public name wins over an unannotated member's C# name, so the other member becomes "
-      + "unreachable under its own name.",
+        "Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; "
+      + "the value '{1}' resolves to '{0}', so '{2}' is only reachable through a different casing",
+        Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
+        "A declared public name is matched before an unannotated member's C# name, and case-sensitively. "
+      + "The shadowed member therefore answers to every casing of its name except its own, which no "
+      + "reader of the enum can guess. This matters most when EMN0003 has been turned off to allow "
+      + "partial contracts, where it is the only remaining protection.",
         HelpBase + "EMN0005.md");
 
     /// <inheritdoc />

@@ -23,7 +23,8 @@ The package version is independent of the .NET version it targets.
 - Roslyn analyzers, shipped inside the package under `analyzers/dotnet/cs`, so a contract mistake is
   a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
   public name, `EMN0003` incomplete contract, `EMN0004` comma in a `[Flags]` name, `EMN0005` a public
-  name shadowing another member's C# name. An enum that declares no contract is never analysed.
+  name shadowing another member's C# name — which leaves that member answering to every casing of its
+  name except its own. All five are errors. An enum that declares no contract is never analysed.
 - CI checks that fail the build if the produced package does not declare its
   `Microsoft.AspNetCore.App` framework reference, or does not ship the analyzers.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the

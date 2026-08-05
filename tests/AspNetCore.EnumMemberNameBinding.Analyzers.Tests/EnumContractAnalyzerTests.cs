@@ -108,11 +108,29 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Contains(diagnostics, d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Warning);
+        Assert.Contains(diagnostics, d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Error);
 
         string message = diagnostics.First(d => d.Id == "EMN0005").GetMessage();
         Assert.Contains("'Red'", message, StringComparison.Ordinal);
         Assert.Contains("'Blue'", message, StringComparison.Ordinal);
+        Assert.Contains("casing", message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// EMN0005 only ever fires alongside EMN0003, so it earns its place in the ruleset by being the
+    /// last protection left once EMN0003 is turned off to allow partial contracts.
+    /// </summary>
+    [Fact]
+    public async Task EMN0005_survives_EMN0003_being_suppressed() {
+        IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """
+            public enum Colour {
+                [JsonStringEnumMemberName("Blue")] Red,
+                Blue
+            }
+            """);
+
+        Assert.Equal(["EMN0003", "EMN0005"], diagnostics.Select(d => d.Id).Order());
+        Assert.All(diagnostics, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
     }
 
     [Fact]
