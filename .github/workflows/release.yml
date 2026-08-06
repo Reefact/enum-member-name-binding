@@ -1,9 +1,18 @@
 name: Release
 
 # The Git tag is the single source of truth for the published version.
+#
+# workflow_dispatch runs everything except the two irreversible steps, so the OIDC login and the
+# package checks can be proved before a tag exists. A tag is awkward to take back; a dry run is not.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build during a dry run (nothing is published).'
+        required: false
+        default: '0.0.0-dryrun'
 
 permissions:
   contents: write
@@ -16,6 +25,7 @@ jobs:
     env:
       CI: true
       DOTNET_NOLOGO: true
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -26,9 +36,14 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Derive version from tag
+      - name: Derive the version
         id: version
-        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build, test and pack
         run: |
@@ -36,7 +51,7 @@ jobs:
           dotnet test -c Release --no-build
           dotnet pack -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
 
-      - name: Verify the package declares its ASP.NET Core framework reference
+      - name: Verify the package declares its ASP.NET Core framework reference and ships the analyzers
         run: |
           set -euo pipefail
           package=$(ls artifacts/AspNetCore.EnumMemberNameBinding.[0-9]*.nupkg)
@@ -45,22 +60,51 @@ jobs:
             || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
           unzip -l "$package" | grep -q 'analyzers/dotnet/cs/AspNetCore.EnumMemberNameBinding.Analyzers.dll' \
             || { echo "::error::the package does not ship the analyzers"; exit 1; }
+          echo "Packages built:"
+          ls -1 artifacts
 
       # Trusted publishing: short-lived OIDC credentials, no long-lived API key in secrets.
-      # Requires a trusted publishing policy configured on nuget.org for this repository.
+      # Runs on a dry run too — proving the login works is the point of the exercise.
       - name: Authenticate to NuGet
         uses: NuGet/login@v1
         id: login
         with:
           user: ${{ vars.NUGET_USER }}
 
+      - name: Confirm the credentials were issued
+        run: |
+          if [ -z "${{ steps.login.outputs.NUGET_API_KEY }}" ]; then
+            echo "::error::trusted publishing returned no API key"; exit 1
+          fi
+          echo "A short-lived API key was issued."
+
       - name: Push
+        if: env.DRY_RUN != 'true'
         run: |
           dotnet nuget push artifacts/*.nupkg \
             --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json
 
       - name: Create the GitHub release
+        if: env.DRY_RUN != 'true'
         run: gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+
+      - name: Dry run summary
+        if: env.DRY_RUN == 'true'
+        run: |
+          {
+            echo "### Dry run"
+            echo
+            echo "Everything ran except the NuGet push and the GitHub release."
+            echo "Packages were built and verified, and trusted publishing issued a key."
+            echo
+            echo "Tag the commit to publish for real."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: env.DRY_RUN == 'true'
+        with:
+          name: dry-run-packages
+          path: artifacts/*
