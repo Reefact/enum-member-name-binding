@@ -16,10 +16,18 @@ public sealed class DocumentationLinksTests {
     private static readonly Regex        Link           = new(@"\[[^\]]*\]\((?<target>[^)\s]+)\)", RegexOptions.Compiled);
     private static readonly Regex        Heading        = new(@"^(?<level>#{1,6})\s+(?<text>.+)$", RegexOptions.Compiled | RegexOptions.Multiline);
     private static readonly Regex        Fence          = new(@"^```(?<tag>\w*)\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
+    private static readonly Regex        FencedCode     = new(@"^```.*?^```", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.Singleline);
 
-    /// <summary>The front page is the one pair that does not follow the file-suffix convention.</summary>
     private const string EnglishFrontPage = "README.md";
-    private const string FrenchFrontPage  = "docs/README.fr.md";
+
+    /// <summary>
+    /// The pages GitHub and NuGet expect at the root keep their name and place; only their French
+    /// version follows the file-suffix convention, from inside <c>docs</c>.
+    /// </summary>
+    private static readonly (string English, string French)[] RootPages = [
+        (EnglishFrontPage, "docs/README.fr.md"),
+        ("CHANGELOG.md", "docs/CHANGELOG.fr.md")
+    ];
 
     public static TheoryData<string> Pages {
         get {
@@ -102,17 +110,20 @@ public sealed class DocumentationLinksTests {
     }
 
     /// <summary>
-    /// Prose is translated, code is not restructured. Comments and string literals inside a snippet
-    /// may well be translated, so the contents are not compared — but a snippet dropped or added on
-    /// one side means the two pages no longer describe the same thing.
+    /// Words are translated, structure is not. The contents are deliberately not compared — comments
+    /// and string literals inside an example are translated too — but a snippet, a section, a bullet
+    /// or a table row present on one side and not the other means the two pages no longer say the
+    /// same thing. This is what catches an entry appended to one changelog and not the other.
     /// </summary>
     [Theory]
     [MemberData(nameof(TranslationPairs))]
-    public void a_translation_keeps_the_same_snippets(string english, string french) {
-        string[] left  = FenceTagsOf(english);
-        string[] right = FenceTagsOf(french);
+    public void a_translation_keeps_the_same_structure(string english, string french) {
+        Assert.Equal(FenceTagsOf(english), FenceTagsOf(french));
 
-        Assert.Equal(left, right);
+        foreach ((string what, Regex pattern) in Structure) {
+            Assert.True(Count(english, pattern) == Count(french, pattern),
+                        $"{english} has {Count(english, pattern)} {what} and {french} has {Count(french, pattern)}.");
+        }
     }
 
     [Fact]
@@ -130,6 +141,18 @@ public sealed class DocumentationLinksTests {
                     $"{page} does not offer a link to {counterpart} in its language header.");
     }
 
+    private static readonly (string What, Regex Pattern)[] Structure = [
+        ("headings", new Regex(@"^#{1,6} ", RegexOptions.Compiled | RegexOptions.Multiline)),
+        ("bullets", new Regex(@"^- ", RegexOptions.Compiled | RegexOptions.Multiline)),
+        ("table rows", new Regex(@"^\|", RegexOptions.Compiled | RegexOptions.Multiline))
+    ];
+
+    private static int Count(string page, Regex pattern) {
+        string source = File.ReadAllText(Path.Combine(RepositoryRoot.FullName, page));
+
+        return pattern.Count(FencedCode.Replace(source, string.Empty));
+    }
+
     private static string[] FenceTagsOf(string page) {
         string        source = File.ReadAllText(Path.Combine(RepositoryRoot.FullName, page));
         List<string>  tags   = [];
@@ -144,13 +167,16 @@ public sealed class DocumentationLinksTests {
     }
 
     private static IEnumerable<(string English, string French)> Pairs() {
-        yield return (EnglishFrontPage, FrenchFrontPage);
+        foreach ((string english, string french) in RootPages) {
+            yield return (english, french);
+        }
 
         foreach (string page in MarkdownPages().Where(page => page.EndsWith(".en.md", StringComparison.Ordinal))) {
             yield return (page, page[..^".en.md".Length] + ".fr.md");
         }
 
-        foreach (string page in MarkdownPages().Where(page => page.EndsWith(".fr.md", StringComparison.Ordinal) && page != FrenchFrontPage)) {
+        string[] rooted = [.. RootPages.Select(pair => pair.French)];
+        foreach (string page in MarkdownPages().Where(page => page.EndsWith(".fr.md", StringComparison.Ordinal) && !rooted.Contains(page))) {
             yield return (page[..^".fr.md".Length] + ".en.md", page);
         }
     }
