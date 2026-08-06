@@ -108,6 +108,16 @@ The package version is independent of the .NET version it targets.
   as an integer in the generated document. Both are now configured, still one converter per contract
   type.
 
+### Documentation
+
+- The README was split. It had grown to a length nobody reads before adopting a package, so the front
+  page now carries the problem, the installation, one example, the channel table, the guarantees and
+  the two limitations worth knowing before adopting — the rest moved, unabridged, to
+  `docs/contract-rules.md`, `docs/analyzers.md`, `docs/openapi.md` and `docs/limitations.md`.
+  The README is also the NuGet package page, where a relative link is dead, so it links to GitHub
+  absolutely; a test fails on a relative one, and on any link — in any page — that points at a file
+  or a heading that does not exist.
+
 ### Known limitations
 
 - **Minimal APIs are not covered.** Their parameter binding uses neither MVC model binders nor
