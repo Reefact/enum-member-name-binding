@@ -111,7 +111,8 @@ public sealed class ContractValidationTests {
     [Fact]
     public void a_fully_annotated_contract_is_never_partial() {
         Assert.Empty(EnumContract.For(typeof(ProductStatus)).UnannotatedMembers);
-        Assert.Equal(["Two"], EnumContract.For(typeof(PartiallyAnnotated)).UnannotatedMembers);
+        // AsEnumerable, because ImmutableArray<T>.Equals compares the underlying array by reference.
+        Assert.Equal(["Two"], EnumContract.For(typeof(PartiallyAnnotated)).UnannotatedMembers.AsEnumerable());
     }
 
 }

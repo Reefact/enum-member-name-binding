@@ -14,8 +14,14 @@ public sealed class EnumMemberNameBindingOptions {
     public IList<Assembly> Assemblies { get; } = [];
 
     /// <summary>
-    /// Enum types registered explicitly, whether or not they carry the attribute.
+    /// Enum types registered explicitly, bypassing the assembly scan.
     /// </summary>
+    /// <remarks>
+    /// Each must declare a contract — at least one member carrying <c>[JsonStringEnumMemberName]</c>.
+    /// An enum that declares none is refused rather than adopted: taking it over would change how an
+    /// ordinary enum binds and serializes, and <see cref="AllowPartialContracts" /> does not make that
+    /// acceptable. It governs an incomplete contract, not the absence of one.
+    /// </remarks>
     public IList<Type> EnumTypes { get; } = [];
 
     /// <summary>

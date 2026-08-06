@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
@@ -127,10 +128,15 @@ internal sealed class EnumContract {
     internal bool IsFlags => _isFlags;
 
     /// <summary>The public names, in declaration order.</summary>
-    internal IReadOnlyList<string> PublicNames { get; }
+    /// <remarks>
+    /// Immutable by type, not by convention. These lists are cached and handed to callers — including
+    /// through the public <see cref="EnumMemberNames" /> API — so the guarantee cannot rest on a
+    /// collection expression happening to synthesize a read-only wrapper rather than an array.
+    /// </remarks>
+    internal ImmutableArray<string> PublicNames { get; }
 
     /// <summary>The C# names of the members that carry no <c>[JsonStringEnumMemberName]</c>.</summary>
-    internal IReadOnlyList<string> UnannotatedMembers { get; }
+    internal ImmutableArray<string> UnannotatedMembers { get; }
 
     /// <summary>The public names joined for use in error messages.</summary>
     internal string AllowedValues { get; }

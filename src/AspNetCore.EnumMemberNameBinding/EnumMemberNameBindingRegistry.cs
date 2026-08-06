@@ -38,7 +38,7 @@ internal static class EnumMemberNameBindingRegistry {
             EnumContract contract = EnumContract.For(enumType);
 
             // Validated on every call, so a second registration with stricter options still fails.
-            if (!options.AllowPartialContracts && contract.UnannotatedMembers.Count > 0) {
+            if (!options.AllowPartialContracts && contract.UnannotatedMembers.Length > 0) {
                 throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
             }
 
@@ -65,7 +65,7 @@ internal static class EnumMemberNameBindingRegistry {
 
     private static string BuildPartialContractProblem(EnumContract contract) {
         string members = string.Join(", ", contract.UnannotatedMembers.Select(static m => $"'{m}'"));
-        string plural  = contract.UnannotatedMembers.Count == 1 ? " carries" : " carry";
+        string plural  = contract.UnannotatedMembers.Length == 1 ? " carries" : " carry";
 
         return $"{members}{plural} no [JsonStringEnumMemberName], so the C# name becomes part of the " +
                "public contract of the API. Annotate every member, or set " +
@@ -80,6 +80,17 @@ internal static class EnumMemberNameBindingRegistry {
         foreach (Type explicitType in options.EnumTypes) {
             if (!explicitType.IsEnum) {
                 throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", nameof(options));
+            }
+
+            // Registering an enum that declares nothing would change how an ordinary enum binds and
+            // serializes, which is exactly what this library promises never to do. Naming one
+            // explicitly is a mistake worth reporting rather than a preference worth honouring.
+            if (!EnumContract.For(explicitType).IsContract) {
+                throw new EnumContractException(explicitType, [
+                    "no member carries [JsonStringEnumMemberName], so there is no contract to apply. "
+                  + "Registering it would change how an ordinary enum binds and serializes. Annotate its "
+                  + "members, or drop the registration."
+                ]);
             }
 
             if (seen.Add(explicitType)) { yield return explicitType; }
