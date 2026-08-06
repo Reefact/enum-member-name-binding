@@ -9,7 +9,8 @@
       CA1069: the duplicate-value enum is a deliberate fixture.
       CA1711: xUnit collection fixtures are named '...Collection' by convention.
     -->
-    <NoWarn>$(NoWarn);CA1707;CA1034;CA2007;CA1069;CA1711</NoWarn>
+    <!-- CA1001: xUnit disposes fixtures through IAsyncLifetime, not IDisposable. -->
+    <NoWarn>$(NoWarn);CA1707;CA1034;CA2007;CA1069;CA1711;CA1001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,0 +1,167 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+
+namespace AspNetCore.EnumMemberNameBinding.Tests;
+
+public enum Portability {
+
+    [JsonStringEnumMemberName("plain")]         Plain,
+    [JsonStringEnumMemberName("with/slash")]    Slash,
+    [JsonStringEnumMemberName("with\nlf")]      LineFeed,
+    [JsonStringEnumMemberName("withéacc")] NonAscii,
+    [JsonStringEnumMemberName("with?question")] Question,
+    [JsonStringEnumMemberName("with#hash")]     Hash,
+    [JsonStringEnumMemberName("with&amp")]      Ampersand,
+    [JsonStringEnumMemberName("with%percent")]  Percent,
+    [JsonStringEnumMemberName("with space")]    Space
+
+}
+
+[ApiController]
+public sealed class PortabilityController : ControllerBase {
+
+    [HttpGet("/portability/route/{value}")] public IActionResult R([FromRoute] Portability value) => Ok(new { value = value.ToString() });
+    [HttpGet("/portability/query")]         public IActionResult Q([FromQuery] Portability value) => Ok(new { value = value.ToString() });
+    [HttpGet("/portability/header")]        public IActionResult H([FromHeader(Name = "X-V")] Portability value) => Ok(new { value = value.ToString() });
+    [HttpPost("/portability/form")]         public IActionResult F([FromForm] Portability value) => Ok(new { value = value.ToString() });
+    [HttpPost("/portability/body")]         public IActionResult B([FromBody] Payload payload) => Ok(new { value = payload.Value.ToString() });
+
+    public sealed class Payload {
+
+        public Portability Value { get; set; }
+
+    }
+
+}
+
+/// <summary>
+/// The evidence behind EMN0006. The promise of one contract on every channel only holds for names
+/// every channel can carry, and this pins which ones can — measured, not read off a specification.
+/// </summary>
+public sealed class ChannelPortabilityTests : IAsyncLifetime {
+
+    private WebApplication _app = null!;
+    private HttpClient _client = null!;
+
+    public async Task InitializeAsync() {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        builder.Logging.ClearProviders();
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Services
+               .AddControllers()
+               .AddApplicationPart(typeof(PortabilityController).Assembly)
+               .AddEnumMemberNameBinding(options => options.AddEnum<Portability>());
+
+        _app = builder.Build();
+        _app.MapControllers();
+        await _app.StartAsync();
+        _client = new HttpClient { BaseAddress = new Uri(_app.Urls.First()) };
+    }
+
+    public async Task DisposeAsync() {
+        _client.Dispose();
+        await _app.StopAsync();
+        await _app.DisposeAsync();
+    }
+
+    /// <summary>Names EMN0006 leaves alone: every channel carries them.</summary>
+    [Theory]
+    [InlineData("plain", nameof(Portability.Plain))]
+    [InlineData("with?question", nameof(Portability.Question))]
+    [InlineData("with#hash", nameof(Portability.Hash))]
+    [InlineData("with&amp", nameof(Portability.Ampersand))]
+    [InlineData("with%percent", nameof(Portability.Percent))]
+    [InlineData("with space", nameof(Portability.Space))]
+    public async Task a_portable_name_binds_on_every_channel(string name, string expected) {
+        Assert.Equal(expected, await Route(name));
+        Assert.Equal(expected, await Query(name));
+        Assert.Equal(expected, await Header(name));
+        Assert.Equal(expected, await Form(name));
+        Assert.Equal(expected, await Body(name));
+    }
+
+    [Fact]
+    public async Task a_slash_is_refused_in_a_route_segment_and_nowhere_else() {
+        const string Name = "with/slash";
+        string expected = nameof(Portability.Slash);
+
+        using HttpResponseMessage route = await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(Name));
+        Assert.Equal(HttpStatusCode.BadRequest, route.StatusCode);
+
+        Assert.Equal(expected, await Query(Name));
+        Assert.Equal(expected, await Header(Name));
+        Assert.Equal(expected, await Form(Name));
+        Assert.Equal(expected, await Body(Name));
+    }
+
+    [Fact]
+    public async Task a_line_break_is_refused_in_a_header_and_nowhere_else() {
+        const string Name = "with\nlf";
+        string expected = nameof(Portability.LineFeed);
+
+        using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
+        request.Headers.TryAddWithoutValidation("X-V", Name);
+        using HttpResponseMessage header = await _client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, header.StatusCode);
+
+        Assert.Equal(expected, await Route(Name));
+        Assert.Equal(expected, await Query(Name));
+        Assert.Equal(expected, await Form(Name));
+        Assert.Equal(expected, await Body(Name));
+    }
+
+    /// <summary>
+    /// The client refuses to put it on the wire, so the request never reaches the server — which is
+    /// worse than a 400, not better.
+    /// </summary>
+    [Fact]
+    public async Task a_non_ascii_name_cannot_even_be_sent_in_a_header() {
+        const string Name = "withéacc";
+        string expected = nameof(Portability.NonAscii);
+
+        using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
+        request.Headers.TryAddWithoutValidation("X-V", Name);
+        await Assert.ThrowsAsync<HttpRequestException>(() => _client.SendAsync(request));
+
+        Assert.Equal(expected, await Route(Name));
+        Assert.Equal(expected, await Query(Name));
+        Assert.Equal(expected, await Form(Name));
+        Assert.Equal(expected, await Body(Name));
+    }
+
+    private async Task<string> Route(string name)  => await Read(await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(name)));
+    private async Task<string> Query(string name)  => await Read(await _client.GetAsync("/portability/query?value=" + Uri.EscapeDataString(name)));
+    private async Task<string> Form(string name)   => await Read(await _client.PostAsync("/portability/form", new FormUrlEncodedContent([new KeyValuePair<string, string>("value", name)])));
+
+    private async Task<string> Body(string name) {
+        string json = JsonSerializer.Serialize(new Dictionary<string, string> { ["Value"] = name });
+        using StringContent content = new(json, Encoding.UTF8, "application/json");
+
+        return await Read(await _client.PostAsync("/portability/body", content));
+    }
+
+    private async Task<string> Header(string name) {
+        using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
+        request.Headers.TryAddWithoutValidation("X-V", name);
+
+        return await Read(await _client.SendAsync(request));
+    }
+
+    private static async Task<string> Read(HttpResponseMessage response) {
+        using (response) {
+            Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}");
+            using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+            return document.RootElement.GetProperty("value").GetString()!;
+        }
+    }
+
+}

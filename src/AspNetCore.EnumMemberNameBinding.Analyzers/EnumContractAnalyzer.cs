@@ -75,9 +75,23 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
       + "partial contracts, where it is the only remaining protection.",
         HelpBase + "EMN0005.md");
 
+    /// <summary>EMN0006 — the public name cannot travel on every input channel.</summary>
+    public static readonly DiagnosticDescriptor NameIsNotPortable = new(
+        "EMN0006",
+        "The public name cannot travel on every input channel",
+        "Member '{0}' declares the public name '{1}', which contains {2} and is refused on {3}",
+        Category, DiagnosticSeverity.Warning, isEnabledByDefault: true,
+        "The promise of one contract on every channel only holds for names every channel can carry. "
+      + "A slash is refused inside a route segment, and a line break or a character outside printable "
+      + "ASCII is refused in a header. Reported as a warning rather than an error because the failure "
+      + "depends on the channels an API actually binds from: a name refused only in a header is "
+      + "harmless in an API that never binds one.",
+        HelpBase + "EMN0006.md");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
-        DuplicatePublicName, InvalidPublicName, IncompleteContract, CommaInFlagsName, PublicNameShadowsAnotherMember);
+        DuplicatePublicName, InvalidPublicName, IncompleteContract, CommaInFlagsName,
+        PublicNameShadowsAnotherMember, NameIsNotPortable);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context) {
@@ -147,6 +161,10 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
 
             declared.Add(name, member);
 
+            if (FindUnportableCharacter(name) is var (description, channel)) {
+                context.ReportDiagnostic(Diagnostic.Create(NameIsNotPortable, location, member.Field.Name, name, description, channel));
+            }
+
             // Case-insensitive, because that is how the runtime looks up an unannotated member's C#
             // name. An ordinal comparison here would let [JsonStringEnumMemberName("blue")] Red sit
             // next to a Blue member unreported, which is the very shape this rule exists to catch.
@@ -157,6 +175,24 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
                                                            member.Field.Name, name, shadowed.Field.Name));
             }
         }
+    }
+
+    /// <summary>
+    /// The characters a public name cannot contain, established by sending each of them over every
+    /// channel rather than from the specifications: a slash is refused inside a route segment, and a
+    /// line break or a non-ASCII character is refused in a header. Other control characters travelled
+    /// intact in that measurement, but RFC 9110 forbids them in a field value, so they are reported
+    /// too — on the standard rather than on the observation.
+    /// </summary>
+    private static (string Description, string Channel)? FindUnportableCharacter(string name) {
+        foreach (char character in name) {
+            if (character == '/') { return ("a slash", "a route segment"); }
+            if (character is '\r' or '\n') { return ("a line break", "a header"); }
+            if (character > '\u007e') { return ("a character outside printable ASCII", "a header"); }
+            if (character < '\u0020') { return ("a control character", "a header"); }
+        }
+
+        return null;
     }
 
     private static Location? LocationOf(AttributeData attribute) {

@@ -164,6 +164,53 @@ public sealed class EnumContractAnalyzerTests {
         Assert.All(diagnostics, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
     }
 
+    /// <summary>
+    /// The forbidden set was measured against a running server, channel by channel, not read off a
+    /// specification. See docs/rules/EMN0006.md for the table.
+    /// </summary>
+    [Theory]
+    [InlineData(@"news/world", "a slash", "a route segment")]
+    [InlineData(@"line\nbreak", "a line break", "a header")]
+    [InlineData(@"line\rbreak", "a line break", "a header")]
+    [InlineData(@"\u00e9puise", "outside printable ASCII", "a header")]
+    [InlineData(@"non\u00a0breaking", "outside printable ASCII", "a header")]
+    [InlineData(@"bell\u0001", "a control character", "a header")]
+    public async Task EMN0006_reports_a_name_a_channel_cannot_carry(string declared, string what, string channel) {
+        IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + $$"""
+            public enum Section {
+                [JsonStringEnumMemberName("{{declared}}")] Only
+            }
+            """);
+
+        Diagnostic diagnostic = Assert.Single(diagnostics);
+        Assert.Equal("EMN0006", diagnostic.Id);
+        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
+        Assert.Contains(what, diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains(channel, diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Every one of these was measured to survive all five channels.</summary>
+    [Theory]
+    [InlineData("with?question")]
+    [InlineData("with#hash")]
+    [InlineData("with&amp")]
+    [InlineData("with=equals")]
+    [InlineData("with+plus")]
+    [InlineData("with%percent")]
+    [InlineData("with space")]
+    // Written as they must appear inside the snippet's own string literal.
+    [InlineData("with\\\\backslash")]
+    [InlineData("with\\\"quote")]
+    public async Task a_name_every_channel_can_carry_is_not_reported(string declared) {
+        IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + $$"""
+            public enum Section {
+                [JsonStringEnumMemberName("{{declared}}")] Only
+            }
+            """);
+
+        Assert.Empty(ids);
+    }
+
     [Fact]
     public async Task the_diagnostic_points_at_the_declared_name_not_the_whole_enum() {
         IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """

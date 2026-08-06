@@ -20,6 +20,13 @@ The package version is independent of the .NET version it targets.
 - `[Flags]` support: comma-separated lists, matching `System.Text.Json`.
 - A parity test suite that uses `JsonSerializer` itself as the oracle — for each candidate input,
   the HTTP outcome must equal the body outcome.
+- `EMN0006`, reporting a public name at least one channel cannot carry. The forbidden set was
+  established by sending each character over all five channels against a running server, not read off
+  a specification: a slash is refused inside a route segment, and a line break or a character outside
+  printable ASCII is refused in a header. `?`, `#`, `&`, `=`, `+`, `%`, space, tab, backslash and
+  quote all travel intact. A warning rather than an error, because whether it bites depends on the
+  channels an API actually binds from — the message names the character and the channel that refuses
+  it. The measurement itself is pinned by tests.
 - Roslyn analyzers, shipped inside the package under `analyzers/dotnet/cs`, so a contract mistake is
   a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
   public name, `EMN0003` incomplete contract, `EMN0004` comma in a `[Flags]` name, `EMN0005` a public
