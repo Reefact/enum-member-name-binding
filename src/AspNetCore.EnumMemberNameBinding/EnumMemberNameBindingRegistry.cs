@@ -30,6 +30,8 @@ internal static class EnumMemberNameBindingRegistry {
     /// registers the converter. Every contract is validated here, at startup — an invalid one throws
     /// <see cref="EnumContractException" /> before the application serves its first request.
     /// </summary>
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     internal static IReadOnlyList<Type> Register(EnumMemberNameBindingOptions options) {
         List<Type> registered = [];
 
@@ -54,7 +56,8 @@ internal static class EnumMemberNameBindingRegistry {
     }
 
     /// <summary>Builds the <c>System.Text.Json</c> converter for a single enum type.</summary>
-    [RequiresDynamicCode("Constructs JsonStringEnumConverter<T> for the enum type at run time.")]
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     internal static JsonConverter CreateJsonConverter(Type enumType) {
         Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
 
@@ -71,6 +74,8 @@ internal static class EnumMemberNameBindingRegistry {
                "if the enum is not yours to annotate.";
     }
 
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     private static IEnumerable<Type> Discover(EnumMemberNameBindingOptions options) {
         HashSet<Type> seen = [];
 
@@ -99,6 +104,7 @@ internal static class EnumMemberNameBindingRegistry {
         }
     }
 
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
     private static IEnumerable<Type> GetLoadableTypes(Assembly assembly) {
         try {
             return assembly.GetTypes();

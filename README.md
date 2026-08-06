@@ -311,7 +311,7 @@ package now configures both, and the companion corrects what remains:
 | Schema | ASP.NET Core alone | With the companion |
 |---|---|---|
 | `ProductStatus` | `{"type":"integer"}` | `{"type":"string","enum":["available","out_of_stock","discontinued"]}` |
-| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string","pattern":"^(read\|write\|delete)(\\s*,\\s*(read\|write\|delete))*$"}` |
+| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string","pattern":"^\\s*(read\|write\|delete)(\\s*,\\s*(read\|write\|delete))*\\s*,?\\s*$"}` |
 | `PlainPriority` (no contract) | `{"type":"integer"}` | `{"type":"integer"}` — untouched |
 
 Two details worth knowing. ASP.NET Core emits enum values **without declaring a type**, which the

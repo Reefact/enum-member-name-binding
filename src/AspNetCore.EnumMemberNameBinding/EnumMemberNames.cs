@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace AspNetCore.EnumMemberNameBinding;
 
 /// <summary>
@@ -10,11 +12,22 @@ namespace AspNetCore.EnumMemberNameBinding;
 public static class EnumMemberNames {
 
     /// <summary>
+    /// Why this library cannot be trimmed or compiled ahead of time, as carried by
+    /// <see cref="RequiresUnreferencedCodeAttribute" /> and <see cref="RequiresDynamicCodeAttribute" />
+    /// on every entry point.
+    /// </summary>
+    public const string ReflectionRequirement =
+        "Enum member name binding reads enum metadata reflectively and builds converters at run time; "
+      + "it is not compatible with trimming or Native AOT.";
+
+    /// <summary>
     /// Returns the public names of <paramref name="enumType" /> in declaration order, or
     /// <see langword="null" /> when the type declares no contract.
     /// </summary>
     /// <param name="enumType">An enum type. Nullable enum types are unwrapped.</param>
     /// <exception cref="EnumContractException">The declared contract is ambiguous or malformed.</exception>
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     public static IReadOnlyList<string>? GetPublicNames(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);
 
@@ -46,6 +59,8 @@ public static class EnumMemberNames {
     /// </code>
     /// </remarks>
     /// <exception cref="EnumContractException">The declared contract is ambiguous or malformed.</exception>
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     public static string? GetPublicName(Enum value) {
         ArgumentNullException.ThrowIfNull(value);
 
@@ -58,6 +73,8 @@ public static class EnumMemberNames {
     /// Whether <paramref name="enumType" /> is a contract enum that also carries <c>[Flags]</c>,
     /// and therefore accepts comma-separated combinations.
     /// </summary>
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     public static bool IsFlagsContract(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);
 

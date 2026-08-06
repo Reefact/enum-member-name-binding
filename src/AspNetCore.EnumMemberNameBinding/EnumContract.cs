@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
@@ -22,14 +23,24 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// </remarks>
 internal sealed class EnumContract {
 
+    internal const string Reflection = EnumMemberNames.ReflectionRequirement;
+
     private static readonly ConcurrentDictionary<Type, EnumContract> Cache = new();
 
     private readonly FrozenDictionary<string, object> _byContractName;
     private readonly FrozenDictionary<string, object> _byClrName;
     private readonly FrozenDictionary<object, string> _names;
     private readonly bool _isFlags;
-    private readonly JsonSerializerOptions _writeOptions;
 
+    /// <summary>
+    /// Built on first use, and only ever by <see cref="Format" /> for a <c>[Flags]</c> combination
+    /// that is not itself a declared member. Reading the public names — for an OpenAPI schema, say —
+    /// never needs it, and neither does an enum that declares no contract.
+    /// </summary>
+    private JsonSerializerOptions? _writeOptions;
+
+    [RequiresUnreferencedCode(Reflection)]
+    [RequiresDynamicCode(Reflection)]
     private EnumContract(Type enumType) {
         EnumType = enumType;
         _isFlags = enumType.IsDefined(typeof(FlagsAttribute), inherit: false);
@@ -107,11 +118,6 @@ internal sealed class EnumContract {
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
         AllowedValues       = string.Join(", ", PublicNames);
-        _writeOptions       = new JsonSerializerOptions {
-            Converters = {
-                (JsonConverter)Activator.CreateInstance(typeof(JsonStringEnumConverter<>).MakeGenericType(enumType), null, false)!
-            }
-        };
     }
 
     /// <summary>The described enum type.</summary>
@@ -134,11 +140,17 @@ internal sealed class EnumContract {
 
     /// <summary>Resolves — and validates — the contract of <paramref name="enumType" />.</summary>
     /// <exception cref="EnumContractException">The declared contract is ambiguous or malformed.</exception>
+    [RequiresUnreferencedCode(Reflection)]
+    [RequiresDynamicCode(Reflection)]
     internal static EnumContract For(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);
         if (!enumType.IsEnum) { throw new ArgumentException($"'{enumType.FullName}' is not an enum.", nameof(enumType)); }
 
-        return Cache.GetOrAdd(enumType, static type => new EnumContract(type));
+        if (Cache.TryGetValue(enumType, out EnumContract? cached)) { return cached; }
+
+        // Built outside GetOrAdd so the annotation on enumType survives; a concurrent build is
+        // benign, since the descriptor is immutable and only one instance is ever published.
+        return Cache.GetOrAdd(enumType, new EnumContract(enumType));
     }
 
     /// <summary>Parses a public name into its enum value.</summary>
@@ -172,15 +184,30 @@ internal sealed class EnumContract {
     /// observation — two independent shapes were enough to rule out the two obvious rules. Parity
     /// here is by construction rather than by imitation.
     /// </remarks>
+    [RequiresUnreferencedCode(Reflection)]
+    [RequiresDynamicCode(Reflection)]
     internal string? Format(object value) {
         if (_names.TryGetValue(value, out string? name)) { return name; }
         if (!_isFlags) { return null; }
 
+        // A benign race: two threads may each build one, and the two are equivalent.
+        JsonSerializerOptions options = _writeOptions ??= CreateWriteOptions(EnumType);
+
         try {
-            return JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value, EnumType, _writeOptions));
+            return JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value, EnumType, options));
         } catch (JsonException) {
             return null;
         }
+    }
+
+    [RequiresUnreferencedCode(Reflection)]
+    [RequiresDynamicCode(Reflection)]
+    private static JsonSerializerOptions CreateWriteOptions(Type enumType) {
+        Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
+
+        return new JsonSerializerOptions {
+            Converters = { (JsonConverter)Activator.CreateInstance(converterType, null, false)! }
+        };
     }
 
     private bool TryParseSingle(string token, out object result) {

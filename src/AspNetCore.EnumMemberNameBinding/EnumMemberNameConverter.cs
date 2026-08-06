@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace AspNetCore.EnumMemberNameBinding;
@@ -18,6 +19,8 @@ public sealed class EnumMemberNameConverter : EnumConverter {
 
     /// <summary>Creates a converter for <paramref name="type" />.</summary>
     /// <param name="type">The enum type to convert.</param>
+    [RequiresUnreferencedCode(EnumContract.Reflection)]
+    [RequiresDynamicCode(EnumContract.Reflection)]
     public EnumMemberNameConverter(Type type) : base(type) {
         _contract = EnumContract.For(type);
     }
@@ -35,6 +38,10 @@ public sealed class EnumMemberNameConverter : EnumConverter {
     }
 
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
     public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType) {
         ArgumentNullException.ThrowIfNull(destinationType);
 

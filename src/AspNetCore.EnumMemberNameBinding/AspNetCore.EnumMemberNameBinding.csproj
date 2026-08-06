@@ -5,6 +5,10 @@
     <IsPackable>true</IsPackable>
     <RootNamespace>AspNetCore.EnumMemberNameBinding</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The library is not trim- or AOT-safe, but the analyzers are on so that every entry point
+         carrying that constraint is annotated, and consumers are warned accurately. -->
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <Description>Makes ASP.NET Core route, query string, form and header model binding honor the enum member names declared with System.Text.Json's [JsonStringEnumMemberName]. One enum contract, applied consistently on every input channel — not just the request body.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>

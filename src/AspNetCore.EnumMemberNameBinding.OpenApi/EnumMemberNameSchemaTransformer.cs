@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -21,7 +22,16 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi;
 /// </remarks>
 public sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer {
 
+    /// <summary>Creates the transformer.</summary>
+    [RequiresUnreferencedCode(EnumMemberNames.ReflectionRequirement)]
+    [RequiresDynamicCode(EnumMemberNames.ReflectionRequirement)]
+    public EnumMemberNameSchemaTransformer() { }
+
     /// <inheritdoc />
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
+    [UnconditionalSuppressMessage("AOT", "IL3050",
+        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
     public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken cancellationToken) {
         ArgumentNullException.ThrowIfNull(schema);
         ArgumentNullException.ThrowIfNull(context);
