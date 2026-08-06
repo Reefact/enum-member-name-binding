@@ -19,8 +19,13 @@ public sealed class EnumMemberNameConverter : EnumConverter {
 
     /// <summary>Creates a converter for <paramref name="type" />.</summary>
     /// <param name="type">The enum type to convert.</param>
-    [RequiresUnreferencedCode(EnumContract.Reflection)]
-    [RequiresDynamicCode(EnumContract.Reflection)]
+    /// <remarks>
+    /// The constructor itself only reads metadata, but <see cref="ConvertTo" /> reaches the
+    /// System.Text.Json round trip and, overriding a base member, cannot carry the annotation. The
+    /// requirement is therefore declared here, where a consumer can see it.
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
     public EnumMemberNameConverter(Type type) : base(type) {
         _contract = EnumContract.For(type);
     }

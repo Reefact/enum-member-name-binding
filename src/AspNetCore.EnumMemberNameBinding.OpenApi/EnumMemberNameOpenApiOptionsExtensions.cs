@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 
-using AspNetCore.EnumMemberNameBinding;
 using AspNetCore.EnumMemberNameBinding.OpenApi;
 
 namespace Microsoft.AspNetCore.OpenApi;
@@ -21,8 +20,7 @@ public static class EnumMemberNameOpenApiOptionsExtensions {
     /// builder.Services.AddOpenApi(options => options.AddEnumMemberNames());
     /// </code>
     /// </example>
-    [RequiresUnreferencedCode(EnumMemberNames.ReflectionRequirement)]
-    [RequiresDynamicCode(EnumMemberNames.ReflectionRequirement)]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     public static OpenApiOptions AddEnumMemberNames(this OpenApiOptions options) {
         ArgumentNullException.ThrowIfNull(options);
 

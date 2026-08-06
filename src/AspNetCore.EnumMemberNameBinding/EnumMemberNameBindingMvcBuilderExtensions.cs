@@ -24,8 +24,8 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
     /// Must be called during application start-up. ASP.NET Core caches the model binder it builds
     /// for a given type on first use, so a converter registered after the first request has no effect.
     /// </remarks>
-    [RequiresDynamicCode("Enum member name binding resolves converters through reflection and is not compatible with Native AOT.")]
-    [RequiresUnreferencedCode("Enum member name binding scans assemblies for enum types and is not compatible with trimming.")]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
     public static IMvcBuilder AddEnumMemberNameBinding(this IMvcBuilder builder, Action<EnumMemberNameBindingOptions>? configure = null) {
         ArgumentNullException.ThrowIfNull(builder);
 

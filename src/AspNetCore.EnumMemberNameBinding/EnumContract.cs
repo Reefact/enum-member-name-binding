@@ -23,8 +23,6 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// </remarks>
 internal sealed class EnumContract {
 
-    internal const string Reflection = EnumMemberNames.ReflectionRequirement;
-
     private static readonly ConcurrentDictionary<Type, EnumContract> Cache = new();
 
     private readonly FrozenDictionary<string, object> _byContractName;
@@ -39,8 +37,7 @@ internal sealed class EnumContract {
     /// </summary>
     private JsonSerializerOptions? _writeOptions;
 
-    [RequiresUnreferencedCode(Reflection)]
-    [RequiresDynamicCode(Reflection)]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private EnumContract(Type enumType) {
         EnumType = enumType;
         _isFlags = enumType.IsDefined(typeof(FlagsAttribute), inherit: false);
@@ -140,8 +137,7 @@ internal sealed class EnumContract {
 
     /// <summary>Resolves — and validates — the contract of <paramref name="enumType" />.</summary>
     /// <exception cref="EnumContractException">The declared contract is ambiguous or malformed.</exception>
-    [RequiresUnreferencedCode(Reflection)]
-    [RequiresDynamicCode(Reflection)]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     internal static EnumContract For(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);
         if (!enumType.IsEnum) { throw new ArgumentException($"'{enumType.FullName}' is not an enum.", nameof(enumType)); }
@@ -184,8 +180,8 @@ internal sealed class EnumContract {
     /// observation — two independent shapes were enough to rule out the two obvious rules. Parity
     /// here is by construction rather than by imitation.
     /// </remarks>
-    [RequiresUnreferencedCode(Reflection)]
-    [RequiresDynamicCode(Reflection)]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
     internal string? Format(object value) {
         if (_names.TryGetValue(value, out string? name)) { return name; }
         if (!_isFlags) { return null; }
@@ -200,8 +196,8 @@ internal sealed class EnumContract {
         }
     }
 
-    [RequiresUnreferencedCode(Reflection)]
-    [RequiresDynamicCode(Reflection)]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
     private static JsonSerializerOptions CreateWriteOptions(Type enumType) {
         Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
 

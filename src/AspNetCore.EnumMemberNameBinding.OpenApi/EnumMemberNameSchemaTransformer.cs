@@ -23,14 +23,11 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi;
 public sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer {
 
     /// <summary>Creates the transformer.</summary>
-    [RequiresUnreferencedCode(EnumMemberNames.ReflectionRequirement)]
-    [RequiresDynamicCode(EnumMemberNames.ReflectionRequirement)]
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     public EnumMemberNameSchemaTransformer() { }
 
     /// <inheritdoc />
     [UnconditionalSuppressMessage("Trimming", "IL2026",
-        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050",
         Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
     public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken cancellationToken) {
         ArgumentNullException.ThrowIfNull(schema);

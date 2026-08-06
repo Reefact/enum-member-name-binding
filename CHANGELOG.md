@@ -80,10 +80,14 @@ The package version is independent of the .NET version it targets.
   syntax characters are escaped now, and a test rejects any other escape.
 - **No entry point carried its trimming or Native AOT constraint.** The trim and AOT analyzers are
   now enabled on both packages, which surfaced nine diagnostics that nothing reported before. Every
-  public entry point is annotated with `[RequiresUnreferencedCode]` and `[RequiresDynamicCode]`, so a
-  consumer compiling for either gets an accurate warning instead of a silent failure at run time.
-  The two interface implementations that cannot carry the attributes suppress them explicitly, next
-  to a constructor that does.
+  entry point is annotated, so a consumer compiling for either gets an accurate warning instead of a
+  silent failure at run time. The two interface implementations that cannot carry the attributes
+  suppress them explicitly, next to a constructor that does.
+  The two constraints are applied **separately**, since they are not the same constraint: reading an
+  enum's metadata needs reflection but generates no code. `GetPublicNames`, `IsFlagsContract`, the
+  MVC registration and the whole OpenAPI package therefore carry `[RequiresUnreferencedCode]` only;
+  `GetPublicName`, the `[Flags]` formatting path and the construction of the generic JSON converters
+  carry both. A consumer is told about dynamic code only on a path that actually generates some.
 - **The README showed the previous `[Flags]` pattern**, before surrounding whitespace and the
   trailing comma were allowed. Corrected, and a test now compares the documented pattern against the
   one the transformer emits.
