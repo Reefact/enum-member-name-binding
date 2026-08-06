@@ -1,5 +1,8 @@
 # Limitations
 
+🌍 **Languages:**  
+🇬🇧 English (this file) | 🇫🇷 [Français](./limitations.fr.md)
+
 Everything here is measured and pinned by a test, so that a limitation stays visible rather than
 becoming folklore.
 
@@ -36,7 +39,7 @@ returns `null` for an enum that declares no contract. Both forms are covered by 
 
 Where `System.Text.Json` rejects `""`, ASP.NET Core resolves an empty value as an absent one before
 any `TypeConverter` is consulted, so it is out of reach from here. See
-[empty and absent values](contract-rules.md#empty-and-absent-values), which also covers the other
+[empty and absent values](contract-rules.en.md#empty-and-absent-values), which also covers the other
 row worth knowing: an absent value on a **non-nullable** parameter binds the first member instead of
 failing. Neither behaviour is introduced by this package — a test asserts that an enum it never
 touches behaves identically.
@@ -44,15 +47,15 @@ touches behaves identically.
 ## Not every name travels on every channel
 
 A slash cannot cross a route segment, and a line break or a character outside printable ASCII cannot
-cross a header. [`EMN0006`](rules/EMN0006.md) reports it at build time; the measurement is in
-[contract rules](contract-rules.md#which-names-can-travel).
+cross a header. [`EMN0006`](rules/EMN0006.en.md) reports it at build time; the measurement is in
+[contract rules](contract-rules.en.md#which-names-can-travel).
 
 ## OpenAPI needs the companion package
 
 ASP.NET Core has closed the corresponding issue as *not planned*
 ([dotnet/aspnetcore#68065](https://github.com/dotnet/aspnetcore/issues/68065)), and .NET 11 will
 start advertising C# names for non-body parameters — so this divergence is expected to widen, not
-shrink. See [OpenAPI](openapi.md).
+shrink. See [OpenAPI](openapi.en.md).
 
 ## Not compatible with trimming or Native AOT
 

@@ -1,5 +1,8 @@
 # AspNetCore.EnumMemberNameBinding
 
+🌍 **Languages:**  
+🇬🇧 English (this file) | 🇫🇷 [Français](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/README.fr.md)
+
 **One enum contract, honoured on every input channel — not just the request body.**
 
 Since .NET 9, `System.Text.Json` lets you give an enum member an explicit public name:
@@ -86,9 +89,9 @@ GET /products?status=OutOfStock   → 400   { "errors": { "status": ["The value 
 | Headers (`[FromHeader]`) | ✅ |
 | Nullable enums (`TEnum?`) | ✅ |
 | Request body | ✅ (by `System.Text.Json`) |
-| OpenAPI document | ✅ with the [companion package](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/openapi.md) |
+| OpenAPI document | ✅ with the [companion package](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/openapi.en.md) |
 | Minimal API responses | ✅ |
-| Minimal API parameters | ❌ — [platform-level constraint](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/limitations.md#minimal-api-parameters-are-not-supported) |
+| Minimal API parameters | ❌ — [platform-level constraint](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/limitations.en.md#minimal-api-parameters-are-not-supported) |
 
 ## Guarantees
 
@@ -123,18 +126,18 @@ The two worth knowing before you adopt it:
 
 The full list — empty values, channel portability, trimming and Native AOT, and why registration must
 happen at start-up — is in
-[limitations](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/limitations.md).
+[limitations](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/limitations.en.md).
 
 ## Documentation
 
-- [Contract rules](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/contract-rules.md)
+- [Contract rules](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/contract-rules.en.md)
   — what is accepted, request by request: fully and partially annotated enums, `[Flags]`, empty and
   absent values, which names can travel on which channel, and the configuration options.
-- [Analyzers](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/analyzers.md)
+- [Analyzers](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/analyzers.en.md)
   — `EMN0001` to `EMN0006`, why `EMN0005` is worth reading twice, and how to configure severities.
-- [OpenAPI](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/openapi.md)
+- [OpenAPI](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/openapi.en.md)
   — the companion package, the `[Flags]` pattern, and how document/runtime coherence is verified.
-- [Limitations](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/limitations.md)
+- [Limitations](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/limitations.en.md)
 - [Changelog](https://github.com/Reefact/enum-member-name-binding/blob/main/CHANGELOG.md)
 
 ## Relationship to `Reefact.JsonEnumValueBinding`

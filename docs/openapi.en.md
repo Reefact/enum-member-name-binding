@@ -1,5 +1,8 @@
 # OpenAPI
 
+🌍 **Languages:**  
+🇬🇧 English (this file) | 🇫🇷 [Français](./openapi.fr.md)
+
 ```
 dotnet add package AspNetCore.EnumMemberNameBinding.OpenApi
 ```
@@ -30,7 +33,7 @@ precise and machine-checkable.
 ## The `[Flags]` pattern
 
 The pattern covers exactly what the binder accepts, whitespace and trailing comma included — see
-[contract rules](contract-rules.md#a-flags-enum). It is written in the ECMA-262 dialect a JSON Schema
+[contract rules](contract-rules.en.md#a-flags-enum). It is written in the ECMA-262 dialect a JSON Schema
 `pattern` is read with, so only syntax characters are escaped: `Regex.Escape` would produce `\ ` and
 `\#`, which are not valid identity escapes there and would make a strict consumer reject the whole
 pattern. A test rejects any other escape.

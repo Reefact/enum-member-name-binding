@@ -31,7 +31,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         "Members '{0}' and '{1}' both declare the public name '{2}'; a public name must identify exactly one member",
         Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
         "Two members declaring the same public name make the value impossible to resolve unambiguously.",
-        HelpBase + "EMN0001.md");
+        HelpBase + "EMN0001.en.md");
 
     /// <summary>EMN0002 — the public name is empty or padded with whitespace.</summary>
     public static readonly DiagnosticDescriptor InvalidPublicName = new(
@@ -40,7 +40,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         "Member '{0}' declares the public name '{1}', which {2}",
         Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
         "An empty name, or a name padded with whitespace, cannot be sent reliably over HTTP.",
-        HelpBase + "EMN0002.md");
+        HelpBase + "EMN0002.en.md");
 
     /// <summary>EMN0003 — the enum declares a contract but some members are not annotated.</summary>
     public static readonly DiagnosticDescriptor IncompleteContract = new(
@@ -51,7 +51,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         "Once an enum declares a contract, every member must declare its public name. A member left "
       + "unannotated answers to its C# name, which puts an internal identifier in the public contract "
       + "and makes renaming it a breaking change — exactly what declaring a contract is meant to prevent.",
-        HelpBase + "EMN0003.md");
+        HelpBase + "EMN0003.en.md");
 
     /// <summary>EMN0004 — a [Flags] public name contains a comma.</summary>
     public static readonly DiagnosticDescriptor CommaInFlagsName = new(
@@ -60,7 +60,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         "Member '{0}' declares the public name '{1}'; a comma separates values in a [Flags] enum and cannot appear inside a name",
         Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
         "A comma is the separator for combined values, so a name containing one cannot be parsed back.",
-        HelpBase + "EMN0004.md");
+        HelpBase + "EMN0004.en.md");
 
     /// <summary>EMN0005 — a public name shadows the C# name of another member.</summary>
     public static readonly DiagnosticDescriptor PublicNameShadowsAnotherMember = new(
@@ -73,7 +73,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
       + "The shadowed member therefore answers to every casing of its name except its own, which no "
       + "reader of the enum can guess. This matters most when EMN0003 has been turned off to allow "
       + "partial contracts, where it is the only remaining protection.",
-        HelpBase + "EMN0005.md");
+        HelpBase + "EMN0005.en.md");
 
     /// <summary>EMN0006 — the public name cannot travel on every input channel.</summary>
     public static readonly DiagnosticDescriptor NameIsNotPortable = new(
@@ -86,7 +86,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
       + "ASCII is refused in a header. Reported as a warning rather than an error because the failure "
       + "depends on the channels an API actually binds from: a name refused only in a header is "
       + "harmless in an API that never binds one.",
-        HelpBase + "EMN0006.md");
+        HelpBase + "EMN0006.en.md");
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(

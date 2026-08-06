@@ -117,6 +117,13 @@ The package version is independent of the .NET version it targets.
   The README is also the NuGet package page, where a relative link is dead, so it links to GitHub
   absolutely; a test fails on a relative one, and on any link — in any page — that points at a file
   or a heading that does not exist.
+- The documentation is now bilingual, following the convention used across Reefact projects: every
+  page exists as `Xxx.en.md` and `Xxx.fr.md` under `docs`, each opening with a link to its
+  counterpart. The README keeps its name and its place, since NuGet renders it; its French version is
+  `docs/README.fr.md`. Tests fail on a page that exists in only one language, on a page that does not
+  offer the other one, and on a translation whose code snippets no longer line up with the original —
+  prose is translated, snippets are not dropped or added. The analyzers' help links point at the
+  English rule pages, which are the canonical ones.
 
 ### Known limitations
 

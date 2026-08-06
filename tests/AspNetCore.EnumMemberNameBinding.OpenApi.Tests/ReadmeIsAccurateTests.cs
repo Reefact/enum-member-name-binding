@@ -4,19 +4,22 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi.Tests;
 
 /// <summary>
 /// The documentation shows the pattern the transformer emits. It drifted once already, so it is
-/// checked against what the code actually produces rather than trusted.
+/// checked against what the code actually produces rather than trusted — in every language, since a
+/// translated page is one more copy that can go stale.
 /// </summary>
 [Collection(nameof(OpenApiCollection))]
 public sealed class ReadmeIsAccurateTests(OpenApiTestApi api) {
 
-    [Fact]
-    public void the_documented_flags_pattern_is_the_one_the_transformer_emits() {
+    [Theory]
+    [InlineData("openapi.en.md")]
+    [InlineData("openapi.fr.md")]
+    public void the_documented_flags_pattern_is_the_one_the_transformer_emits(string page) {
         // Scopes declares read, write and delete — the same three names the documentation illustrates.
         string produced = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
-        string page     = File.ReadAllText(Path.Combine(FindRepositoryRoot().FullName, "docs", "openapi.md"));
+        string source   = File.ReadAllText(Path.Combine(FindRepositoryRoot().FullName, "docs", page));
 
-        Match documented = Regex.Match(page, @"""pattern"":""(?<pattern>[^""]+)""");
-        Assert.True(documented.Success, "docs/openapi.md no longer shows a pattern; either restore it or drop this test.");
+        Match documented = Regex.Match(source, @"""pattern"":""(?<pattern>[^""]+)""");
+        Assert.True(documented.Success, $"docs/{page} no longer shows a pattern; either restore it or drop this test.");
 
         // The page carries the pattern inside a JSON snippet in a markdown table, so backslashes
         // are doubled and pipes are escaped for the table.

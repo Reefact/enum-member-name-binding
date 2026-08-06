@@ -1,16 +1,19 @@
 # Analyzers
 
+🌍 **Languages:**  
+🇬🇧 English (this file) | 🇫🇷 [Français](./analyzers.fr.md)
+
 The package ships Roslyn analyzers — no extra install. A contract mistake is a build error in your
 editor, not an exception found when the application starts.
 
 | ID | Severity | Reported when |
 |---|---|---|
-| [`EMN0001`](rules/EMN0001.md) | Error | Two members declare the same public name |
-| [`EMN0002`](rules/EMN0002.md) | Error | A public name is empty, or has leading or trailing whitespace |
-| [`EMN0003`](rules/EMN0003.md) | Error | A contract enum leaves some members unannotated |
-| [`EMN0004`](rules/EMN0004.md) | Error | A `[Flags]` public name contains a comma |
-| [`EMN0005`](rules/EMN0005.md) | Error | A public name is also the C# name of another member |
-| [`EMN0006`](rules/EMN0006.md) | Warning | A public name cannot travel on every input channel |
+| [`EMN0001`](rules/EMN0001.en.md) | Error | Two members declare the same public name |
+| [`EMN0002`](rules/EMN0002.en.md) | Error | A public name is empty, or has leading or trailing whitespace |
+| [`EMN0003`](rules/EMN0003.en.md) | Error | A contract enum leaves some members unannotated |
+| [`EMN0004`](rules/EMN0004.en.md) | Error | A `[Flags]` public name contains a comma |
+| [`EMN0005`](rules/EMN0005.en.md) | Error | A public name is also the C# name of another member |
+| [`EMN0006`](rules/EMN0006.en.md) | Warning | A public name cannot travel on every input channel |
 
 **An enum carrying no `[JsonStringEnumMemberName]` at all is never analysed.** The rules only apply
 once you have declared a contract, so adding this package to an existing solution does not light up

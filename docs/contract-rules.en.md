@@ -1,5 +1,8 @@
 # Contract rules — what is accepted
 
+🌍 **Languages:**  
+🇬🇧 English (this file) | 🇫🇷 [Français](./contract-rules.fr.md)
+
 The rules are not invented here: they are a port of the ones `System.Text.Json` applies to the
 request body, so that every channel of your API accepts exactly the same vocabulary.
 
@@ -130,7 +133,7 @@ Not every string `System.Text.Json` accepts survives every channel. Measured, ch
 | outside printable ASCII | ✅ | ✅ | **refused by the client** | ✅ | ✅ |
 | `?` `#` `&` `=` `+` `%` space tab `\` `"` | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-[`EMN0006`](rules/EMN0006.md) reports the first three at build time, as a warning — whether it
+[`EMN0006`](rules/EMN0006.en.md) reports the first three at build time, as a warning — whether it
 matters depends on the channels your API actually binds from.
 
 ## Configuration
