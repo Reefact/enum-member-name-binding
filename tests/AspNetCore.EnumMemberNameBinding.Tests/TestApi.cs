@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -79,6 +80,22 @@ public sealed class BindingController : ControllerBase {
 
     [HttpGet("/status/serialized")]
     public IActionResult StatusSerialized() => Ok(new { value = ProductStatus.OutOfStock });
+
+    /// <summary>A link built from the enum value itself — ASP.NET Core does not use TypeDescriptor here.</summary>
+    [HttpGet("/status/link-raw")]
+    public IActionResult StatusLinkRaw([FromServices] LinkGenerator links) => Ok(new Bound(
+        links.GetPathByAction(HttpContext, nameof(StatusFromRoute), "Binding", new { value = ProductStatus.OutOfStock }) ?? "<none>"));
+
+    /// <summary>The same link, built from the public name.</summary>
+    [HttpGet("/status/link")]
+    public IActionResult StatusLink([FromServices] LinkGenerator links) => Ok(new Bound(
+        links.GetPathByAction(HttpContext, nameof(StatusFromRoute), "Binding",
+                              new { value = EnumMemberNames.GetPublicName(ProductStatus.OutOfStock) }) ?? "<none>"));
+
+    [HttpGet("/permissions/link")]
+    public IActionResult PermissionsLink([FromServices] LinkGenerator links) => Ok(new Bound(
+        links.GetPathByAction(HttpContext, nameof(PermissionsFromQuery), "Binding",
+                              new { value = EnumMemberNames.GetPublicName(Permissions.Read | Permissions.Write) }) ?? "<none>"));
 
     public sealed record Bound(string Value);
 

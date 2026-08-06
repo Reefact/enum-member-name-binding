@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -11,6 +12,13 @@ namespace AspNetCore.EnumMemberNameBinding;
 internal static class EnumMemberNameBindingRegistry {
 
     /// <summary>
+    /// <see cref="TypeDescriptor.AddAttributes(Type, Attribute[])" /> mutates process-wide state and
+    /// stacks a new provider on every call, so a type is only ever registered once. Several hosts in
+    /// one process — a test suite, most often — then share one registration instead of piling up.
+    /// </summary>
+    private static readonly ConcurrentDictionary<Type, byte> AlreadyRegistered = new();
+
+    /// <summary>
     /// Resolves the enums covered by <paramref name="options" />, validates each contract and
     /// registers the converter. Every contract is validated here, at startup — an invalid one throws
     /// <see cref="EnumContractException" /> before the application serves its first request.
@@ -21,11 +29,15 @@ internal static class EnumMemberNameBindingRegistry {
         foreach (Type enumType in Discover(options)) {
             EnumContract contract = EnumContract.For(enumType);
 
+            // Validated on every call, so a second registration with stricter options still fails.
             if (!options.AllowPartialContracts && contract.UnannotatedMembers.Count > 0) {
                 throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
             }
 
-            TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
+            if (AlreadyRegistered.TryAdd(enumType, 0)) {
+                TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
+            }
+
             registered.Add(enumType);
         }
 

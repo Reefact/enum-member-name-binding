@@ -333,6 +333,23 @@ Minimal API *responses* are covered: an endpoint returning a contract enum write
 because the main package configures `Http.Json.JsonOptions` alongside the MVC options. It is the
 input side that is out of reach.
 
+**Link generation does not use the public name.** ASP.NET Core formats route values without
+consulting `TypeDescriptor`, so a link built from the enum value itself carries the C# name — and
+this very API answers 400 to it:
+
+```csharp
+// /products/OutOfStock  →  400
+links.GetPathByAction(context, "ByStatus", "Products", new { status = ProductStatus.OutOfStock });
+
+// /products/out_of_stock
+links.GetPathByAction(context, "ByStatus", "Products",
+                      new { status = EnumMemberNames.GetPublicName(ProductStatus.OutOfStock) });
+```
+
+`EnumMemberNames.GetPublicName` renders a `[Flags]` combination as a comma-separated list too, and
+returns `null` for an enum that declares no contract. Both forms are covered by tests, including the
+400 on the first one.
+
 **An empty value on a nullable enum parameter binds `null`** instead of being rejected, where
 `System.Text.Json` rejects `""`. ASP.NET Core resolves it before any `TypeConverter` is consulted.
 See [empty and absent values](#empty-and-absent-values).

@@ -11,7 +11,18 @@ permissions:
 
 jobs:
   build:
+    name: build (SDK ${{ matrix.sdk }})
     runs-on: ubuntu-latest
+
+    # The matrix is over SDK versions rather than operating systems, deliberately. This library has
+    # no platform-specific code — no paths, no culture-sensitive comparisons — so Windows would add
+    # cost and catch nothing. What has actually broken this build, twice, is an analyzer difference
+    # between the SDK declared in global.json and the newest one, so that is what is guarded here.
+    strategy:
+      fail-fast: false
+      matrix:
+        sdk: ['10.0.100', '10.0.x']
+
     env:
       CI: true
       DOTNET_NOLOGO: true
@@ -24,7 +35,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          global-json-file: global.json
+          dotnet-version: ${{ matrix.sdk }}
 
       - name: Restore
         run: dotnet restore
@@ -55,5 +66,5 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: packages
+          name: packages-sdk-${{ matrix.sdk }}
           path: artifacts/*

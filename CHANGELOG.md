@@ -35,6 +35,11 @@ The package version is independent of the .NET version it targets.
 - The companion raises the floor of `Microsoft.OpenApi` to 2.11.0. `Microsoft.AspNetCore.OpenApi`
   10.0.x resolves 2.0.0, which carries advisory GHSA-v5pm-xwqc-g5wc.
 
+- `EnumMemberNames.GetPublicName(Enum)`, for generating links. ASP.NET Core formats route values
+  without consulting `TypeDescriptor`, so a link built from an enum value carries the C# name and the
+  binder refuses it. That gap cannot be closed from a `TypeConverter`; it is documented and this is
+  the way round it.
+
 ### Changed
 
 - A partially annotated enum is now **rejected by default**, at build time by `EMN0003` and at
@@ -62,6 +67,10 @@ The package version is independent of the .NET version it targets.
   server honoured.
 - **The five analyzer help links pointed at pages that did not exist**, so the IDE link led to a 404.
   Every rule now has a page under `docs/rules`, and a test fails if a rule and its page ever diverge.
+- **Registering the same enum twice stacked a new `TypeDescriptor` provider each time.** A type is
+  now registered once per process, while validation still runs on every call so a second
+  registration with stricter options still fails. Covered by tests that host several applications
+  side by side.
 
 - `Microsoft.AspNetCore.OpenApi` and minimal API serialization read `Http.Json.JsonOptions`, while
   MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described
