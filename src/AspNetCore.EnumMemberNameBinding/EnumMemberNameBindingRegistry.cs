@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -16,7 +15,15 @@ internal static class EnumMemberNameBindingRegistry {
     /// stacks a new provider on every call, so a type is only ever registered once. Several hosts in
     /// one process — a test suite, most often — then share one registration instead of piling up.
     /// </summary>
-    private static readonly ConcurrentDictionary<Type, byte> AlreadyRegistered = new();
+    /// <remarks>
+    /// A lock rather than a concurrent dictionary, because the requirement is not merely that the
+    /// converter be installed once: no caller may return before the installation has completed. A
+    /// host that started serving while another was still registering would resolve the stock
+    /// converter and cache a model binder built on it, permanently, for that host. Registration
+    /// happens once at start-up, so the cost of the lock is irrelevant.
+    /// </remarks>
+    private static readonly Lock         Gate       = new();
+    private static readonly HashSet<Type> Registered = [];
 
     /// <summary>
     /// Resolves the enums covered by <paramref name="options" />, validates each contract and
@@ -34,8 +41,10 @@ internal static class EnumMemberNameBindingRegistry {
                 throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
             }
 
-            if (AlreadyRegistered.TryAdd(enumType, 0)) {
-                TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
+            lock (Gate) {
+                if (Registered.Add(enumType)) {
+                    TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
+                }
             }
 
             registered.Add(enumType);
