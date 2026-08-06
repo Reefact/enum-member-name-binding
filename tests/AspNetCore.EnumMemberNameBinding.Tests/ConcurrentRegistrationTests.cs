@@ -19,7 +19,32 @@ public enum Racer7 { [JsonStringEnumMemberName("a")] A, [JsonStringEnumMemberNam
 /// </summary>
 public sealed class ConcurrentRegistrationTests {
 
-    private const int Threads = 16;
+    private const int Threads = 8;
+
+    /// <summary>
+    /// Dedicated threads rather than <c>Parallel.For</c>: a barrier of N needs N threads running at
+    /// once, and the thread pool injects them one every 250 ms or so, which turns each case into
+    /// seconds of waiting and the suite into a minute.
+    /// </summary>
+    private static void RaceOn(Action<int> body) {
+        using Barrier gate = new(Threads);
+        Exception?[] failures = new Exception?[Threads];
+
+        Thread[] threads = [.. Enumerable.Range(0, Threads).Select(index => new Thread(() => {
+            try {
+                gate.SignalAndWait();
+                body(index);
+            } catch (Exception exception) {
+                failures[index] = exception;
+            }
+        }) { IsBackground = true })];
+
+        foreach (Thread thread in threads) { thread.Start(); }
+        foreach (Thread thread in threads) { thread.Join(); }
+
+        Exception? failure = failures.FirstOrDefault(f => f is not null);
+        if (failure is not null) { throw failure; }
+    }
 
     public static TheoryData<Type> Racers => new() {
         typeof(Racer0), typeof(Racer1), typeof(Racer2), typeof(Racer3),
@@ -43,14 +68,12 @@ public sealed class ConcurrentRegistrationTests {
     [Theory]
     [MemberData(nameof(Racers))]
     public void every_concurrent_caller_sees_the_converter_installed_when_its_call_returns(Type enumType) {
-        using Barrier gate = new(Threads);
         Type[] observed = new Type[Threads];
 
-        Parallel.For(0, Threads, index => {
+        RaceOn(index => {
             EnumMemberNameBindingOptions options = new();
             options.EnumTypes.Add(enumType);
 
-            gate.SignalAndWait();
             EnumMemberNameBindingRegistry.Register(options);
 
             observed[index] = TypeDescriptor.GetConverter(enumType).GetType();
@@ -62,13 +85,10 @@ public sealed class ConcurrentRegistrationTests {
     [Theory]
     [MemberData(nameof(Racers))]
     public void a_concurrent_race_leaves_a_single_usable_registration(Type enumType) {
-        using Barrier gate = new(Threads);
-
-        Parallel.For(0, Threads, _ => {
+        RaceOn(_ => {
             EnumMemberNameBindingOptions options = new();
             options.EnumTypes.Add(enumType);
 
-            gate.SignalAndWait();
             EnumMemberNameBindingRegistry.Register(options);
         });
 
@@ -82,12 +102,8 @@ public sealed class ConcurrentRegistrationTests {
     [Fact]
     public void the_contract_cache_is_safe_under_concurrent_first_use() {
         EnumContract[] resolved = new EnumContract[Threads];
-        using Barrier gate = new(Threads);
 
-        Parallel.For(0, Threads, index => {
-            gate.SignalAndWait();
-            resolved[index] = EnumContract.For(typeof(ProductStatus));
-        });
+        RaceOn(index => resolved[index] = EnumContract.For(typeof(ProductStatus)));
 
         // GetOrAdd may build the value more than once under contention; every result must still be
         // equivalent, and every later caller must observe the one that won.

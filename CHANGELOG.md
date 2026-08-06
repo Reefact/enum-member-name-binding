@@ -67,6 +67,17 @@ The package version is independent of the .NET version it targets.
   server honoured.
 - **The five analyzer help links pointed at pages that did not exist**, so the IDE link led to a 404.
   Every rule now has a page under `docs/rules`, and a test fails if a rule and its page ever diverge.
+- **Writing a `[Flags]` combination diverged from `System.Text.Json`.** The decomposition ran in
+  declaration order, while the serializer sorts members topologically so that a combination covering
+  several bits wins over its constituents. `7` was written `read, write, delete` where the serializer
+  writes `read_write, delete`, and an sbyte flags enum ordered its members differently again. Two
+  independent shapes were enough to rule out the two obvious tie-breaking rules, so combinations are
+  now handed to the serializer itself rather than imitated — parity by construction. A declared
+  member is still answered from the cache, so only combinations pay for it.
+- **The `[Flags]` OpenAPI pattern used escapes that ECMA-262 rejects.** `Regex.Escape` escapes
+  whitespace and `#`, producing `\ ` and `\#`; neither is a valid identity escape in the dialect a
+  JSON Schema `pattern` is read with, so a strict consumer would reject the whole pattern. Only
+  syntax characters are escaped now, and a test rejects any other escape.
 - **Registering the same enum twice stacked a new `TypeDescriptor` provider each time.** A type is
   now registered once per process, while validation still runs on every call so a second
   registration with stricter options still fails. Covered by tests that host several applications

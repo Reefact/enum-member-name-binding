@@ -36,6 +36,21 @@ public enum PlainLevel {
 
 }
 
+/// <summary>Names full of characters that mean something to a regular expression engine.</summary>
+[Flags]
+public enum Tricky {
+
+    [JsonStringEnumMemberName("a+b")]        Plus    = 1,
+    [JsonStringEnumMemberName("c.d")]        Dot     = 2,
+    [JsonStringEnumMemberName("read write")] Spaced  = 4,
+    [JsonStringEnumMemberName("e|f")]        Pipe    = 8,
+    [JsonStringEnumMemberName("(g)")]        Parens  = 16,
+    [JsonStringEnumMemberName("h#i")]        Hash    = 32,
+    [JsonStringEnumMemberName("[j]")]        Bracket = 64,
+    [JsonStringEnumMemberName("k-l")]        Dash    = 128
+
+}
+
 [ApiController]
 public sealed class OrdersController : ControllerBase {
 
@@ -50,6 +65,9 @@ public sealed class OrdersController : ControllerBase {
 
     [HttpGet("/levels")]
     public IActionResult ByLevel([FromQuery] PlainLevel level) => Ok(new { value = level.ToString() });
+
+    [HttpGet("/tricky")]
+    public IActionResult ByTricky([FromQuery] Tricky value) => Ok(new { value = value.ToString() });
 
 }
 
@@ -70,7 +88,7 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
         builder.Services
                .AddControllers()
                .AddApplicationPart(typeof(OrdersController).Assembly)
-               .AddEnumMemberNameBinding(options => options.AddEnum<OrderState>().AddEnum<Scopes>());
+               .AddEnumMemberNameBinding(options => options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>());
 
         if (withTransformer) {
             builder.Services.AddOpenApi(options => options.AddEnumMemberNames());

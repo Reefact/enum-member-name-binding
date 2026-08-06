@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -47,12 +48,35 @@ public sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer 
     }
 
     private static string BuildFlagsPattern(IReadOnlyList<string> names) {
-        string alternatives = string.Join('|', names.Select(Regex.Escape));
+        string alternatives = string.Join('|', names.Select(EscapeForJsonSchema));
 
         // Surrounding whitespace and a single trailing comma are accepted by the binder, because
         // System.Text.Json accepts them. A pattern that excluded them would advertise a contract
         // stricter than the one the server honours.
         return $"^\\s*({alternatives})(\\s*,\\s*({alternatives}))*\\s*,?\\s*$";
+    }
+
+    /// <summary>
+    /// Escapes for the regular expression dialect a JSON Schema <c>pattern</c> is read with, ECMA-262.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Regex.Escape" /> is not usable here. It escapes whitespace and <c>#</c> — producing
+    /// <c>\ </c> and <c>\#</c> — because of .NET's <c>IgnorePatternWhitespace</c> mode. Neither is a
+    /// valid identity escape in ECMA-262, so a strict consumer such as a JavaScript engine in unicode
+    /// mode rejects the whole pattern. Only the syntax characters are escaped; everything else,
+    /// spaces included, is a literal in both dialects.
+    /// </remarks>
+    private static string EscapeForJsonSchema(string name) {
+        const string SyntaxCharacters = @"^$\.*+?()[]{}|/";
+
+        StringBuilder escaped = new(name.Length + 8);
+        foreach (char character in name) {
+            if (SyntaxCharacters.Contains(character, StringComparison.Ordinal)) { escaped.Append('\\'); }
+
+            escaped.Append(character);
+        }
+
+        return escaped.ToString();
     }
 
     private static string Append(string? description, string addition) {

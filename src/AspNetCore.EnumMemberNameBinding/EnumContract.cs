@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Globalization;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace AspNetCore.EnumMemberNameBinding;
@@ -26,8 +27,8 @@ internal sealed class EnumContract {
     private readonly FrozenDictionary<string, object> _byContractName;
     private readonly FrozenDictionary<string, object> _byClrName;
     private readonly FrozenDictionary<object, string> _names;
-    private readonly (object Value, string Name)[] _ordered;
     private readonly bool _isFlags;
+    private readonly JsonSerializerOptions _writeOptions;
 
     private EnumContract(Type enumType) {
         EnumType = enumType;
@@ -103,10 +104,14 @@ internal sealed class EnumContract {
         _byContractName = byContractName.ToFrozenDictionary(StringComparer.Ordinal);
         _byClrName      = byClrName.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
         _names          = names.ToFrozenDictionary();
-        _ordered            = [.. ordered];
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
         AllowedValues       = string.Join(", ", PublicNames);
+        _writeOptions       = new JsonSerializerOptions {
+            Converters = {
+                (JsonConverter)Activator.CreateInstance(typeof(JsonStringEnumConverter<>).MakeGenericType(enumType), null, false)!
+            }
+        };
     }
 
     /// <summary>The described enum type.</summary>
@@ -159,23 +164,23 @@ internal sealed class EnumContract {
     }
 
     /// <summary>Renders an enum value as its public name, or <see langword="null" /> if it has none.</summary>
+    /// <remarks>
+    /// A declared member is answered from the cache. A <c>[Flags]</c> combination is handed to
+    /// <c>System.Text.Json</c> itself: it decomposes a value by sorting members topologically, so
+    /// that a combination covering several bits is preferred over its constituents, and the
+    /// tie-breaking between incomparable members is not something worth reimplementing from
+    /// observation — two independent shapes were enough to rule out the two obvious rules. Parity
+    /// here is by construction rather than by imitation.
+    /// </remarks>
     internal string? Format(object value) {
         if (_names.TryGetValue(value, out string? name)) { return name; }
         if (!_isFlags) { return null; }
 
-        ulong remaining = ToUInt64(value);
-        if (remaining == 0) { return null; }
-
-        List<string> parts = [];
-        foreach ((object memberValue, string memberName) in _ordered) {
-            ulong bits = ToUInt64(memberValue);
-            if (bits != 0 && (remaining & bits) == bits) {
-                remaining &= ~bits;
-                parts.Add(memberName);
-            }
+        try {
+            return JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value, EnumType, _writeOptions));
+        } catch (JsonException) {
+            return null;
         }
-
-        return remaining == 0 && parts.Count > 0 ? string.Join(", ", parts) : null;
     }
 
     private bool TryParseSingle(string token, out object result) {
