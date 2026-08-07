@@ -126,8 +126,13 @@ The package version is independent of the .NET version it targets.
   failed with CS9137 inside generated code they never wrote. Referencing
   `Microsoft.AspNetCore.OpenApi` directly also cured it, and most consumers will already have done
   so, which is why nothing in this repository noticed. The companion now ships that property itself,
-  enabling the one namespace Microsoft enables and nothing more. Found by the package smoke test on
-  the first run of its life.
+  from a `.targets` and not a `.props`: NuGet imports the former below the consumer's project body
+  and the latter above it, so a consumer who assigns `InterceptorsNamespaces` rather than appending
+  to it would silently overwrite a `.props` and get CS9137 back. Microsoft ships it from a `.targets`
+  for that reason, and their package survives that assignment where a `.props` version of ours was
+  measured not to. It enables the one namespace Microsoft enables and nothing more. Found by the
+  package smoke test on the first run of its life, and the consumer fixture now makes that
+  assignment itself so the distinction cannot be lost again.
 
 - `Microsoft.AspNetCore.OpenApi` and minimal API serialization read `Http.Json.JsonOptions`, while
   MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described

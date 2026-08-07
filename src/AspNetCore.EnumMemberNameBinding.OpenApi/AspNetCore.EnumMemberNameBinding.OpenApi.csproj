@@ -30,9 +30,9 @@
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <!-- Restores a property the consumer loses because NuGet does not flow build assets
-         transitively; the reason is written out inside the file. The name has to match the package
-         id for NuGet to import it. -->
-    <None Include="build/AspNetCore.EnumMemberNameBinding.OpenApi.props" Pack="true" PackagePath="build/" />
+         transitively; the reason, and why it is a .targets rather than a .props, are written out
+         inside the file. The name has to match the package id for NuGet to import it. -->
+    <None Include="build/AspNetCore.EnumMemberNameBinding.OpenApi.targets" Pack="true" PackagePath="build/" />
   </ItemGroup>
 
   <ItemGroup>

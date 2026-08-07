@@ -139,8 +139,14 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
   légale, et son build échouait sur CS9137 dans du code généré qu'il n'avait jamais écrit. Référencer
   `Microsoft.AspNetCore.OpenApi` en direct corrigeait aussi le problème, et la plupart des
   consommateurs l'auront déjà fait, ce qui explique que rien dans ce dépôt ne l'ait remarqué. Le
-  compagnon livre désormais cette propriété lui-même, activant le seul espace de noms que Microsoft
-  active, et rien de plus. Trouvé par le test de fumée du paquet dès sa première exécution.
+  compagnon livre désormais cette propriété lui-même, depuis un `.targets` et non un `.props` : NuGet
+  importe le premier sous le corps du projet consommateur et le second au-dessus, si bien qu'un
+  consommateur qui affecte `InterceptorsNamespaces` au lieu d'y concaténer écraserait silencieusement
+  un `.props` et retrouverait CS9137. Microsoft le livre depuis un `.targets` pour cette raison, et
+  son paquet survit à cette affectation là où une version `.props` du nôtre a été mesurée comme n'y
+  survivant pas. Elle active le seul espace de noms que Microsoft active, et rien de plus. Trouvé par
+  le test de fumée du paquet dès sa première exécution, et le fixture consommateur fait désormais
+  cette affectation lui-même pour que la distinction ne puisse plus se perdre.
 
 - `Microsoft.AspNetCore.OpenApi` et la sérialisation des Minimal APIs lisent `Http.Json.JsonOptions`,
   tandis que MVC lit `Mvc.JsonOptions`. Seules ces dernières étaient configurées, si bien que chaque

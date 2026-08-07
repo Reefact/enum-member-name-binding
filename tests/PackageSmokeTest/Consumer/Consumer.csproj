@@ -10,6 +10,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Consumer</RootNamespace>
+    <!--
+      Adversarial, and the one line here a real consumer would not write. The OpenAPI companion has
+      to restore an InterceptorsNamespaces value that NuGet does not flow transitively, and it can
+      only do so from a .targets: assigning the property here — rather than appending to it — beats
+      any .props, which NuGet imports above this. Shipping that file as a .props was measured to
+      fail exactly this way, so the assignment stays, and the compile below is the guard.
+    -->
+    <InterceptorsNamespaces>Some.Consumer.Generated</InterceptorsNamespaces>
   </PropertyGroup>
 
   <!-- PackageReference, never ProjectReference. That distinction is the whole point of this test. -->
