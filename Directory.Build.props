@@ -26,6 +26,9 @@
     <Company>Reefact</Company>
     <Copyright>Copyright (c) Reefact</Copyright>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <!-- The file itself is included per project, beside the README, because this file is imported
+         above the project body: a condition on IsPackable would be read before the csproj sets it. -->
+    <PackageIcon>icon.png</PackageIcon>
     <PackageProjectUrl>https://github.com/Reefact/enum-member-name-binding</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Reefact/enum-member-name-binding</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
