@@ -55,3 +55,6 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# The package smoke test builds a consumer against a locally packed feed.
+tests/PackageSmokeTest/.work/

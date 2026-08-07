@@ -1,0 +1,10 @@
+<!--
+  Deliberately empty, and load-bearing.
+
+  MSBuild walks up from a project directory and imports the FIRST Directory.Build.props it finds.
+  Without this file the fixtures below would inherit the repository's own — net10.0, nullable,
+  TreatWarningsAsErrors, the analysis level, the package metadata — and would stop resembling the
+  thing they exist to imitate: somebody else's project, with somebody else's defaults, consuming us
+  from nuget.org. Whatever these fixtures need, they declare themselves.
+-->
+<Project />

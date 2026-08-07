@@ -68,6 +68,15 @@ jobs:
           unzip -l "$package" | grep -q 'analyzers/dotnet/cs/AspNetCore.EnumMemberNameBinding.Analyzers.dll' \
             || { echo "::error::the package does not ship the analyzers"; exit 1; }
 
+      # Everything above reaches the library through a ProjectReference, which never exercises the
+      # package: not the framework reference, not the analyzers' place inside it, not the MSBuild
+      # assets, and not whether a consumer with their own defaults can compile against any of it.
+      # This starts from a fresh pack and ends at an HTTP response. It runs on both SDKs, because an
+      # analyzer behaving differently between them is the reason this matrix exists.
+      - name: Package smoke test
+        timeout-minutes: 10
+        run: tests/PackageSmokeTest/run.sh
+
       - uses: actions/upload-artifact@v4
         with:
           name: packages-sdk-${{ matrix.sdk }}

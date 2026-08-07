@@ -41,6 +41,15 @@ The package version is independent of the .NET version it targets.
   an ambiguity that is wrong on every channel. An enum that declares no contract is never analysed.
 - CI checks that fail the build if the produced package does not declare its
   `Microsoft.AspNetCore.App` framework reference, or does not ship the analyzers.
+- A package smoke test, run on both SDKs in CI and again as the last gate before publishing. It packs
+  into a local feed, compiles an application that consumes the result by `PackageReference`, and
+  drives it over HTTP — covering the ground a `ProjectReference` skips entirely: the framework
+  reference, the analyzers' place inside the package, the MSBuild assets, and whether a project with
+  its own defaults can compile against any of it. It is also the only thing that exercises the call
+  the README leads with, since `AddEnumMemberNameBinding()` with no options scans the entry assembly,
+  which under a test host is the test host. A second fixture is meant *not* to compile, so `EMN0003`
+  has to arrive from the analyzer inside the `.nupkg`; the assertion is positive, because "no
+  diagnostic appeared" is also what a missing analyzer looks like.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the
   generated document describe what the server accepts: an explicit `string` type, the declared public
   names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
@@ -109,6 +118,16 @@ The package version is independent of the .NET version it targets.
   now registered once per process, while validation still runs on every call so a second
   registration with stricter options still fails. Covered by tests that host several applications
   side by side.
+- **The documented one-package install of the OpenAPI companion did not compile.**
+  `Microsoft.AspNetCore.OpenApi` enables the interceptor namespace its XML comment generator writes
+  into, and it does so through MSBuild build assets, which NuGet does not flow transitively. A
+  consumer who took the companion and nothing else — exactly what `docs/openapi.en.md` instructs —
+  therefore inherited the generator without the property that makes its output legal, and their build
+  failed with CS9137 inside generated code they never wrote. Referencing
+  `Microsoft.AspNetCore.OpenApi` directly also cured it, and most consumers will already have done
+  so, which is why nothing in this repository noticed. The companion now ships that property itself,
+  enabling the one namespace Microsoft enables and nothing more. Found by the package smoke test on
+  the first run of its life.
 
 - `Microsoft.AspNetCore.OpenApi` and minimal API serialization read `Http.Json.JsonOptions`, while
   MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described

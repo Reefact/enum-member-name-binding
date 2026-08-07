@@ -21,12 +21,14 @@ public sealed class DocumentationLinksTests {
     private const string EnglishFrontPage = "README.md";
 
     /// <summary>
-    /// The pages GitHub and NuGet expect at the root keep their name and place; only their French
-    /// version follows the file-suffix convention, from inside <c>docs</c>.
+    /// The pages GitHub and NuGet expect at a fixed name keep it, and their French version sits
+    /// beside them; every other page follows the file-suffix convention from inside <c>docs</c>.
     /// </summary>
     private static readonly (string English, string French)[] RootPages = [
         (EnglishFrontPage, "docs/README.fr.md"),
-        ("CHANGELOG.md", "docs/CHANGELOG.fr.md")
+        ("CHANGELOG.md", "docs/CHANGELOG.fr.md"),
+        // GitHub renders a directory's README.md and nothing else, so this one stays where it is.
+        ("tests/PackageSmokeTest/README.md", "tests/PackageSmokeTest/README.fr.md")
     ];
 
     public static TheoryData<string> Pages {
@@ -181,11 +183,15 @@ public sealed class DocumentationLinksTests {
         }
     }
 
+    /// <summary>
+    /// The pages this repository writes, and only those. Build output is skipped, and so is anything
+    /// under a dot-directory — the package smoke test unpacks a NuGet cache into <c>.work</c>, which
+    /// is full of other people's READMEs carrying other people's dead links.
+    /// </summary>
     private static IEnumerable<string> MarkdownPages() {
         return Directory.EnumerateFiles(RepositoryRoot.FullName, "*.md", SearchOption.AllDirectories)
                         .Select(path => Path.GetRelativePath(RepositoryRoot.FullName, path).Replace('\\', '/'))
-                        .Where(path => !path.StartsWith("bin/", StringComparison.Ordinal) && !path.Contains("/bin/", StringComparison.Ordinal))
-                        .Where(path => !path.StartsWith("obj/", StringComparison.Ordinal) && !path.Contains("/obj/", StringComparison.Ordinal))
+                        .Where(path => !path.Split('/').Any(segment => segment.StartsWith('.') || segment is "bin" or "obj"))
                         .Order();
     }
 

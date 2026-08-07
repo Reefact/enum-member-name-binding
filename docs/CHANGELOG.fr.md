@@ -45,6 +45,16 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
   Une énumération qui ne déclare aucun contrat n'est jamais analysée.
 - Des vérifications de CI qui font échouer le build si le paquet produit ne déclare pas sa référence
   de framework `Microsoft.AspNetCore.App`, ou ne livre pas les analyseurs.
+- Un test de fumée du paquet, exécuté sur les deux SDK en CI puis à nouveau comme dernière barrière
+  avant publication. Il packe dans un feed local, compile une application qui consomme le résultat par
+  `PackageReference`, et la pilote en HTTP — couvrant ce qu'une `ProjectReference` saute entièrement :
+  la référence de framework, la place des analyseurs dans le paquet, les assets MSBuild, et la
+  capacité d'un projet ayant ses propres réglages à compiler face à tout cela. C'est aussi la seule
+  chose qui exerce l'appel mis en avant par le README, puisqu'`AddEnumMemberNameBinding()` sans
+  options scanne l'assembly d'entrée, qui sous un host de test est le host de test. Une seconde
+  fixture est censée *ne pas* compiler, pour qu'`EMN0003` doive venir de l'analyseur contenu dans le
+  `.nupkg` ; l'assertion est positive, car « aucun diagnostic n'est apparu » est aussi ce à quoi
+  ressemble un analyseur absent.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont le transformateur de schéma
   fait décrire au document généré ce que le serveur accepte réellement : un type `string` explicite,
   les noms publics déclarés, et — pour les énumérations `[Flags]`, qu'ASP.NET Core documente sans
@@ -121,6 +131,16 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
   chaque fois.** Un type n'est désormais enregistré qu'une fois par processus, tandis que la
   validation s'exécute toujours à chaque appel, de sorte qu'un second enregistrement avec des options
   plus strictes échoue encore. Couvert par des tests qui hébergent plusieurs applications côte à côte.
+- **L'installation en un seul paquet du compagnon OpenAPI, telle que documentée, ne compilait pas.**
+  `Microsoft.AspNetCore.OpenApi` active l'espace de noms d'intercepteurs dans lequel écrit son
+  générateur de commentaires XML, et il le fait via des assets MSBuild `build`, que NuGet ne propage
+  pas en transitif. Un consommateur qui prenait le compagnon et rien d'autre — exactement ce
+  qu'indique `docs/openapi.fr.md` — héritait donc du générateur sans la propriété qui rend sa sortie
+  légale, et son build échouait sur CS9137 dans du code généré qu'il n'avait jamais écrit. Référencer
+  `Microsoft.AspNetCore.OpenApi` en direct corrigeait aussi le problème, et la plupart des
+  consommateurs l'auront déjà fait, ce qui explique que rien dans ce dépôt ne l'ait remarqué. Le
+  compagnon livre désormais cette propriété lui-même, activant le seul espace de noms que Microsoft
+  active, et rien de plus. Trouvé par le test de fumée du paquet dès sa première exécution.
 
 - `Microsoft.AspNetCore.OpenApi` et la sérialisation des Minimal APIs lisent `Http.Json.JsonOptions`,
   tandis que MVC lit `Mvc.JsonOptions`. Seules ces dernières étaient configurées, si bien que chaque

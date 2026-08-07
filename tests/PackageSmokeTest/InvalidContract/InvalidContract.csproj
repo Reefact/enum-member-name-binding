@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>InvalidContract</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    Only the main package. The analyzers ride inside it, under analyzers/dotnet/cs, and NuGet gives
+    them to a DIRECT PackageReference — which is exactly the claim this fixture is here to test.
+  -->
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.EnumMemberNameBinding" Version="$(SmokePackageVersion)" />
+  </ItemGroup>
+
+  <Target Name="RequireSmokePackageVersion" BeforeTargets="CollectPackageReferences" Condition=" '$(SmokePackageVersion)' == '' ">
+    <Error Text="SmokePackageVersion is not set. This fixture is driven by tests/PackageSmokeTest/run.sh, which packs the libraries into a local feed first; building it directly cannot work." />
+  </Target>
+
+</Project>

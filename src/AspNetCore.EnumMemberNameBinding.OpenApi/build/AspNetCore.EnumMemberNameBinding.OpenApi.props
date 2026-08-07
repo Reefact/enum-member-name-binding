@@ -1,0 +1,22 @@
+<!--
+  Shipped inside the package as build/<PackageId>.props, which NuGet imports into any project that
+  references this package directly.
+
+  Microsoft.AspNetCore.OpenApi carries an XML comment source generator whose output uses C#
+  interceptors, and it enables the namespace for that output through build assets of its own. NuGet
+  does not flow build assets transitively, so a consumer who takes this companion — and nothing else,
+  which is exactly what docs/openapi.en.md tells them to do — gets the generator without the property
+  that makes its output legal, and the build fails on CS9137 in generated code they never wrote.
+
+  Referencing Microsoft.AspNetCore.OpenApi directly also fixes it, and most consumers will already
+  have done so, since that is where AddOpenApi comes from. But the documented one-package install has
+  to work on its own, so the property is restored here. It enables exactly the namespace Microsoft
+  enables, and nothing else.
+-->
+<Project>
+
+  <PropertyGroup>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);Microsoft.AspNetCore.OpenApi.Generated</InterceptorsNamespaces>
+  </PropertyGroup>
+
+</Project>

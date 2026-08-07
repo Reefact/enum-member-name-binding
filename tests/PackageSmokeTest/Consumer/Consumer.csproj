@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    The defaults of `dotnet new webapi`, written out because the empty Directory.Build.props one
+    level up stops this project inheriting the repository's. Notably TreatWarningsAsErrors is NOT
+    set: a customer's build is not ours, and EMN0006 is a warning that must not fail their build.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Consumer</RootNamespace>
+  </PropertyGroup>
+
+  <!-- PackageReference, never ProjectReference. That distinction is the whole point of this test. -->
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.EnumMemberNameBinding" Version="$(SmokePackageVersion)" />
+    <PackageReference Include="AspNetCore.EnumMemberNameBinding.OpenApi" Version="$(SmokePackageVersion)" />
+  </ItemGroup>
+
+  <Target Name="RequireSmokePackageVersion" BeforeTargets="CollectPackageReferences" Condition=" '$(SmokePackageVersion)' == '' ">
+    <Error Text="SmokePackageVersion is not set. This fixture is driven by tests/PackageSmokeTest/run.sh, which packs the libraries into a local feed first; building it directly cannot work." />
+  </Target>
+
+</Project>

@@ -83,6 +83,13 @@ jobs:
           echo "Packages built:"
           ls -1 artifacts
 
+      # The last gate before anything irreversible: build a consumer against the packed library and
+      # drive it over HTTP. The step above checks what is inside the package; this one checks that
+      # somebody else can actually use it.
+      - name: Package smoke test
+        timeout-minutes: 10
+        run: tests/PackageSmokeTest/run.sh
+
       # Trusted publishing: short-lived OIDC credentials, no long-lived API key in secrets.
       # Runs on a dry run too — proving the login works is the point of the exercise.
       - name: Authenticate to NuGet
