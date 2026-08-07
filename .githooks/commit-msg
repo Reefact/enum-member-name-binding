@@ -1,0 +1,15 @@
+#!/bin/sh
+# Check the message about to be recorded, before it is recorded.
+#
+# Enable it once per clone — a hook cannot install itself, which is why this is a step and not
+# magic:
+#
+#   git config core.hooksPath .githooks
+#
+# The same check runs in CI on every pull request, so a bypass (`git commit --no-verify`) is caught
+# before merge rather than never. The point of having it locally is not enforcement, it is that a
+# rejected message can still be fixed by typing, instead of by an interactive rebase.
+
+set -e
+
+exec "$(git rev-parse --show-toplevel)/tools/commit-lint/lint-commit-message.sh" "$1"
