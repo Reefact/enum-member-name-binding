@@ -24,7 +24,7 @@
       high-severity advisory (GHSA-v5pm-xwqc-g5wc). Raising the floor keeps consumers off it while
       staying inside the 2.x range the ASP.NET Core package is built against.
     -->
-    <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="3.9.0" />
   </ItemGroup>
 
   <ItemGroup>
