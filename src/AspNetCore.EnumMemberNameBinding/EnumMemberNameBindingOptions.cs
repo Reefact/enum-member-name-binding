@@ -11,6 +11,13 @@ public sealed class EnumMemberNameBindingOptions {
     /// Assemblies scanned for enums carrying <c>[JsonStringEnumMemberName]</c>.
     /// When neither this nor <see cref="EnumTypes" /> is populated, the entry assembly is scanned.
     /// </summary>
+    /// <remarks>
+    /// The supported way to fill this is <see cref="ScanAssemblyContaining{T}" />. The list itself is
+    /// the escape hatch for a caller holding an <see cref="Assembly" /> at run time, and it stays a
+    /// mutable <see cref="IList{T}" /> for the same reason <c>MvcOptions.Conventions</c> and
+    /// <c>JsonSerializerOptions.Converters</c> do. The consequence is that nothing validates an entry
+    /// at the moment it is added; a bad one is reported at start-up instead.
+    /// </remarks>
     public IList<Assembly> Assemblies { get; } = [];
 
     /// <summary>
@@ -21,6 +28,10 @@ public sealed class EnumMemberNameBindingOptions {
     /// An enum that declares none is refused rather than adopted: taking it over would change how an
     /// ordinary enum binds and serializes, and <see cref="AllowPartialContracts" /> does not make that
     /// acceptable. It governs an incomplete contract, not the absence of one.
+    ///
+    /// The supported way to fill this is <see cref="AddEnum{TEnum}" />, which states the constraint in
+    /// the type system. The list is the escape hatch for a caller holding a <see cref="Type" /> at run
+    /// time, and like <see cref="Assemblies" /> it validates nothing at the point of the addition.
     /// </remarks>
     public IList<Type> EnumTypes { get; } = [];
 

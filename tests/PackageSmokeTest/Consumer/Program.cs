@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.OpenApi;   // as docs/openapi.en.md shows, for AddEnumMemberNames()
 
 // This file is a transcription of the README, kept deliberately close to it. The registration below
 // is the zero-option form the front page advertises, which no test in this repository can reach:

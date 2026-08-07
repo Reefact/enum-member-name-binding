@@ -2,11 +2,26 @@ using System.Diagnostics.CodeAnalysis;
 
 using AspNetCore.EnumMemberNameBinding.OpenApi;
 
-namespace Microsoft.AspNetCore.OpenApi;
+using Microsoft.AspNetCore.OpenApi;
+
+namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>
 /// Registration of enum member name correction on <see cref="OpenApiOptions" />.
 /// </summary>
+/// <remarks>
+/// Placed in <c>Microsoft.Extensions.DependencyInjection</c> rather than in the namespace owning
+/// <see cref="OpenApiOptions" />, because that is the namespace the caller already has. The Web SDK
+/// imports it implicitly — it is how <c>AddOpenApi</c> itself resolves — while
+/// <c>Microsoft.AspNetCore.OpenApi</c> is not implicitly imported, so the conventional placement
+/// cost every consumer a <c>using</c> directive they had no way to guess, and cost this repository
+/// one in each OpenAPI documentation page and in the package smoke test.
+///
+/// The method is <c>AddEnumMemberNames</c> and not <c>AddEnumMemberNameBinding</c>, which was
+/// weighed at v1 and kept: this package binds nothing, it describes. <c>EnumMemberNameBinding</c>
+/// names the registration that installs the binder; this one makes the generated document carry the
+/// member names, and saying "binding" of it would be inaccurate for the sake of symmetry.
+/// </remarks>
 public static class EnumMemberNameOpenApiOptionsExtensions {
 
     /// <summary>

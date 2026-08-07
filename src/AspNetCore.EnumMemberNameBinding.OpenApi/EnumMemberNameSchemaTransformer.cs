@@ -20,7 +20,17 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi;
 ///         pattern and a description covering comma-separated combinations.</item>
 /// </list>
 /// </remarks>
-public sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer {
+/// <remarks>
+/// Internal, deliberately. <c>AddEnumMemberNames()</c>
+/// registers it through the instance overload of <c>AddSchemaTransformer</c>, which takes an
+/// <see cref="IOpenApiSchemaTransformer" /> and is indifferent to the concrete type's
+/// accessibility, so nothing requires it to be public. Publishing it would, on the other hand, bake
+/// <see cref="OpenApiSchema" /> — a concrete class belonging to Microsoft.OpenApi, which reshaped
+/// across 1.x to 2.x and has since introduced an <c>IOpenApiSchema</c> interface — into this
+/// package's own versioning promise, handing a third party the power to force a major version here.
+/// The package's entire public surface is <c>AddEnumMemberNames()</c>.
+/// </remarks>
+internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransformer {
 
     /// <summary>Creates the transformer.</summary>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]

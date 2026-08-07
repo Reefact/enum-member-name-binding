@@ -17,6 +17,14 @@ public static class EnumMemberNames {
     /// </summary>
     /// <param name="enumType">An enum type. Nullable enum types are unwrapped.</param>
     /// <exception cref="EnumContractException">The declared contract is ambiguous or malformed.</exception>
+    /// <remarks>
+    /// The returned list is never written through, and a test holds the current implementation to
+    /// returning an immutable one. That concrete type is not part of the contract: what is promised
+    /// is <see cref="IReadOnlyList{T}" />, and a caller must not depend on the runtime type behind
+    /// it. The interface was kept rather than narrowed at v1 deliberately — it is the idiomatic
+    /// public shape, it matches <see cref="EnumContractException.Problems" />, and this method is
+    /// called once per enum at start-up or document generation, where the boxing is free.
+    /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     public static IReadOnlyList<string>? GetPublicNames(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);

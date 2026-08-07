@@ -13,7 +13,23 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// registering this converter is enough to cover route values, query strings, form fields and
 /// headers — including their nullable forms — without replacing any model binder.
 /// </remarks>
-public sealed class EnumMemberNameConverter : EnumConverter {
+/// <remarks>
+/// Internal, deliberately. Public, the type advertised a second way in — writing
+/// <c>[TypeConverter(typeof(EnumMemberNameConverter))]</c> on an enum by hand — whose guarantees
+/// are strictly weaker than the documented one: it installs on an enum carrying no contract at
+/// all, the adoption <see cref="EnumMemberNameBindingRegistry" /> exists to refuse; it skips the
+/// System.Text.Json alignment that closes the body-versus-query divergence this package was
+/// written for; and it surfaces <see cref="EnumContractException" /> wrapped in a
+/// <c>TargetInvocationException</c> on the first request, contradicting that exception's promise
+/// to be raised at start-up and never on a request. The supported entry point is
+/// <c>AddEnumMemberNameBinding()</c>.
+///
+/// The constructor stays public even though the type is not: <c>TypeDescriptor</c> instantiates
+/// converters reflectively through a public constructor, and making it internal fails at run time
+/// with <c>MissingMethodException</c>. Publishing the type again later would be additive and free;
+/// withdrawing it after v1 would not.
+/// </remarks>
+internal sealed class EnumMemberNameConverter : EnumConverter {
 
     private readonly EnumContract _contract;
 

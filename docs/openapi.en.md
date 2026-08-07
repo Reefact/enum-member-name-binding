@@ -8,8 +8,6 @@ dotnet add package AspNetCore.EnumMemberNameBinding.OpenApi
 ```
 
 ```csharp
-using Microsoft.AspNetCore.OpenApi;
-
 builder.Services.AddOpenApi(options => options.AddEnumMemberNames());
 ```
 

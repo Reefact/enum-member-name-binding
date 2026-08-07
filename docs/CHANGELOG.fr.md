@@ -18,9 +18,15 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 - `AddEnumMemberNameBinding()` sur `IMvcBuilder` : les valeurs de route, les chaînes de requête, les
   champs de formulaire et les en-têtes acceptent les noms de membres d'énumération déclarés avec
   `[JsonStringEnumMemberName]`.
-- `EnumMemberNameConverter`, un `TypeConverter` piloté par l'attribut natif. ASP.NET Core résout les
+- La liaison via un `TypeConverter` piloté par l'attribut natif. ASP.NET Core résout les
   binders de types simples via `TypeDescriptor` : aucun model binder n'est donc remplacé, et les
-  énumérations nullables, les en-têtes et les champs de formulaire sont couverts par construction.
+  énumérations nullables, les en-têtes et les champs de formulaire sont couverts par construction. Le
+  convertisseur est un détail d'implémentation : `AddEnumMemberNameBinding()` est la seule entrée
+  supportée.
+- Une base de référence versionnée de l'API publique des deux paquets, pour qu'un changement de la
+  surface publiée soit une différence relue et non un effet de bord. La surface a été lue symbole par
+  symbole avant cette publication et volontairement réduite à ce dont un consommateur a besoin :
+  19 entrées dans le paquet principal, 2 dans le compagnon.
 - Validation au démarrage de chaque contrat enregistré, levant `EnumContractException` pour les noms
   publics en double, les noms entourés d'espaces et les virgules dans le nom d'un membre `[Flags]`.
 - Prise en charge de `[Flags]` : listes séparées par des virgules, à l'identique de
