@@ -21,21 +21,24 @@ force a bypass on each one, which is worse than no rule at all. What carries the
 `required_review_thread_resolution`: an unresolved comment blocks the merge. Raise the count to 1
 the day a second contributor appears.
 
-**No required status check yet.** The check to require is a single aggregate job named `CI`, and it
-does not exist yet — see `.github/ci-cd-plan.md` §2.1. Requiring the current per-matrix check names
-(`build (SDK 10.0.100)`, `build (SDK 10.0.x)`) would be the very trap that job exists to avoid: the
-day the matrix changes, the required name disappears and every pull request blocks forever waiting
-for a check that will never report. Add the rule once the aggregate job is on `main`:
+**One required status check: `CI`.** Requiring a pull request without requiring a green one is half a
+rule — it stops the direct push and still lets a red branch merge, which is the hole the exercise
+was meant to close.
 
-```json
-{
-  "type": "required_status_checks",
-  "parameters": {
-    "strict_required_status_checks_policy": true,
-    "required_status_checks": [{ "context": "CI" }]
-  }
-}
-```
+`CI` is a single aggregate job in `ci.yml` whose only work is to read the build matrix's collective
+result. Requiring it, rather than the per-matrix names `build (SDK 10.0.100)` and
+`build (SDK 10.0.x)`, is what keeps the rule from becoming a trap: a required check that names a job
+nobody runs never reports, and every pull request then sits at *Expected — waiting for status* with
+no way out but an admin bypass. Adding an SDK or an operating system to the matrix must not require
+anyone to remember this file.
+
+`strict_required_status_checks_policy` additionally refuses a branch that is behind `main`, so a
+change is proved against the tip it will land on rather than against whatever `main` was when the
+branch was cut.
+
+**Editing an already-imported ruleset.** Importing does not link the file to the rule — it copies it
+once. A change here reaches GitHub only by editing the live ruleset to match, or by deleting it and
+importing again.
 
 **Linear history** means no merge commits: land pull requests with rebase, or with squash when the
 branch carries a single intention. This suits a repository whose history is already linear and whose
