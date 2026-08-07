@@ -146,11 +146,18 @@ un autre commit republierait un numéro de version déjà consommé.
 
 ### 4.1 Template de pull request (`.github/pull_request_template.md`)
 
+**Fait**, et livré avec les rulesets plutôt qu'ici : le regroupement d'origine était mauvais.
+`CONTRIBUTING.md` et `SECURITY.md` coûtent chacun une traduction française de structure
+identique ; le template, lui, vit sous `.github/`, que les gardes de documentation ignorent, et
+ne coûte donc rien. Rien ne justifiait de le faire attendre — d'autant que c'est la ruleset
+`main` qui rend les pull requests obligatoires, et que le template est ce qu'elles remplissent.
+
 Repris de la référence, **fortement raccourci** : ce dépôt n'a ni ADR, ni trains de release.
 Sections retenues : *Résumé*, *Type de changement*, *Changements*, *Tests effectués*
-(`dotnet build`, `dotnet test`, `tests/PackageSmokeTest/run.sh`), *Documentation*
-(avec la case « traduction FR à jour », que la garde structurelle rend non négociable),
-*Issues liées*.
+(`dotnet build`, `dotnet test`, `tests/PackageSmokeTest/run.sh`), *API publique* (la baseline
+du §7.1 a rendu cette section possible), *Documentation* (avec les cases « traduction FR à
+jour » et « les deux CHANGELOG », que la garde structurelle rend non négociables), *Issues
+liées*.
 
 ### 4.2 `CODEOWNERS`
 
