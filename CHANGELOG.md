@@ -11,11 +11,6 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
-### Added
-
-- An icon on both packages, so they are recognisable on nuget.org instead of appearing behind the
-  default placeholder.
-
 ## [1.0.0-preview.1] - 2026-08-07
 
 ### Added
@@ -67,6 +62,10 @@ The package version is independent of the .NET version it targets.
   replaying every advertised value against the running server.
 - The companion raises the floor of `Microsoft.OpenApi` to 2.11.0. `Microsoft.AspNetCore.OpenApi`
   10.0.x resolves 2.0.0, which carries advisory GHSA-v5pm-xwqc-g5wc.
+- An icon on both packages, so they are recognisable on nuget.org instead of appearing behind the
+  default placeholder. The smoke test checks each package for both halves of it — that the `.nuspec`
+  declares an icon, and that the file it names is really inside — since keeping the include without
+  the property produces a perfectly valid package that nuget.org still shows grey.
 
 - `EnumMemberNames.GetPublicName(Enum)`, for generating links. ASP.NET Core formats route values
   without consulting `TypeDescriptor`, so a link built from an enum value carries the C# name and the
