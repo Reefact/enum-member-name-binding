@@ -38,12 +38,32 @@ jobs:
 
       - name: Derive the version
         id: version
+        # The dispatch input arrives through the environment rather than through ${{ }}, so that a
+        # value containing shell syntax is data and not script.
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
+          set -euo pipefail
           if [ "$DRY_RUN" = "true" ]; then
-            echo "value=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            version="$INPUT_VERSION"
           else
-            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+            version="${GITHUB_REF_NAME#v}"
           fi
+
+          # SemVer puts the pre-release identifier after the first hyphen, so 1.0.0-preview.1 has one
+          # and 1.0.0 does not. nuget.org reads the version string itself and needs no help, but a
+          # GitHub release is flagged by the caller: left alone, a preview would be published as an
+          # ordinary release and become the one the repository front page offers.
+          case "$version" in
+            *-*) prerelease=true  ;;
+            *)   prerelease=false ;;
+          esac
+
+          {
+            echo "value=$version"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "Version $version (prerelease: $prerelease)"
 
       - name: Build, test and pack
         run: |
@@ -85,20 +105,58 @@ jobs:
             --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json
 
+      # --latest=false is not implied by --prerelease: the two are separate fields, and a repository
+      # with no stable release yet would otherwise show a preview as its latest. A stable version
+      # passes neither flag, so GitHub keeps deciding by date and version — which is what a backport
+      # of an older major needs, since it must not displace the newer one.
       - name: Create the GitHub release
         if: env.DRY_RUN != 'true'
-        run: gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
+        run: |
+          set -euo pipefail
+          if [ "$PRERELEASE" = "true" ]; then
+            gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes --prerelease --latest=false
+          else
+            gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
 
+      # The release step is skipped on a dry run, so the assumption it rests on is checked here
+      # instead: that this runner's gh understands the flags a preview needs. Learning otherwise
+      # while the tag is already pushed would be learning too late.
+      - name: Confirm gh supports the flags the release step uses
+        if: env.DRY_RUN == 'true'
+        run: |
+          set -euo pipefail
+          gh --version
+          help=$(gh release create --help 2>&1)
+          for flag in --generate-notes --prerelease --latest; do
+            printf '%s\n' "$help" | grep -q -- "$flag" \
+              || { echo "::error::gh release create does not support $flag on this runner"; exit 1; }
+            echo "gh release create supports $flag"
+          done
+
+      # The release step itself is skipped here, so the one thing it decides is reported instead —
+      # otherwise whether a preview is flagged as one would first be observed on the real release.
       - name: Dry run summary
         if: env.DRY_RUN == 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
           {
             echo "### Dry run"
             echo
             echo "Everything ran except the NuGet push and the GitHub release."
             echo "Packages were built and verified, and trusted publishing issued a key."
+            echo
+            echo "Version \`$VERSION\` — prerelease: \`$PRERELEASE\`."
+            if [ "$PRERELEASE" = "true" ]; then
+              echo "A real run would pass \`--prerelease --latest=false\`, so it would not become the latest release."
+            else
+              echo "A real run would pass neither flag, so GitHub would decide whether it becomes the latest release."
+            fi
             echo
             echo "Tag the commit to publish for real."
           } >> "$GITHUB_STEP_SUMMARY"

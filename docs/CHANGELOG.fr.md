@@ -11,6 +11,8 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
+## [1.0.0-preview.1] - 2026-08-07
+
 ### Ajouté
 
 - `AddEnumMemberNameBinding()` sur `IMvcBuilder` : les valeurs de route, les chaînes de requête, les
@@ -37,8 +39,10 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
   contrat soit une erreur de compilation plutôt qu'une exception au démarrage : `EMN0001` nom public en
   double, `EMN0002` nom public inutilisable, `EMN0003` contrat incomplet, `EMN0004` virgule dans un nom
   `[Flags]`, `EMN0005` un nom public masquant le nom C# d'un autre membre — ce qui laisse ce membre
-  répondre à toutes les casses de son nom sauf la sienne. Les cinq sont des erreurs. Une énumération
-  qui ne déclare aucun contrat n'est jamais analysée.
+  répondre à toutes les casses de son nom sauf la sienne. Ces cinq-là sont des erreurs ; `EMN0006`
+  ci-dessus est le seul avertissement, car une limite de portabilité dépend des canaux depuis lesquels
+  une API lie réellement, là où les cinq autres signalent une ambiguïté fausse sur tous les canaux.
+  Une énumération qui ne déclare aucun contrat n'est jamais analysée.
 - Des vérifications de CI qui font échouer le build si le paquet produit ne déclare pas sa référence
   de framework `Microsoft.AspNetCore.App`, ou ne livre pas les analyseurs.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont le transformateur de schéma
@@ -82,7 +86,7 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 - **Le motif `[Flags]` du document OpenAPI excluait des formes que le binder accepte** — les espaces
   en tête et en fin, et la virgule finale. Le document annonçait un contrat plus strict que celui que
   le serveur honorait.
-- **Les cinq help links des analyseurs pointaient vers des pages inexistantes**, si bien que le lien
+- **Les help links des analyseurs pointaient vers des pages inexistantes**, si bien que le lien
   de l'IDE menait à un 404. Chaque règle a désormais une page sous `docs/rules`, et un test échoue si
   une règle et sa page divergent.
 - **L'écriture d'une combinaison `[Flags]` divergeait de `System.Text.Json`.** La décomposition suivait

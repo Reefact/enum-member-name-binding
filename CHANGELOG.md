@@ -11,6 +11,8 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
+## [1.0.0-preview.1] - 2026-08-07
+
 ### Added
 
 - `AddEnumMemberNameBinding()` on `IMvcBuilder`: route values, query strings, form fields and
@@ -34,7 +36,9 @@ The package version is independent of the .NET version it targets.
   a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
   public name, `EMN0003` incomplete contract, `EMN0004` comma in a `[Flags]` name, `EMN0005` a public
   name shadowing another member's C# name — which leaves that member answering to every casing of its
-  name except its own. All five are errors. An enum that declares no contract is never analysed.
+  name except its own. Those five are errors; `EMN0006` above is the one warning, because a
+  portability limit depends on the channels an API actually binds from, whereas the other five report
+  an ambiguity that is wrong on every channel. An enum that declares no contract is never analysed.
 - CI checks that fail the build if the produced package does not declare its
   `Microsoft.AspNetCore.App` framework reference, or does not ship the analyzers.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the
@@ -75,7 +79,7 @@ The package version is independent of the .NET version it targets.
 - **The `[Flags]` pattern in the OpenAPI document excluded forms the binder accepts** — leading and
   trailing whitespace, and the trailing comma. The document advertised a stricter contract than the
   server honoured.
-- **The five analyzer help links pointed at pages that did not exist**, so the IDE link led to a 404.
+- **The analyzer help links pointed at pages that did not exist**, so the IDE link led to a 404.
   Every rule now has a page under `docs/rules`, and a test fails if a rule and its page ever diverge.
 - **Writing a `[Flags]` combination diverged from `System.Text.Json`.** The decomposition ran in
   declaration order, while the serializer sorts members topologically so that a combination covering

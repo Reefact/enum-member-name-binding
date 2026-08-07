@@ -183,13 +183,20 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     /// line break or a non-ASCII character is refused in a header. Other control characters travelled
     /// intact in that measurement, but RFC 9110 forbids them in a field value, so they are reported
     /// too — on the standard rather than on the observation.
+    /// <para>
+    /// A tab is the exception, and is deliberately not reported. RFC 9110 admits it alongside a
+    /// space — <c>field-content = field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]</c> — so
+    /// the standard that rules the other control characters out is the same one that lets this one
+    /// through, and the measurement agrees. That grammar only admits it between two visible
+    /// characters, and a name that begins or ends with one is already rejected by EMN0002.
+    /// </para>
     /// </summary>
     private static (string Description, string Channel)? FindUnportableCharacter(string name) {
         foreach (char character in name) {
             if (character == '/') { return ("a slash", "a route segment"); }
             if (character is '\r' or '\n') { return ("a line break", "a header"); }
             if (character > '\u007e') { return ("a character outside printable ASCII", "a header"); }
-            if (character < '\u0020') { return ("a control character", "a header"); }
+            if (character < '\u0020' && character != '\u0009') { return ("a control character", "a header"); }
         }
 
         return null;

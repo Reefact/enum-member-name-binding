@@ -21,7 +21,8 @@ public enum Portability {
     [JsonStringEnumMemberName("with#hash")]     Hash,
     [JsonStringEnumMemberName("with&amp")]      Ampersand,
     [JsonStringEnumMemberName("with%percent")]  Percent,
-    [JsonStringEnumMemberName("with space")]    Space
+    [JsonStringEnumMemberName("with space")]    Space,
+    [JsonStringEnumMemberName("with\ttab")]     Tab
 
 }
 
@@ -72,7 +73,15 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
         await _app.DisposeAsync();
     }
 
-    /// <summary>Names EMN0006 leaves alone: every channel carries them.</summary>
+    /// <summary>
+    /// Names EMN0006 leaves alone: every channel carries them.
+    /// <para>
+    /// The tab is here because EMN0006 reported it for a while, on the grounds that RFC 9110 forbids
+    /// control characters in a field value. It does not forbid this one —
+    /// <c>field-content = field-vchar [ 1*( SP / HTAB / field-vchar ) field-vchar ]</c> admits it
+    /// exactly where a space is admitted — and the measurement below is what settles it either way.
+    /// </para>
+    /// </summary>
     [Theory]
     [InlineData("plain", nameof(Portability.Plain))]
     [InlineData("with?question", nameof(Portability.Question))]
@@ -80,6 +89,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
     [InlineData("with&amp", nameof(Portability.Ampersand))]
     [InlineData("with%percent", nameof(Portability.Percent))]
     [InlineData("with space", nameof(Portability.Space))]
+    [InlineData("with\ttab", nameof(Portability.Tab))]
     public async Task a_portable_name_binds_on_every_channel(string name, string expected) {
         Assert.Equal(expected, await Route(name));
         Assert.Equal(expected, await Query(name));

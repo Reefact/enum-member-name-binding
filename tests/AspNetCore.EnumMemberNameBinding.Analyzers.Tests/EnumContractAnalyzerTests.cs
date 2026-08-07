@@ -166,7 +166,7 @@ public sealed class EnumContractAnalyzerTests {
 
     /// <summary>
     /// The forbidden set was measured against a running server, channel by channel, not read off a
-    /// specification. See docs/rules/EMN0006.md for the table.
+    /// specification. See docs/rules/EMN0006.en.md for the table.
     /// </summary>
     [Theory]
     [InlineData(@"news/world", "a slash", "a route segment")]
@@ -201,6 +201,10 @@ public sealed class EnumContractAnalyzerTests {
     // Written as they must appear inside the snippet's own string literal.
     [InlineData("with\\\\backslash")]
     [InlineData("with\\\"quote")]
+    // A tab, which this rule reported for a while. RFC 9110 rules out the other control characters
+    // but admits this one wherever it admits a space, and the measurement agrees, so it stays legal.
+    // EMN0002 still rejects a name that begins or ends with one.
+    [InlineData("with\\ttab")]
     public async Task a_name_every_channel_can_carry_is_not_reported(string declared) {
         IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + $$"""
             public enum Section {
