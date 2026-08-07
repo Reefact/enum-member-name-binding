@@ -39,7 +39,7 @@ et fait porter la garde par les *checks*, pas par la revue.
 du dépôt : chaque lien doit résoudre, et chaque page appariée doit avoir la même structure
 (titres, puces, lignes de tableau) dans les deux langues. Un `CONTRIBUTING.md` à la racine
 implique donc un `docs/CONTRIBUTING.fr.md` de structure identique, plus une entrée dans
-`RootPages`. C'est un coût réel, à budgéter à l'étape 3.
+`RootPages`. C'est un coût réel, à budgéter au §4.3.
 
 ## 2. Étape 1 — rendre la protection possible
 
@@ -233,16 +233,100 @@ nuspec, smoke test avant toute étape irréversible). Quatre manques :
    un dépôt public.
 4. **`concurrency: cancel-in-progress: false`**, pour ne jamais interrompre une publication.
 
-## 7. Écart de couverture repéré au passage
+## 7. Ce qui passe avant le tag v1
 
-Hors périmètre strict CI/CD, mais à traiter avant la v1 puisque c'est la CI qui devrait le
-voir : la vérification du contenu de paquet, dans `ci.yml` comme dans `release.yml`, ne porte
-que sur `AspNetCore.EnumMemberNameBinding.nupkg`. Le second paquet publié,
-`AspNetCore.EnumMemberNameBinding.OpenApi`, n'est vérifié par rien — ni ses dépendances, ni
-son contenu — alors qu'il part sur nuget.org dans le même `dotnet nuget push artifacts/*.nupkg`.
-Une poignée de lignes dans le même style que l'existant.
+Décision prise : la v1 part **avant** le gros du plan. Le critère n'est pas « est-ce que ça
+touche aux fonctionnalités » mais la réversibilité. Un workflow, une ruleset, un template se
+corrigent n'importe quand. Un numéro de version sur nuget.org, jamais : `1.0.0` peut être
+délisté, il ne pourra plus jamais être republié. Seuls les items qui protègent **l'artefact**,
+et non le processus, passent donc devant — dans cet ordre.
 
-## 8. Volontairement écarté de la référence
+### 7.1 Baseline d'API publique (`PublicApiAnalyzers`)
+
+`PublicApiContractTests` teste des **comportements** (immuabilité de la liste rendue, ce que
+l'API refuse), pas la **surface**. Rien ne signalerait aujourd'hui qu'une surcharge disparaît
+ou qu'un type de retour se rétrécit sous un numéro de version qui promet la compatibilité.
+
+Mais l'argument décisif n'est pas le cliquet : générer `PublicAPI.Shipped.txt` produit
+**l'inventaire ligne à ligne de la surface publique**, au moment précis où elle cesse d'être
+révocable. C'est la relecture de v1, pas seulement la garde des versions suivantes — et
+`Shipped` veut dire *shipped* : remplir le fichier à la v1 fait coïncider la sémantique de
+l'outil avec la réalité, au lieu de rétro-documenter une promesse déjà faite.
+
+D'où sa place en tête : c'est **le seul des trois items qui peut changer ce qui est publié**.
+Si la relecture conclut qu'un type doit devenir `internal`, c'est un changement de code, et il
+doit atterrir avant le tag.
+
+Portée : les deux projets `IsPackable` — `AspNetCore.EnumMemberNameBinding` et
+`AspNetCore.EnumMemberNameBinding.OpenApi`. Pas le projet d'analyseurs, dont la surface
+publique est un jeu de diagnostics, pas une API.
+
+La surface est petite — de l'ordre de 25 entrées au total :
+
+```
+EnumMemberNames.GetPublicNames / GetPublicName / IsFlagsContract
+EnumMemberNameBindingOptions.ScanAssemblyContaining<T> / AddEnum<TEnum>
+EnumMemberNameBindingMvcBuilderExtensions.AddEnumMemberNameBinding
+EnumContractException, EnumMemberNameConverter (+ ctor, 2 overrides)
+EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames
+EnumMemberNameSchemaTransformer (+ ctor public, TransformAsync)
+```
+
+Deux entrées à trancher explicitement pendant la relecture : `EnumMemberNameConverter` et
+`EnumMemberNameSchemaTransformer` sont publics avec constructeur public. C'est probablement
+délibéré — `TypeConverterAttribute` pour l'un, l'exigence d'`AddSchemaTransformer<T>()` pour
+l'autre — mais le baseline est ce qui transforme ces deux-là en décisions plutôt qu'en
+héritage.
+
+Pièges d'installation :
+
+- `TreatWarningsAsErrors` est **déjà actif** dans `Directory.Build.props`, donc RS0016 est une
+  erreur dès que l'analyseur entre : le build casse tant que les baselines sont vides. Elles
+  doivent être remplies **dans le même commit**. Chemin fiable : ajouter le `PackageReference`
+  (`PrivateAssets="all"`), builder, récolter les messages RS0016 — ils donnent la signature
+  exacte à écrire.
+- Un seul TFM (`net10.0`) : pas de sous-dossiers par framework, contrairement à
+  `first-class-errors` qui multi-cible.
+- RS0026/RS0027 ne devraient pas se déclencher ici (aucune méthode à paramètre optionnel n'a
+  de surcharge), donc pas besoin de les désactiver comme le fait la référence. À confirmer au
+  build.
+- Au moment de la release : promouvoir les entrées de `PublicAPI.Unshipped.txt` vers
+  `PublicAPI.Shipped.txt`.
+
+### 7.2 Ruleset `v*`
+
+Voir §3.2. Cinq minutes, aucune dépendance, aucun code. C'est le moment exact où elle compte :
+le tag qu'on s'apprête à pousser crée une correspondance tag ↔ version publiée qui devient
+permanente.
+
+### 7.3 Dry run
+
+`workflow_dispatch` sur `release.yml`, avec le vrai numéro de version. Il prouve l'OIDC et les
+vérifications de paquet avant que le tag existe — ce pour quoi il a été écrit.
+
+**En dernier**, une fois §7.1 fusionné : le dry run doit exercer le commit **final**. Lancé
+avant, il prouve un commit qui ne sera pas celui publié.
+
+La ruleset `main` (§3.1) peut se poser dès maintenant en parallèle, mais en version réduite —
+*require a pull request* et blocage du force-push, **sans check requis**, puisque le job
+agrégé `CI` n'existe pas encore. Exiger les deux noms de matrice actuels rejouerait exactement
+le piège du §2.1. Le check requis arrive avec l'étape 1.
+
+## 8. Écart de couverture repéré au passage
+
+La vérification du contenu de paquet, dans `ci.yml` comme dans `release.yml`, ne porte que sur
+`AspNetCore.EnumMemberNameBinding.nupkg`. Le second paquet publié,
+`AspNetCore.EnumMemberNameBinding.OpenApi`, n'est vérifié par rien — ni ses dépendances, ni son
+contenu — alors qu'il part sur nuget.org dans le même `dotnet nuget push artifacts/*.nupkg`.
+
+**Vérifié à la main avant la v1** (`dotnet pack -p:Version=1.0.0-check`, inspection des deux
+`.nupkg`) : les deux paquets sont sains. Le principal déclare son `frameworkReference`
+Microsoft.AspNetCore.App et embarque `analyzers/dotnet/cs/` ; celui d'OpenApi porte ses trois
+dépendances, dont le plancher `Microsoft.OpenApi` 2.11.0 qui évite l'advisory, et livre bien
+son `build/*.targets`. Le trou est donc réel dans la CI mais ne cache aucun défaut, ce qui est
+la raison pour laquelle il ne bloque pas la v1 — il suit à l'étape 6.
+
+## 9. Volontairement écarté de la référence
 
 | Ce que fait `first-class-errors` | Pourquoi pas ici |
 |---|---|
@@ -254,20 +338,32 @@ Une poignée de lignes dans le même style que l'existant.
 | `dependabot-automerge` | Utile en solo, mais **strictement** après le ruleset : sans checks requis, l'auto-merge fusionne immédiatement. À faire en phase 2, et en version simplifiée (patch/minor seulement) |
 | Matrice Windows | Aucun code sensible à la plateforme dans cette bibliothèque ; la matrice actuelle porte sur les SDK, ce qui est le bon axe (deux régressions passées venaient d'un écart d'analyseur entre SDK) |
 
-## 9. Séquencement proposé
+## 10. Séquencement
 
-Chaque étape est une PR ; à partir de la 2, elles passent toutes par le circuit protégé.
+### Avant le tag v1
 
-| # | PR | Contenu | Effort |
-|---|---|---|---|
-| 1 | `ci: add an aggregate gate and harden the workflows` | job `CI`, concurrency, timeouts, permissions par job, épinglage SHA + montée de version des actions | ~1 h |
-| 2 | *(pas de PR)* | Rulesets `main` et `v*`, réglages Actions du dépôt | ~20 min |
-| 3 | `ci: guard the supply chain` | dependabot, dependency-review, codeql, lint (shellcheck + actionlint) | ~1 h |
-| 4 | `docs: state how this repository is contributed to` | template de PR, CODEOWNERS, CONTRIBUTING + SECURITY **et leurs traductions**, entrées `RootPages` | ~2 h |
-| 5 | `ci: lint the commit messages` | script partagé, hook `commit-msg`, workflow ; puis ajout aux checks requis | ~1 h |
-| 6 | `ci: make a release provable and deliberate` | garde tag-sur-`main`, attestation, reviewer sur l'environnement `nuget`, concurrency ; + vérification du paquet OpenApi (§7) | ~1 h |
-| 7 | *après la v1* | Scorecard + badge, dependabot-automerge | — |
+| # | Quoi | Effort |
+|---|---|---|
+| A | `build: baseline the public API before v1 promises it` — PublicApiAnalyzers sur les deux projets packables, baselines remplies, surface relue (§7.1) | ~45 min |
+| B | Ruleset `v*` ; et, en option, ruleset `main` en version réduite — PR requise, sans check (§7.2) | ~15 min |
+| C | Dry run de `release.yml` sur le commit final, puis tag `v1.0.0` (§7.3) | ~15 min |
 
-**Coupe minimale pour débloquer la v1** : étapes 1, 2 et 6. C'est ce qui répond exactement à
-la demande — PR obligatoire, `main` protégée, publication sûre — en une demi-journée. Les
-étapes 3 à 5 sont du confort et de la posture, et peuvent suivre la v1 sans rien bloquer.
+L'ordre A → B → C est contraint : A peut changer ce qui est publié, C doit exercer ce qui l'est.
+
+### Après la v1
+
+Chaque étape est une PR, toutes par le circuit protégé.
+
+| # | PR | Contenu | Détail | Effort |
+|---|---|---|---|---|
+| 1 | `ci: add an aggregate gate and harden the workflows` | job `CI`, concurrency, timeouts, permissions par job, épinglage SHA + montée de version des actions ; puis ajout de `CI` aux checks requis | §2 | ~1 h |
+| 2 | *(pas de PR)* | Ruleset `main` complète, réglages Actions du dépôt | §3.1, §2.3 | ~15 min |
+| 3 | `ci: guard the supply chain` | dependabot, dependency-review, codeql, lint (shellcheck + actionlint) | §5 | ~1 h |
+| 4 | `docs: state how this repository is contributed to` | template de PR, CODEOWNERS, CONTRIBUTING + SECURITY **et leurs traductions**, entrées `RootPages` | §4.1 à §4.3 | ~2 h |
+| 5 | `ci: lint the commit messages` | script partagé, hook `commit-msg`, workflow ; puis ajout aux checks requis | §4.4 | ~1 h |
+| 6 | `ci: make a release provable and deliberate` | garde tag-sur-`main`, attestation, reviewer sur l'environnement `nuget`, concurrency ; + vérification du paquet OpenApi | §6, §8 | ~1 h |
+| 7 | *plus tard* | Scorecard + badge, dependabot-automerge | §5, §9 | — |
+
+L'étape 6 gagne en valeur une fois la v1 publiée, pas l'inverse : les releases suivantes sont
+des correctifs sur un paquet vivant, où l'approbation manuelle et l'attestation comptent plus
+que sur une première publication délibérée.
