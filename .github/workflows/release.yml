@@ -36,6 +36,27 @@ jobs:
         with:
           global-json-file: global.json
 
+      # A tag is what triggers a publication, and a tag can be pushed anywhere. Nothing else in this
+      # pipeline would notice: the branch ruleset governs what lands on main, not where a ref points,
+      # so a `v*` tag placed on an unreviewed branch tip would build, pack and publish exactly as a
+      # release does. What proves a commit was reviewed is that it is on main, so that is what is
+      # checked — before anything is built, and long before anything is irreversible.
+      #
+      # Skipped on a dry run, deliberately: rehearsing a release from a branch is the point of the
+      # dry run, and it publishes nothing.
+      - name: Refuse a tag that is not on main
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          # The checkout above resolved a tag, so main is not necessarily present as a ref yet.
+          git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
+          if git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo "$GITHUB_REF_NAME points at $GITHUB_SHA, which is on main."
+          else
+            echo "::error::$GITHUB_REF_NAME points at $GITHUB_SHA, which is not on main. A release is published from reviewed history only: delete the tag, land the commit through a pull request, then tag again."
+            exit 1
+          fi
+
       - name: Derive the version
         id: version
         # The dispatch input arrives through the environment rather than through ${{ }}, so that a
@@ -48,6 +69,26 @@ jobs:
             version="$INPUT_VERSION"
           else
             version="${GITHUB_REF_NAME#v}"
+          fi
+
+          # The trigger is `v*`, which matches far more than a version: `vnext`, `v1`, `v1.0.0.0`,
+          # and — because Git allows the character in a ref name — `v1.0.0;whoami`. Until here that
+          # string is nothing but an attacker-influenced token, and it is about to become both an
+          # MSBuild property and the version under which two packages are published forever. So it is
+          # validated against a SemVer 2.0.0 allowlist first, and a name that does not match stops the
+          # run before a single project is built.
+          #
+          # Build metadata (`1.0.0+abc`) is refused rather than accepted: nuget.org drops it from the
+          # published version, so a tag carrying it would name one thing and publish another.
+          #
+          # Matched with bash's own `=~` rather than piped to grep, because grep decides line by line:
+          # a value whose FIRST line is a valid version would satisfy it and carry anything after the
+          # newline through. A ref name cannot hold a newline, but the dispatch input can, and the two
+          # paths meet here. `=~` anchors ^ and $ to the whole string, so it cannot be split that way.
+          semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?$'
+          if [[ ! "$version" =~ $semver ]]; then
+            echo "::error::'$version' is not a SemVer 2.0.0 version. Expected X.Y.Z or X.Y.Z-prerelease, with no build metadata — for example 1.0.0 or 1.0.0-preview.1."
+            exit 1
           fi
 
           # SemVer puts the pre-release identifier after the first hyphen, so 1.0.0-preview.1 has one
@@ -65,11 +106,18 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Version $version (prerelease: $prerelease)"
 
+      # The version reaches the shell through the environment, not through ${{ }} — the same rule the
+      # step above states for the dispatch input, which this step used to break. Interpolated, a tag
+      # named `v1.0.0;id` would have run `id`. The allowlist already makes that string unreachable;
+      # this keeps the guarantee from resting on the allowlist alone.
       - name: Build, test and pack
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
         run: |
-          dotnet build -c Release -p:Version=${{ steps.version.outputs.value }}
+          set -euo pipefail
+          dotnet build -c Release -p:Version="$VERSION"
           dotnet test -c Release --no-build
-          dotnet pack -c Release --no-build -o artifacts -p:Version=${{ steps.version.outputs.value }}
+          dotnet pack -c Release --no-build -o artifacts -p:Version="$VERSION"
 
       - name: Verify the package declares its ASP.NET Core framework reference and ships the analyzers
         run: |
@@ -98,18 +146,27 @@ jobs:
         with:
           user: ${{ vars.NUGET_USER }}
 
+      # The key travels by environment for the same reason the version does. Interpolating a secret
+      # into a run block writes it into the generated script, where an unlucky `set -x` or a shell
+      # error message can spill what the log masker only knows how to redact after the fact.
       - name: Confirm the credentials were issued
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
-          if [ -z "${{ steps.login.outputs.NUGET_API_KEY }}" ]; then
+          set -euo pipefail
+          if [ -z "$NUGET_API_KEY" ]; then
             echo "::error::trusted publishing returned no API key"; exit 1
           fi
           echo "A short-lived API key was issued."
 
       - name: Push
         if: env.DRY_RUN != 'true'
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
         run: |
+          set -euo pipefail
           dotnet nuget push artifacts/*.nupkg \
-            --api-key ${{ steps.login.outputs.NUGET_API_KEY }} \
+            --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json
 
       # --latest=false is not implied by --prerelease: the two are separate fields, and a repository

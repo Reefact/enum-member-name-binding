@@ -226,11 +226,23 @@ le lancer avant, c'est produire un mauvais score et un badge à cacher.
 `release.yml` est déjà en bon état (OIDC / trusted publishing, dry run, vérification du
 nuspec, smoke test avant toute étape irréversible). Quatre manques :
 
-1. **Rien ne garantit que le commit tagué a vu la CI.** Une fois `main` protégée, tout commit
-   de `main` est vert — mais un tag peut être posé n'importe où. Ajouter un premier pas qui
+1. **Rien ne garantit que le commit tagué a vu la CI.** ~~Une fois `main` protégée, tout commit
+   de `main` est vert — mais un tag peut être posé n'importe où.~~ **Fait** : un premier pas
    refuse de publier si `$GITHUB_SHA` n'est pas contenu dans `origin/main` (`git merge-base
-   --is-ancestor`). Quelques lignes, et cela ferme le seul chemin restant vers une
-   publication non revue.
+   --is-ancestor`), avant que quoi que ce soit ne soit construit. La ruleset de branche gouverne
+   ce qui atterrit sur `main`, pas où pointe une ref — c'était donc le dernier chemin vers une
+   publication non revue. Sauté sur un dry run, puisque répéter une release depuis une branche
+   est précisément son objet.
+
+   **Fait aussi, et lié** : la validation SemVer stricte du numéro de version. Le déclencheur
+   est `v*`, qui attrape `vnext`, `v1`, `v1.0.0.0` — et, Git autorisant le caractère dans un nom
+   de ref, `v1.0.0;whoami`. La valeur était ensuite interpolée par `${{ }}` **dans le corps du
+   `run:`** de l'étape de pack, ce qui en faisait du script et non de la donnée : le fichier
+   énonçait la règle pour l'input de dispatch et l'enfreignait quatre lignes plus bas. La version
+   est désormais validée contre une liste blanche SemVer 2.0.0 avant tout build, transmise par
+   l'environnement, et la clé API OIDC de même. Le métadonnée de build (`1.0.0+abc`) est refusée :
+   nuget.org la retire de la version publiée, si bien qu'un tag qui en porte annoncerait une
+   chose et publierait l'autre.
 2. **Attestation de provenance.** `actions/attest-build-provenance` avec
    `attestations: write`, pour que `gh attestation verify` réponde sur les `.nupkg` publiés.
    La référence le fait ; c'est aussi un point Scorecard.
