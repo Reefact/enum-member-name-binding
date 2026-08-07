@@ -1,6 +1,3 @@
 #nullable enable
-AspNetCore.EnumMemberNameBinding.OpenApi.EnumMemberNameSchemaTransformer
-AspNetCore.EnumMemberNameBinding.OpenApi.EnumMemberNameSchemaTransformer.EnumMemberNameSchemaTransformer() -> void
-AspNetCore.EnumMemberNameBinding.OpenApi.EnumMemberNameSchemaTransformer.TransformAsync(Microsoft.OpenApi.OpenApiSchema! schema, Microsoft.AspNetCore.OpenApi.OpenApiSchemaTransformerContext! context, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task!
-Microsoft.AspNetCore.OpenApi.EnumMemberNameOpenApiOptionsExtensions
-static Microsoft.AspNetCore.OpenApi.EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(this Microsoft.AspNetCore.OpenApi.OpenApiOptions! options) -> Microsoft.AspNetCore.OpenApi.OpenApiOptions!
+Microsoft.Extensions.DependencyInjection.EnumMemberNameOpenApiOptionsExtensions
+static Microsoft.Extensions.DependencyInjection.EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(this Microsoft.AspNetCore.OpenApi.OpenApiOptions! options) -> Microsoft.AspNetCore.OpenApi.OpenApiOptions!

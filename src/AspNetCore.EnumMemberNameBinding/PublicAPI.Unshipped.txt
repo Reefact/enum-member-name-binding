@@ -12,12 +12,8 @@ AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.ConfigureJsonSeria
 AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.EnumMemberNameBindingOptions() -> void
 AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.EnumTypes.get -> System.Collections.Generic.IList<System.Type!>!
 AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.ScanAssemblyContaining<T>() -> AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions!
-AspNetCore.EnumMemberNameBinding.EnumMemberNameConverter
-AspNetCore.EnumMemberNameBinding.EnumMemberNameConverter.EnumMemberNameConverter(System.Type! type) -> void
 AspNetCore.EnumMemberNameBinding.EnumMemberNames
 Microsoft.Extensions.DependencyInjection.EnumMemberNameBindingMvcBuilderExtensions
-override AspNetCore.EnumMemberNameBinding.EnumMemberNameConverter.ConvertFrom(System.ComponentModel.ITypeDescriptorContext? context, System.Globalization.CultureInfo? culture, object! value) -> object?
-override AspNetCore.EnumMemberNameBinding.EnumMemberNameConverter.ConvertTo(System.ComponentModel.ITypeDescriptorContext? context, System.Globalization.CultureInfo? culture, object? value, System.Type! destinationType) -> object?
 static AspNetCore.EnumMemberNameBinding.EnumMemberNames.GetPublicName(System.Enum! value) -> string?
 static AspNetCore.EnumMemberNameBinding.EnumMemberNames.GetPublicNames(System.Type! enumType) -> System.Collections.Generic.IReadOnlyList<string!>?
 static AspNetCore.EnumMemberNameBinding.EnumMemberNames.IsFlagsContract(System.Type! enumType) -> bool

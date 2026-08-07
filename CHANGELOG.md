@@ -17,9 +17,14 @@ The package version is independent of the .NET version it targets.
 
 - `AddEnumMemberNameBinding()` on `IMvcBuilder`: route values, query strings, form fields and
   headers accept the enum member names declared with `[JsonStringEnumMemberName]`.
-- `EnumMemberNameConverter`, a `TypeConverter` driven by the native attribute. ASP.NET Core resolves
+- Binding through a `TypeConverter` driven by the native attribute. ASP.NET Core resolves
   simple-type binders through `TypeDescriptor`, so no model binder is replaced and nullable enums,
-  headers and form fields are covered by construction.
+  headers and form fields are covered by construction. The converter is an implementation detail:
+  `AddEnumMemberNameBinding()` is the only supported way in.
+- A committed public API baseline for both packages, so a change to the published surface is a
+  reviewed diff rather than a side effect. The surface was read symbol by symbol before this
+  release and deliberately kept to what a consumer needs: 19 entries in the main package, 2 in the
+  companion.
 - Start-up validation of every registered contract, raising `EnumContractException` for duplicate
   public names, names with surrounding whitespace, and commas inside a `[Flags]` member name.
 - `[Flags]` support: comma-separated lists, matching `System.Text.Json`.
