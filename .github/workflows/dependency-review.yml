@@ -1,0 +1,46 @@
+name: dependency-review
+
+# Fails a pull request that would introduce a known-vulnerable dependency, by diffing the base and
+# head dependency graphs.
+#
+# It is the upstream half of what Dependabot does. Dependabot reacts after a vulnerable package is
+# already on main and opens a pull request to get rid of it; this refuses to let it land in the
+# first place, at the one moment when removing it costs a line in a csproj rather than a release.
+#
+# It deliberately does not gate on a CVE published overnight against a dependency already in the
+# tree — it only ever sees what a pull request changes. That case belongs to Dependabot and to the
+# NuGet audit, not here.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: dependency-review-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    # A graph diff is seconds; the cap bounds a stuck runner.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          # Moderate and above. Because only the pull request's own dependency changes are
+          # considered, this is a real gate rather than a wall of pre-existing noise: every finding
+          # is something this change would add.
+          fail-on-severity: moderate
+          # No comment is posted — that would need pull-requests: write, and the failed check is
+          # already the signal.

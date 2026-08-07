@@ -1,0 +1,58 @@
+name: codeql
+
+# Static security analysis of the C# sources, uploaded to the repository's code-scanning dashboard.
+#
+# It complements what the build already enforces rather than repeating it. The Roslyn analyzers and
+# the warnings-as-errors ratchet answer "is this code correct and consistent"; CodeQL asks a
+# different question — whether a value that arrives from outside reaches somewhere it should not.
+# For a library whose whole job is to accept enum names off a route, a query string, a form field
+# and a header, that is a question worth asking on every change.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Weekly, so queries shipped after a change still run against it. Most findings arrive this way:
+    # the code did not change, the analysis did.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: codeql-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: CodeQL analyze (C#)
+    runs-on: ubuntu-latest
+    # Buildless extraction takes a couple of minutes; the cap bounds an analysis that hangs.
+    timeout-minutes: 20
+    # Declared on the job rather than at workflow level, so a job added later inherits nothing it
+    # did not ask for.
+    permissions:
+      security-events: write   # upload the results to the code-scanning dashboard
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
+        with:
+          languages: csharp
+          # Buildless extraction: no SDK to install and no build to keep working, which also
+          # sidesteps compiler tracing on a very new SDK. Switch to `manual` with a real build if
+          # deeper data-flow analysis is ever wanted.
+          build-mode: none
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
+        with:
+          category: "/language:csharp"

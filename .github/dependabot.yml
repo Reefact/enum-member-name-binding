@@ -1,0 +1,40 @@
+version: 2
+
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    # Matches the commit convention this repository already follows, so a routine dependency bump
+    # reads like every other commit and passes the same lint.
+    commit-message:
+      prefix: "build"
+    ignore:
+      # The version of Microsoft.CodeAnalysis.* the analyzer compiles against sets the minimum
+      # Roslyn a host must carry to load it: raise it, and the shipped analyzer stops loading on
+      # older SDKs and IDEs. That is a decision about who the package still supports, not routine
+      # maintenance, so it should arrive as a deliberate change rather than as a weekly pull
+      # request nobody asked for. A single nuget entry cannot be scoped to one project, so the
+      # freeze also covers the analyzer test project, which pins the same version on purpose.
+      - dependency-name: "Microsoft.CodeAnalysis.CSharp"
+      - dependency-name: "Microsoft.CodeAnalysis.Common"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci"
+    # This is what makes SHA pinning sustainable. Pinned by digest, an action never moves on its
+    # own; without something proposing the bumps, "never moves" quietly becomes "never updated".
+    groups:
+      # codeql-action ships init and analyze as separate actions that MUST run the same version:
+      # analyze refuses a database built by a different one. Bumping either alone leaves codeql.yml
+      # mismatched and red, so they move together or not at all.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
