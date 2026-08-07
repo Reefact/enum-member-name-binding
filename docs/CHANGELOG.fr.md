@@ -11,11 +11,6 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
-### Ajouté
-
-- Une icône sur les deux paquets, pour qu'ils soient identifiables sur nuget.org au lieu d'apparaître
-  derrière le placeholder par défaut.
-
 ## [1.0.0-preview.1] - 2026-08-07
 
 ### Ajouté
@@ -74,6 +69,10 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
   en fonctionnement.
 - Le compagnon relève le plancher de `Microsoft.OpenApi` à 2.11.0. `Microsoft.AspNetCore.OpenApi`
   10.0.x résout 2.0.0, qui porte l'avis de sécurité GHSA-v5pm-xwqc-g5wc.
+- Une icône sur les deux paquets, pour qu'ils soient identifiables sur nuget.org au lieu d'apparaître
+  derrière le placeholder par défaut. Le test de fumée vérifie les deux moitiés sur chaque paquet —
+  que le `.nuspec` déclare une icône, et que le fichier qu'il nomme s'y trouve réellement — car garder
+  l'inclusion sans la propriété produit un paquet parfaitement valide que nuget.org affiche gris.
 
 - `EnumMemberNames.GetPublicName(Enum)`, pour la génération de liens. ASP.NET Core formate les valeurs
   de route sans consulter `TypeDescriptor` : un lien construit à partir d'une valeur d'énumération
