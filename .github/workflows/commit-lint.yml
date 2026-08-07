@@ -1,0 +1,79 @@
+name: commit-lint
+
+# Lint every non-merge commit a pull request adds, with the same script the local hook runs.
+#
+# The hook is the fast feedback; this is the guarantee. `git commit --no-verify` bypasses the hook
+# silently, and a contributor who never ran `git config core.hooksPath .githooks` has no hook at
+# all — so without this the convention would hold only for people who opted into it.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: commit-lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  commit-lint:
+    name: Conventional commits
+    runs-on: ubuntu-latest
+    # Reading a handful of messages is seconds; the cap bounds a stuck runner.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The pull request's own commits are needed, so a shallow tip will not do.
+          fetch-depth: 0
+
+      - name: Lint the commits this pull request adds
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          echo "Linting non-merge commits in ${BASE_SHA}..${HEAD_SHA}"
+          commits="$(git rev-list --no-merges "${BASE_SHA}..${HEAD_SHA}")"
+          if [ -z "${commits}" ]; then
+            echo "No non-merge commits to lint."
+            exit 0
+          fi
+
+          status=0
+          for sha in ${commits}; do
+            echo "── $(git log -1 --format='%h %s' "${sha}")"
+
+            # Dependabot writes its own mechanical headers and cannot amend them; their length is
+            # driven by the package name, so a long one overruns the limit on its own. They come
+            # from a trusted bot rather than a contributor, so they are exempt here instead of
+            # failing routine dependency pull requests. The author is what identifies them, and a
+            # human commit never carries it — so if one of those messages is ever rewritten by
+            # hand, the author changes and the rewrite is linted normally.
+            author_email="$(git log -1 --format='%ae' "${sha}")"
+            case "$author_email" in
+              *dependabot*)
+                echo "   skipped (Dependabot-authored)"
+                continue
+                ;;
+            esac
+
+            if git log -1 --format=%B "${sha}" | tools/commit-lint/lint-commit-message.sh --ci -; then
+              echo "   ok"
+            else
+              status=1
+            fi
+          done
+
+          if [ "${status}" -ne 0 ]; then
+            echo
+            echo "One or more commit messages do not follow the convention."
+            echo "Fix them with an interactive rebase (git rebase -i) before merge."
+          fi
+          exit "${status}"
