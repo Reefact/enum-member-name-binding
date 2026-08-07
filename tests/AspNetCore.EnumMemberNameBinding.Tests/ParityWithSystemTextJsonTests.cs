@@ -66,7 +66,7 @@ public sealed class ParityWithSystemTextJsonTests {
     public async Task header_accepts_exactly_what_the_body_accepts(string input) {
         using HttpRequestMessage request = new(HttpMethod.Get, "/status/header");
         request.Headers.TryAddWithoutValidation("X-Status", input);
-        using HttpResponseMessage response = await _api.Client.SendAsync(request);
+        using HttpResponseMessage response = await _api.Client.SendAsync(request, TestContext.Current.CancellationToken);
 
         await AssertMatchesJson<ProductStatus>(input, response);
     }
@@ -75,7 +75,7 @@ public sealed class ParityWithSystemTextJsonTests {
     [MemberData(nameof(StatusInputs))]
     public async Task form_field_accepts_exactly_what_the_body_accepts(string input) {
         using FormUrlEncodedContent content = new([new KeyValuePair<string, string>("value", input)]);
-        using HttpResponseMessage response = await _api.Client.PostAsync("/status/form", content);
+        using HttpResponseMessage response = await _api.Client.PostAsync("/status/form", content, TestContext.Current.CancellationToken);
 
         await AssertMatchesJson<ProductStatus>(input, response);
     }
@@ -94,7 +94,7 @@ public sealed class ParityWithSystemTextJsonTests {
 
     [Fact]
     public async Task an_absent_nullable_value_binds_to_null() {
-        using HttpResponseMessage response = await _api.Client.GetAsync("/status/query-nullable");
+        using HttpResponseMessage response = await _api.Client.GetAsync("/status/query-nullable", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("<null>", await ReadBoundValue(response));
@@ -103,7 +103,7 @@ public sealed class ParityWithSystemTextJsonTests {
     [Fact]
     public async Task the_request_body_still_honours_the_contract() {
         using StringContent content = new("""{"Value":"out_of_stock"}""", Encoding.UTF8, "application/json");
-        using HttpResponseMessage response = await _api.Client.PostAsync("/status/body", content);
+        using HttpResponseMessage response = await _api.Client.PostAsync("/status/body", content, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(nameof(ProductStatus.OutOfStock), await ReadBoundValue(response));
@@ -111,16 +111,16 @@ public sealed class ParityWithSystemTextJsonTests {
 
     [Fact]
     public async Task a_rejected_value_produces_a_validation_error_not_a_default_value() {
-        using HttpResponseMessage response = await _api.Client.GetAsync("/status/query?value=bogus");
+        using HttpResponseMessage response = await _api.Client.GetAsync("/status/query?value=bogus", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        string body = await response.Content.ReadAsStringAsync();
+        string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         Assert.Contains("\"errors\"", body, StringComparison.Ordinal);
         Assert.Contains("value", body, StringComparison.Ordinal);
     }
 
     private async Task AssertParity<TEnum>(string input, string url) where TEnum : struct, Enum {
-        using HttpResponseMessage response = await _api.Client.GetAsync(url);
+        using HttpResponseMessage response = await _api.Client.GetAsync(url, TestContext.Current.CancellationToken);
         await AssertMatchesJson<TEnum>(input, response);
     }
 
@@ -130,14 +130,14 @@ public sealed class ParityWithSystemTextJsonTests {
         if (expected is null) {
             Assert.True(response.StatusCode == HttpStatusCode.BadRequest,
                         $"System.Text.Json rejects '{input}' for {typeof(TEnum).Name}, but the HTTP channel answered " +
-                        $"{(int)response.StatusCode} with '{await response.Content.ReadAsStringAsync()}'.");
+                        $"{(int)response.StatusCode} with '{await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)}'.");
 
             return;
         }
 
         Assert.True(response.StatusCode == HttpStatusCode.OK,
                     $"System.Text.Json accepts '{input}' for {typeof(TEnum).Name} as '{expected}', but the HTTP channel " +
-                    $"answered {(int)response.StatusCode} with '{await response.Content.ReadAsStringAsync()}'.");
+                    $"answered {(int)response.StatusCode} with '{await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)}'.");
 
         Assert.Equal(expected.Value.ToString(), await ReadBoundValue(response));
     }
@@ -160,7 +160,7 @@ public sealed class ParityWithSystemTextJsonTests {
     }
 
     private static async Task<string> ReadBoundValue(HttpResponseMessage response) {
-        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
         return document.RootElement.GetProperty("value").GetString()
             ?? throw new InvalidOperationException("No bound value in the response.");

@@ -224,7 +224,7 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        string flagged = diagnostics[0].Location.SourceTree!.GetText().ToString(diagnostics[0].Location.SourceSpan);
+        string flagged = diagnostics[0].Location.SourceTree!.GetText(TestContext.Current.CancellationToken).ToString(diagnostics[0].Location.SourceSpan);
 
         Assert.Equal("\"same\"", flagged);
     }

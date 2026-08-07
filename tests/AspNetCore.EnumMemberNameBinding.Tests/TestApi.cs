@@ -114,7 +114,7 @@ public sealed class TestApi : IAsyncLifetime {
 
     public HttpClient Client { get; private set; } = null!;
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -147,7 +147,7 @@ public sealed class TestApi : IAsyncLifetime {
         Client = new HttpClient { BaseAddress = new Uri(address) };
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         Client?.Dispose();
         if (_app is not null) {
             await _app.StopAsync();

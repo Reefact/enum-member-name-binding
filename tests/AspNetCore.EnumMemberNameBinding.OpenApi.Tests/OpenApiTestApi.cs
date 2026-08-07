@@ -80,7 +80,7 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
 
     public JsonElement Document { get; private set; }
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -105,12 +105,17 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
         Document = JsonDocument.Parse(await Client.GetStringAsync("/openapi/v1.json")).RootElement.Clone();
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         Client?.Dispose();
         if (_app is not null) {
             await _app.StopAsync();
             await _app.DisposeAsync();
         }
+
+        // Required by CA1816 rather than by this type: xUnit v3's IAsyncLifetime extends
+        // IAsyncDisposable, and this class is a base, so a derived type introducing a finalizer
+        // would otherwise have to re-implement disposal just to suppress it.
+        GC.SuppressFinalize(this);
     }
 
     public JsonElement Schema(string name) => Document.GetProperty("components").GetProperty("schemas").GetProperty(name);

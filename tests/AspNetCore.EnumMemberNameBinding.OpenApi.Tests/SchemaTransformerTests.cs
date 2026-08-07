@@ -89,8 +89,8 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
         foreach (JsonElement value in api.Schema(nameof(OrderState)).GetProperty("enum").EnumerateArray()) {
             string advertised = value.GetString()!;
 
-            using HttpResponseMessage query = await api.Client.GetAsync("/orders?state=" + Uri.EscapeDataString(advertised));
-            using HttpResponseMessage route = await api.Client.GetAsync("/orders/" + Uri.EscapeDataString(advertised));
+            using HttpResponseMessage query = await api.Client.GetAsync("/orders?state=" + Uri.EscapeDataString(advertised), TestContext.Current.CancellationToken);
+            using HttpResponseMessage route = await api.Client.GetAsync("/orders/" + Uri.EscapeDataString(advertised), TestContext.Current.CancellationToken);
 
             Assert.True(query.StatusCode == HttpStatusCode.OK, $"the document advertises '{advertised}' but the query string rejected it.");
             Assert.True(route.StatusCode == HttpStatusCode.OK, $"the document advertises '{advertised}' but the route rejected it.");
@@ -106,7 +106,7 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
         string[] advertised = [.. api.Schema(nameof(OrderState)).GetProperty("enum").EnumerateArray().Select(v => v.GetString()!)];
         Assert.DoesNotContain(value, advertised);
 
-        using HttpResponseMessage response = await api.Client.GetAsync("/orders?state=" + Uri.EscapeDataString(value));
+        using HttpResponseMessage response = await api.Client.GetAsync("/orders?state=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
@@ -124,7 +124,7 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
         string pattern = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
         Assert.Matches(pattern, value);
 
-        using HttpResponseMessage response = await api.Client.GetAsync("/tokens?scopes=" + Uri.EscapeDataString(value));
+        using HttpResponseMessage response = await api.Client.GetAsync("/tokens?scopes=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -137,7 +137,7 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
         string pattern = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
         Assert.False(Regex.IsMatch(value, pattern), $"'{value}' unexpectedly matches the advertised pattern.");
 
-        using HttpResponseMessage response = await api.Client.GetAsync("/tokens?scopes=" + Uri.EscapeDataString(value));
+        using HttpResponseMessage response = await api.Client.GetAsync("/tokens?scopes=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
