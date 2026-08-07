@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # A run that never gets a runner cannot be cancelled or re-run through the API — GitHub answers
+  # "cannot cancel a workflow re-run that has not yet queued" and "this workflow is already running".
+  # Without a manual trigger the only way out is an empty commit, so there is one.
+  workflow_dispatch:
 
 permissions:
   contents: read
