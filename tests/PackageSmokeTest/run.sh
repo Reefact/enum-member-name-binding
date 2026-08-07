@@ -77,6 +77,54 @@ dotnet pack "$ROOT/EnumMemberNameBinding.slnx" -c Release -o "$WORK/feed" -p:Ver
     > "$WORK/pack.log" 2>&1 || { cat "$WORK/pack.log"; exit 1; }
 ls -1 "$WORK/feed"/*.nupkg | sed 's|.*/|   |'
 
+step "Both packages carry their icon"
+# PackageIcon is declared once in Directory.Build.props, but the file has to be included by each
+# packable project, and only the second half is easy to forget when a package is added. Getting it
+# wrong is not always loud: naming a file nothing packs fails the pack above with NU5046, while
+# dropping the property and keeping the include packs a perfectly valid package that nuget.org
+# shows behind the grey placeholder. Both halves are checked here, per package.
+python3 - "$WORK/feed" <<'PY' || FAILURES=$((FAILURES + 1))
+import glob, os, sys, zipfile
+import xml.etree.ElementTree as ET
+
+feed = sys.argv[1]
+ok   = True
+
+def check(label, condition, detail=""):
+    global ok
+    if condition:
+        print(f"   \033[32mok\033[0m   {label}")
+    else:
+        ok = False
+        print(f"   \033[31mFAIL\033[0m {label}")
+        if detail:
+            print(f"        {detail}")
+
+for package in ("AspNetCore.EnumMemberNameBinding", "AspNetCore.EnumMemberNameBinding.OpenApi"):
+    # The trailing [0-9] keeps the base package's glob from also matching the OpenApi one.
+    found = glob.glob(os.path.join(feed, f"{package}.[0-9]*.nupkg"))
+    if len(found) != 1:
+        check(f"{package}: exactly one .nupkg in the feed", False, f"got {sorted(map(os.path.basename, found))}")
+        continue
+
+    with zipfile.ZipFile(found[0]) as nupkg:
+        entries = nupkg.namelist()
+        nuspec  = next((e for e in entries if e.lower() == f"{package}.nuspec".lower()), None)
+        if nuspec is None:
+            check(f"{package}: the .nupkg holds its .nuspec", False, f"got {entries}")
+            continue
+        # The nuspec carries a default namespace, so match on the local name rather than hardcode it.
+        declared = next((e.text for e in ET.fromstring(nupkg.read(nuspec)).iter()
+                         if e.tag.rpartition('}')[2] == "icon"), None)
+
+    check(f"{package}: the .nuspec declares an icon", declared is not None)
+    check(f"{package}: the declared icon is in the package",
+          declared is not None and declared.replace("\\", "/") in entries,
+          f"declares {declared!r}, package holds {sorted(e for e in entries if e.lower().endswith('.png'))}")
+
+sys.exit(0 if ok else 1)
+PY
+
 step "Compile a consumer that references the package"
 # No --no-restore: restore is part of what is being tested.
 dotnet build "$HERE/Consumer/Consumer.csproj" -c Release -p:SmokePackageVersion="$VERSION" \

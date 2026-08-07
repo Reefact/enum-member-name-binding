@@ -11,6 +11,11 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
+### Ajouté
+
+- Une icône sur les deux paquets, pour qu'ils soient identifiables sur nuget.org au lieu d'apparaître
+  derrière le placeholder par défaut.
+
 ## [1.0.0-preview.1] - 2026-08-07
 
 ### Ajouté
