@@ -272,11 +272,28 @@ EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames
 EnumMemberNameSchemaTransformer (+ ctor public, TransformAsync)
 ```
 
-Deux entrées à trancher explicitement pendant la relecture : `EnumMemberNameConverter` et
-`EnumMemberNameSchemaTransformer` sont publics avec constructeur public. C'est probablement
-délibéré — `TypeConverterAttribute` pour l'un, l'exigence d'`AddSchemaTransformer<T>()` pour
-l'autre — mais le baseline est ce qui transforme ces deux-là en décisions plutôt qu'en
-héritage.
+**Fait.** La relecture a eu lieu, sous cinq lentilles indépendantes, chaque constat vérifié de
+façon adversariale contre le code. Treize constats vérifiés se sont réduits à sept décisions,
+dont trois changeaient ce qui est publié — toutes appliquées :
+
+| # | Décision | Effet |
+|---|---|---|
+| D1 | `EnumMemberNameConverter` → `internal sealed`, constructeur public conservé | −4 entrées |
+| D2 | `EnumMemberNameSchemaTransformer` → `internal sealed` | −3 entrées |
+| D3 | `AddEnumMemberNames` → namespace `Microsoft.Extensions.DependencyInjection` | `using` supprimé chez le consommateur |
+
+Les deux justifications supposées ci-dessus étaient **fausses**, et c'est la relecture qui l'a
+établi : `TypeConverterAttribute` exige un *constructeur* public et non un *type* public, et
+`AddEnumMemberNames` enregistre le transformer par la surcharge d'instance d'`AddSchemaTransformer`,
+indifférente à l'accessibilité. Les deux types étaient publics par héritage, pas par décision —
+ce que le baseline devait précisément révéler.
+
+Quatre autres questions ont été posées et répondues « on ne change rien » : le nom
+`AddEnumMemberNames`, `IReadOnlyList<string>?` sur `GetPublicNames`, les collections `IList<T>` des
+options, et `Problems` en prose. Chacune porte désormais son raisonnement dans son propre
+commentaire de doc.
+
+Surface finale : **19 entrées** dans le paquet principal, **2** dans le compagnon.
 
 Pièges d'installation :
 
