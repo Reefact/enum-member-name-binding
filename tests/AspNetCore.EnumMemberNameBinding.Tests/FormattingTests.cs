@@ -140,7 +140,7 @@ public sealed class FormattingTests {
 
         Assert.Equal("/status/route/OutOfStock", link);
 
-        using HttpResponseMessage response = await _api.Client.GetAsync(link);
+        using HttpResponseMessage response = await _api.Client.GetAsync(link, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -159,10 +159,10 @@ public sealed class FormattingTests {
     public async Task a_link_built_from_the_public_name_is_accepted_back_by_the_binder() {
         string link = await ReadLink("/status/link");
 
-        using HttpResponseMessage response = await _api.Client.GetAsync(link);
+        using HttpResponseMessage response = await _api.Client.GetAsync(link, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using JsonDocument bound = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using JsonDocument bound = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal(nameof(ProductStatus.OutOfStock), bound.RootElement.GetProperty("value").GetString());
     }
 
@@ -173,16 +173,16 @@ public sealed class FormattingTests {
         Assert.Contains("read", link, StringComparison.Ordinal);
         Assert.Contains("write", link, StringComparison.Ordinal);
 
-        using HttpResponseMessage response = await _api.Client.GetAsync(link);
+        using HttpResponseMessage response = await _api.Client.GetAsync(link, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using JsonDocument bound = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using JsonDocument bound = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal("Read, Write", bound.RootElement.GetProperty("value").GetString());
     }
 
     private async Task<string> ReadLink(string url) {
-        using HttpResponseMessage response = await _api.Client.GetAsync(url);
-        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using HttpResponseMessage response = await _api.Client.GetAsync(url, TestContext.Current.CancellationToken);
+        using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
         return document.RootElement.GetProperty("value").GetString()!;
     }

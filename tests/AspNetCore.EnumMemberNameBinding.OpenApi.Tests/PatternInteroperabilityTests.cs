@@ -83,7 +83,7 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
         string pattern = api.Schema(nameof(Tricky)).GetProperty("pattern").GetString()!;
         Assert.Matches(pattern, value);
 
-        using HttpResponseMessage response = await api.Client.GetAsync("/tricky?value=" + Uri.EscapeDataString(value));
+        using HttpResponseMessage response = await api.Client.GetAsync("/tricky?value=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
@@ -96,7 +96,7 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
         string pattern = api.Schema(nameof(Tricky)).GetProperty("pattern").GetString()!;
         Assert.DoesNotMatch(pattern, value);
 
-        using HttpResponseMessage response = await api.Client.GetAsync("/tricky?value=" + Uri.EscapeDataString(value));
+        using HttpResponseMessage response = await api.Client.GetAsync("/tricky?value=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }

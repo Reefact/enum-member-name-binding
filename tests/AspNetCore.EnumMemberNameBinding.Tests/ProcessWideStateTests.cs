@@ -55,11 +55,11 @@ public sealed class ProcessWideStateTests {
         await using Host second = await Host.StartAsync();
 
         foreach (Host host in new[] { first, second }) {
-            using HttpResponseMessage accepted = await host.Client.GetAsync("/repeated?value=second");
-            using HttpResponseMessage refused = await host.Client.GetAsync("/repeated?value=Second");
+            using HttpResponseMessage accepted = await host.Client.GetAsync("/repeated?value=second", TestContext.Current.CancellationToken);
+            using HttpResponseMessage refused = await host.Client.GetAsync("/repeated?value=Second", TestContext.Current.CancellationToken);
 
             Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
-            using JsonDocument document = JsonDocument.Parse(await accepted.Content.ReadAsStringAsync());
+            using JsonDocument document = JsonDocument.Parse(await accepted.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
             Assert.Equal(nameof(Repeated.Second), document.RootElement.GetProperty("value").GetString());
 
             Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
@@ -69,12 +69,12 @@ public sealed class ProcessWideStateTests {
     [Fact]
     public async Task a_host_started_after_another_has_stopped_still_binds_correctly() {
         await using (Host first = await Host.StartAsync()) {
-            using HttpResponseMessage response = await first.Client.GetAsync("/repeated?value=first");
+            using HttpResponseMessage response = await first.Client.GetAsync("/repeated?value=first", TestContext.Current.CancellationToken);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
         await using Host second = await Host.StartAsync();
-        using HttpResponseMessage again = await second.Client.GetAsync("/repeated?value=first");
+        using HttpResponseMessage again = await second.Client.GetAsync("/repeated?value=first", TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, again.StatusCode);
     }

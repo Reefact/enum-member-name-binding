@@ -52,7 +52,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
     private WebApplication _app = null!;
     private HttpClient _client = null!;
 
-    public async Task InitializeAsync() {
+    public async ValueTask InitializeAsync() {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.Logging.ClearProviders();
         builder.WebHost.UseUrls("http://127.0.0.1:0");
@@ -67,7 +67,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
         _client = new HttpClient { BaseAddress = new Uri(_app.Urls.First()) };
     }
 
-    public async Task DisposeAsync() {
+    public async ValueTask DisposeAsync() {
         _client.Dispose();
         await _app.StopAsync();
         await _app.DisposeAsync();
@@ -103,7 +103,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
         const string Name = "with/slash";
         string expected = nameof(Portability.Slash);
 
-        using HttpResponseMessage route = await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(Name));
+        using HttpResponseMessage route = await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(Name), TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.BadRequest, route.StatusCode);
 
         Assert.Equal(expected, await Query(Name));
@@ -119,7 +119,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
 
         using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
         request.Headers.TryAddWithoutValidation("X-V", Name);
-        using HttpResponseMessage header = await _client.SendAsync(request);
+        using HttpResponseMessage header = await _client.SendAsync(request, TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.BadRequest, header.StatusCode);
 
         Assert.Equal(expected, await Route(Name));
@@ -139,7 +139,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
 
         using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
         request.Headers.TryAddWithoutValidation("X-V", Name);
-        await Assert.ThrowsAsync<HttpRequestException>(() => _client.SendAsync(request));
+        await Assert.ThrowsAsync<HttpRequestException>(() => _client.SendAsync(request, TestContext.Current.CancellationToken));
 
         Assert.Equal(expected, await Route(Name));
         Assert.Equal(expected, await Query(Name));
@@ -147,28 +147,28 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
         Assert.Equal(expected, await Body(Name));
     }
 
-    private async Task<string> Route(string name)  => await Read(await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(name)));
-    private async Task<string> Query(string name)  => await Read(await _client.GetAsync("/portability/query?value=" + Uri.EscapeDataString(name)));
-    private async Task<string> Form(string name)   => await Read(await _client.PostAsync("/portability/form", new FormUrlEncodedContent([new KeyValuePair<string, string>("value", name)])));
+    private async Task<string> Route(string name)  => await Read(await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(name), TestContext.Current.CancellationToken));
+    private async Task<string> Query(string name)  => await Read(await _client.GetAsync("/portability/query?value=" + Uri.EscapeDataString(name), TestContext.Current.CancellationToken));
+    private async Task<string> Form(string name)   => await Read(await _client.PostAsync("/portability/form", new FormUrlEncodedContent([new KeyValuePair<string, string>("value", name)]), TestContext.Current.CancellationToken));
 
     private async Task<string> Body(string name) {
         string json = JsonSerializer.Serialize(new Dictionary<string, string> { ["Value"] = name });
         using StringContent content = new(json, Encoding.UTF8, "application/json");
 
-        return await Read(await _client.PostAsync("/portability/body", content));
+        return await Read(await _client.PostAsync("/portability/body", content, TestContext.Current.CancellationToken));
     }
 
     private async Task<string> Header(string name) {
         using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
         request.Headers.TryAddWithoutValidation("X-V", name);
 
-        return await Read(await _client.SendAsync(request));
+        return await Read(await _client.SendAsync(request, TestContext.Current.CancellationToken));
     }
 
     private static async Task<string> Read(HttpResponseMessage response) {
         using (response) {
             Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}");
-            using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
             return document.RootElement.GetProperty("value").GetString()!;
         }
