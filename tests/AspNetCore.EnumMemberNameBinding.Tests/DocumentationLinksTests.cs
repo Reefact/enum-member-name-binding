@@ -27,6 +27,9 @@ public sealed class DocumentationLinksTests {
     private static readonly (string English, string French)[] RootPages = [
         (EnglishFrontPage, "docs/README.fr.md"),
         ("CHANGELOG.md", "docs/CHANGELOG.fr.md"),
+        // GitHub only offers "Report a vulnerability" when it finds the policy at one of a few fixed
+        // paths, of which the repository root is one; its translation follows the others into docs.
+        ("SECURITY.md", "docs/SECURITY.fr.md"),
         // GitHub renders a directory's README.md and nothing else, so this one stays where it is.
         ("tests/PackageSmokeTest/README.md", "tests/PackageSmokeTest/README.fr.md")
     ];
