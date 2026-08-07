@@ -10,6 +10,12 @@ on:
   # Without a manual trigger the only way out is an empty commit, so there is one.
   workflow_dispatch:
 
+# Supersede a run the moment a newer commit arrives on the same branch or pull request. Three
+# pushes in a row otherwise hold six runners to answer a question only the last one asks.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -17,6 +23,11 @@ jobs:
   build:
     name: build (SDK ${{ matrix.sdk }})
     runs-on: ubuntu-latest
+    # The whole job runs in about a minute; the cap only bounds a hung one, which would otherwise
+    # hold its runner for the six-hour default.
+    timeout-minutes: 20
+    permissions:
+      contents: read
 
     # The matrix is over SDK versions rather than operating systems, deliberately. This library has
     # no platform-specific code — no paths, no culture-sensitive comparisons — so Windows would add
@@ -81,3 +92,38 @@ jobs:
         with:
           name: packages-sdk-${{ matrix.sdk }}
           path: artifacts/*
+
+  # The one check `main` requires, and the only reason this job exists.
+  #
+  # The matrix above reports under names that carry the SDK it ran on — "build (SDK 10.0.100)" and
+  # "build (SDK 10.0.x)". Requiring those by name works exactly until the matrix changes: the
+  # required name then belongs to a job nobody runs, so it never reports, and every pull request
+  # sits at "Expected — waiting for status" with no way forward but an admin bypass. Requiring this
+  # job instead leaves the matrix free to grow an SDK or an operating system without anyone
+  # remembering to go and edit a branch rule.
+  #
+  # `if: always()` is load-bearing. Without it this job is skipped whenever the matrix fails or is
+  # cancelled, and GitHub counts a skipped required check as satisfied — so the gate would pass in
+  # precisely the cases it exists to catch. With it, the job runs regardless and reads the result
+  # itself. `needs.build.result` collapses the whole matrix: it is 'success' only when every leg
+  # succeeded, so a single red SDK is enough to fail here.
+  ci:
+    name: CI
+    needs: [build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - name: Verify every matrix leg succeeded
+        env:
+          RESULT: ${{ needs.build.result }}
+        run: |
+          set -euo pipefail
+          echo "build: $RESULT"
+          if [ "$RESULT" != "success" ]; then
+            echo "::error::the build matrix did not succeed (result: $RESULT)"
+            exit 1
+          fi

@@ -122,7 +122,7 @@ bypass. Les rulesets sont disponibles gratuitement sur un dépôt public.
 | — Required approvals | **0** | mainteneur solo : voir §1. À passer à 1 dès qu'un second contributeur arrive |
 | — Dismiss stale approvals on push | ✅ | sans coût aujourd'hui, correct demain |
 | — Require conversation resolution | ✅ | ce qui remplace l'approbation absente : un commentaire non résolu bloque |
-| Require status checks to pass | ✅ → **`CI`** uniquement | le job agrégé du §2.1 |
+| Require status checks to pass | ✅ → **`CI`** uniquement | le job agrégé du §2.1. **Fait** : une PR obligatoire sans check requis n'est qu'une demi-règle — elle arrête le push direct et laisse toujours merger une branche rouge. Le job agrégé a donc été avancé de l'étape 1 à ici |
 | — Require branches to be up to date | ✅ | interdit le merge d'une branche verte contre un `main` qui a bougé |
 | Require signed commits | ⚠️ optionnel | fort, mais impose la signature à *tous* les auteurs, agents compris. À décider séparément |
 | Bypass list | *Repository admin* | filet en cas d'incident ; à n'utiliser qu'en connaissance de cause |
