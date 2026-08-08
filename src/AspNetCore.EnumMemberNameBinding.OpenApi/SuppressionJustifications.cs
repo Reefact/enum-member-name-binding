@@ -17,7 +17,12 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi;
 /// and has no business in a stable API. Only the trimming constraint applies in this package — the
 /// transformer reads an enum's public names and nothing more, so it never reaches the code that
 /// builds a converter at run time, and there is no IL3050 to excuse.
+///
+/// Excluded from coverage for the reason given on the main package's copy: a class of constants has
+/// no behaviour to measure, and a <c>const</c> initialised from another constant is nevertheless
+/// counted as an executable line by Sonar's C# sensor — uncoverable by construction.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 internal static class SuppressionJustification {
 
     /// <summary>Reflection the trimmer cannot follow.</summary>

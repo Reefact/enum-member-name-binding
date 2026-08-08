@@ -125,6 +125,11 @@ jobs:
           echo "value=${version:-0.0.0}" >> "$GITHUB_OUTPUT"
           echo "Analysing as version ${version:-0.0.0}"
 
+      # sonar.qualitygate.wait is what makes this job able to fail. Without it the scanner uploads
+      # and exits zero, so the check is green whatever the Quality Gate says — it reports that the
+      # analysis ran, not that it passed. This repository has already been caught by that shape
+      # three times over (see CLAUDE.md, "Verify, do not assume"); a fourth would be a choice.
+      # The cost is the ~30s the scanner spends polling the compute engine for the verdict.
       - name: Begin analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -137,6 +142,7 @@ jobs:
           /d:sonar.token="$SONAR_TOKEN"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
+          /d:sonar.qualitygate.wait=true
           /d:sonar.issue.ignore.multicriteria="e1,e2"
           /d:sonar.issue.ignore.multicriteria.e1.ruleKey="shell:S5332"
           /d:sonar.issue.ignore.multicriteria.e1.resourceKey="tests/PackageSmokeTest/run.sh"

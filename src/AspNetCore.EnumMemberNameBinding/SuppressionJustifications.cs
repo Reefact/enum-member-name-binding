@@ -15,7 +15,15 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// way. Internal, and duplicated in the companion package rather than shared through a public
 /// constant — a suppression's wording is an implementation detail and has no business in a stable
 /// API, which this package's is now that 1.0.0 fixes it.
+///
+/// Excluded from coverage because there is no behaviour here to measure. That is true of any class
+/// of constants, but this one made it visible: <see cref="IL3050.RequirementCarriedByConstructor" />
+/// is initialised from another constant rather than from a literal, and Sonar's C# sensor counts
+/// that as an executable line. A <c>const</c> compiles to no code at all, so no coverage report can
+/// ever mention it and no test can be written to reach it — the gate would have failed forever on a
+/// line that does not exist at run time.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 internal static class SuppressionJustification {
 
     /// <summary>Reflection the trimmer cannot follow.</summary>
