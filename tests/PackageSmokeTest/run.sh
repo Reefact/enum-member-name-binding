@@ -38,7 +38,7 @@ FAILURES=0
 APP_PID=""
 
 cleanup() {
-    if [ -n "$APP_PID" ] && kill -0 "$APP_PID" 2>/dev/null; then
+    if [[ -n "$APP_PID" ]] && kill -0 "$APP_PID" 2>/dev/null; then
         kill "$APP_PID" 2>/dev/null || true
         wait "$APP_PID" 2>/dev/null || true
     fi
@@ -53,7 +53,7 @@ fail()  { printf '   \033[31mFAIL\033[0m %s\n' "$1"; FAILURES=$((FAILURES + 1));
 # test that only says "assertion failed" costs more time than it saves.
 expect() {
     local what="$1" expected="$2" actual="$3"
-    if [ "$actual" = "$expected" ]; then
+    if [[ "$actual" == "$expected" ]]; then
         pass "$what"
     else
         fail "$what"
@@ -134,7 +134,7 @@ pass "compiles"
 
 # Proves the package came from the feed this run built. The sentinel version exists nowhere else,
 # so its presence in the run-local package directory is the evidence.
-if [ -d "$NUGET_PACKAGES/aspnetcore.enummembernamebinding/$VERSION" ]; then
+if [[ -d "$NUGET_PACKAGES/aspnetcore.enummembernamebinding/$VERSION" ]]; then
     pass "resolved from the local feed, not a cache or nuget.org"
 else
     fail "resolved from the local feed, not a cache or nuget.org"
@@ -167,7 +167,7 @@ fi
 
 step "Start the consumer as a real application"
 APP="$HERE/Consumer/bin/Release/net10.0/Consumer.dll"
-[ -f "$APP" ] || { fail "the consumer was not produced at $APP"; exit 1; }
+[[ -f "$APP" ]] || { fail "the consumer was not produced at $APP"; exit 1; }
 
 # Port 0 lets the OS choose, so parallel jobs on one runner cannot collide, and the chosen address
 # is read back from Kestrel's own startup line rather than guessed.
@@ -184,11 +184,11 @@ for _ in $(seq 1 60); do
     # `|| true` is load-bearing under `set -o pipefail`: until the line appears grep exits 1, which
     # would otherwise abort the script here, silently, every single time.
     BASE="$(grep -oE 'Now listening on: http://127\.0\.0\.1:[0-9]+' "$WORK/app.log" 2>/dev/null | head -1 | sed 's/Now listening on: //' || true)"
-    [ -n "$BASE" ] && break
+    [[ -n "$BASE" ]] && break
     sleep 0.5
 done
 
-[ -n "$BASE" ] || { fail "the application never reported a listening address within 30s"; cat "$WORK/app.log"; exit 1; }
+[[ -n "$BASE" ]] || { fail "the application never reported a listening address within 30s"; cat "$WORK/app.log"; exit 1; }
 pass "listening on $BASE"
 
 # Every request is bounded. A smoke test that can hang is a smoke test that will hang, in CI, at
@@ -249,7 +249,7 @@ sys.exit(0 if ok else 1)
 PY
 
 step "Result"
-if [ "$FAILURES" -eq 0 ]; then
+if (( FAILURES == 0 )); then
     printf '\033[32mThe published package behaves as documented.\033[0m\n'
 else
     printf '\033[31m%s check(s) failed.\033[0m\n' "$FAILURES"
