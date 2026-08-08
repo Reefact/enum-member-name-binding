@@ -36,7 +36,15 @@ This package closes that gap.
 dotnet add package AspNetCore.EnumMemberNameBinding
 ```
 
-Requires **.NET 10** and ASP.NET Core MVC (controllers).
+Requires ASP.NET Core MVC (controllers), on a supported .NET:
+
+| Package | .NET |
+|---|:--:|
+| 1.x | 10 |
+
+Take the latest version — NuGet resolves the target framework matching your project. The package
+version describes this library's own public surface, so a new .NET release adds a row to that table
+rather than moving the major.
 
 ## Use
 
