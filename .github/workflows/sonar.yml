@@ -24,6 +24,31 @@ concurrency:
   group: sonar-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Three rules are silenced below, and the reasons live here rather than as clicks in the SonarQube
+# UI, where they would be invisible to a reader of this repository and lost if the project were ever
+# recreated. The line drawn is between a rule whose premise does not hold here — silenced — and a
+# rule that is right and simply not acted on yet, which stays visible as known debt. Four findings
+# are deliberately left in that second category: three S3776 cognitive-complexity reports and one
+# S4456, all discussed in the pull request that introduced this comment.
+#
+#   shell:S5332 "using clear-text protocols" on tests/PackageSmokeTest/run.sh
+#     The line chooses no protocol. It greps `http://127.0.0.1:<port>` out of the log Kestrel writes
+#     at start-up, to learn which port the fixture was given: loopback inside a single CI job, and a
+#     search pattern rather than a connection.
+#
+#   shelldre:S7679 "assign this positional parameter to a local variable" on the same file
+#     Every occurrence is a one-line helper — `step`, `pass`, `fail`, `get`, `status` — whose whole
+#     body is a single printf or curl. Naming `$1` one token below the function's own name makes
+#     each of them longer and none of them clearer.
+#
+#   external_roslyn:IDE0028 "collection initialization can be simplified" under tests/
+#     The suggested collection expression trips CA1825 on the 10.0.100 analyzers, which is the SDK
+#     floor in global.json and one of the two legs of the CI matrix — so obeying this rule would
+#     turn that leg red. The reason is already recorded beside the code in
+#     ParityWithSystemTextJsonTests; this keeps Sonar from asking for it again.
+#
+# Each is scoped to the files it concerns, so the same rule breaking elsewhere is still reported.
+#
 # Least privilege: the analysis only reads the repository. Pull-request decoration is delivered by
 # the SonarQube Cloud GitHub App, which is why the project has to be bound to this repository and
 # not created by hand — a manually created project analyses fine and decorates nothing.
@@ -81,16 +106,45 @@ jobs:
           dotnet tool install --global dotnet-sonarscanner
           echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
+      # Report the released version, so an analysis in SonarQube's history can be read against the
+      # versions actually on nuget.org. The latest tag is what the package carries too — the tag is
+      # this repository's single source of truth for a version — so reusing it keeps Sonar's idea of
+      # a release and NuGet's the same one. Before the first tag, 0.0.0 stands in.
+      #
+      # It is also the precondition for ever defining new code as "since the previous version",
+      # which is the right question for a released library — did this release make things worse than
+      # the last one — and which a project reporting no version at all cannot answer. New code is a
+      # rolling 30-day window today, because on a first release no definition measures anything:
+      # there is nothing yet to compare against. That choice is worth revisiting once a second
+      # version exists, since a rolling window empties itself after a quiet month and then passes
+      # for having nothing to look at.
+      - name: Resolve the released version
+        id: version
+        run: |
+          set -euo pipefail
+          version="$(git describe --tags --abbrev=0 2>/dev/null | sed 's/^v//' || true)"
+          echo "value=${version:-0.0.0}" >> "$GITHUB_OUTPUT"
+          echo "Analysing as version ${version:-0.0.0}"
+
       - name: Begin analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          VERSION: ${{ steps.version.outputs.value }}
         run: >-
           dotnet-sonarscanner begin
           /k:"reefact_enum-member-name-binding"
           /o:"reefact"
+          /v:"$VERSION"
           /d:sonar.token="$SONAR_TOKEN"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
+          /d:sonar.issue.ignore.multicriteria="e1,e2,e3"
+          /d:sonar.issue.ignore.multicriteria.e1.ruleKey="shell:S5332"
+          /d:sonar.issue.ignore.multicriteria.e1.resourceKey="tests/PackageSmokeTest/run.sh"
+          /d:sonar.issue.ignore.multicriteria.e2.ruleKey="shelldre:S7679"
+          /d:sonar.issue.ignore.multicriteria.e2.resourceKey="tests/PackageSmokeTest/run.sh"
+          /d:sonar.issue.ignore.multicriteria.e3.ruleKey="external_roslyn:IDE0028"
+          /d:sonar.issue.ignore.multicriteria.e3.resourceKey="tests/**/*.cs"
 
       # The build has to happen between `begin` and `end`: the scanner hooks MSBuild to observe the
       # compilation, so it cannot read a pre-built output and `--no-build` would leave it with
