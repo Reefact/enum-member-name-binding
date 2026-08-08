@@ -16,7 +16,8 @@ on:
 
 permissions:
   contents: write
-  id-token: write   # required by NuGet trusted publishing (OIDC)
+  id-token: write        # required by NuGet trusted publishing (OIDC)
+  attestations: write    # store the build-provenance attestation for the published packages
 
 jobs:
   publish:
@@ -137,6 +138,26 @@ jobs:
       - name: Package smoke test
         timeout-minutes: 10
         run: tests/PackageSmokeTest/run.sh
+
+      # Sign a statement that these exact bytes were built by this workflow, from this commit, and
+      # store it where anyone can check it:
+      #
+      #   gh attestation verify AspNetCore.EnumMemberNameBinding.1.0.0.nupkg \
+      #     --repo Reefact/enum-member-name-binding
+      #
+      # Everything above proves the package is correct; this is the only thing that ties it to an
+      # origin. Without it, a consumer downloading a .nupkg has the maintainer's word that it came
+      # from this repository and nothing else — and nuget.org re-signs packages on receipt, so the
+      # signature they see is nuget.org's, not ours.
+      #
+      # It runs on a dry run too, deliberately. The attestation needs its own permission and its own
+      # OIDC exchange, and a failure in either is precisely what a rehearsal is for; discovering it
+      # with a tag already pushed would be discovering it too late. The cost is a stored attestation
+      # for a package that was never published, which is metadata nobody resolves.
+      - name: Attest the build provenance
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3
+        with:
+          subject-path: 'artifacts/*.nupkg'
 
       # Trusted publishing: short-lived OIDC credentials, no long-lived API key in secrets.
       # Runs on a dry run too — proving the login works is the point of the exercise.
