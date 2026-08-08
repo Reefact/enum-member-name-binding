@@ -22,7 +22,11 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: nuget
+    # No deployment environment, matching the other repositories in this organisation. Two things
+    # have to agree with that and are not visible from here: NUGET_USER must be a repository-level
+    # variable rather than one scoped to an environment, and the trusted-publishing policy on
+    # nuget.org must not require a GitHub environment — the OIDC token stops carrying that claim
+    # the moment this line is absent, and a policy demanding it would refuse the exchange.
     env:
       CI: true
       DOTNET_NOLOGO: true

@@ -246,10 +246,15 @@ nuspec, smoke test avant toute étape irréversible). Quatre manques :
 2. **Attestation de provenance.** `actions/attest-build-provenance` avec
    `attestations: write`, pour que `gh attestation verify` réponde sur les `.nupkg` publiés.
    La référence le fait ; c'est aussi un point Scorecard.
-3. **Approbation manuelle avant publication.** L'environnement `nuget` existe déjà dans le
+3. ~~**Approbation manuelle avant publication.** L'environnement `nuget` existe déjà dans le
    workflow mais n'a probablement aucune règle de protection. Y ajouter un *required
-   reviewer* (vous) fait de la publication un geste délibéré, tag poussé ou non. Gratuit sur
-   un dépôt public.
+   reviewer* (vous) fait de la publication un geste délibéré, tag poussé ou non.~~
+   **Écarté**, au profit de la cohérence : aucun autre dépôt de l'organisation n'utilise
+   d'environnement de déploiement, `first-class-errors` compris. L'environnement `nuget` est
+   donc retiré plutôt que durci. Ce qu'on perd est réel — l'approbation faisait du clic
+   *Approve*, et non du tag, le geste irréversible. Ce qui reste pour compenser : la garde
+   d'ascendance (§6.1), la ruleset de tags, et le fait que le tag ne peut être posé que par
+   quelqu'un qui a déjà accès en écriture.
 4. **`concurrency: cancel-in-progress: false`**, pour ne jamais interrompre une publication.
 
 ## 7. Ce qui passe avant le tag v1
