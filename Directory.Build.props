@@ -1,7 +1,15 @@
 <Project>
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <!--
+      Plural with a single value, deliberately. The package version describes this library's own
+      public surface and not the .NET release it runs on, so serving a new .NET means adding a
+      target framework here rather than opening a parallel major to maintain. Written this way from
+      the start, that day is one character; TargetFrameworks and TargetFramework cannot coexist,
+      since the plural wins wherever both are set and would silently retarget a project that
+      overrides the singular.
+    -->
+    <TargetFrameworks>net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

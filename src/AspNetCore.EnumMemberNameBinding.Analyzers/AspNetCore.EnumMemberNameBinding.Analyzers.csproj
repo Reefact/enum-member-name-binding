@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <!-- Plural to override the plural in Directory.Build.props; the singular would not win. An
+         analyzer targets netstandard2.0 to load in every host, and follows no .NET release. -->
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <RootNamespace>AspNetCore.EnumMemberNameBinding.Analyzers</RootNamespace>
     <IsPackable>false</IsPackable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>

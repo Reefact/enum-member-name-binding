@@ -37,7 +37,15 @@ Ce paquet comble cet écart.
 dotnet add package AspNetCore.EnumMemberNameBinding
 ```
 
-Requiert **.NET 10** et ASP.NET Core MVC (contrôleurs).
+Requiert ASP.NET Core MVC (contrôleurs), sur une version de .NET prise en charge :
+
+| Paquet | .NET |
+|---|:--:|
+| 1.x | 10 |
+
+Prenez la dernière version — NuGet retient le framework cible correspondant à votre projet. La
+version du paquet décrit la surface publique de cette bibliothèque : une nouvelle version de .NET
+ajoute une ligne à ce tableau plutôt que de faire bouger le majeur.
 
 ## Utilisation
 
