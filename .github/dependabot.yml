@@ -18,8 +18,15 @@ updates:
       # maintenance, so it should arrive as a deliberate change rather than as a weekly pull
       # request nobody asked for. A single nuget entry cannot be scoped to one project, so the
       # freeze also covers the analyzer test project, which pins the same version on purpose.
+      #
+      # Microsoft.CodeAnalysis.Analyzers is on the list for a reason worth writing down: ignoring a
+      # dependency stops Dependabot proposing an update TO it, not an update that DRAGS it along.
+      # Left off, it was bumped as part of a group and carried Microsoft.CodeAnalysis.CSharp with
+      # it — exactly the pull request the two entries below exist to prevent. Freezing the peer is
+      # what makes the freeze hold.
       - dependency-name: "Microsoft.CodeAnalysis.CSharp"
       - dependency-name: "Microsoft.CodeAnalysis.Common"
+      - dependency-name: "Microsoft.CodeAnalysis.Analyzers"
 
   - package-ecosystem: "github-actions"
     directory: "/"
