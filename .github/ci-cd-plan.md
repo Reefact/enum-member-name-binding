@@ -161,10 +161,15 @@ liées*.
 
 ### 4.2 `CODEOWNERS`
 
-Une ligne, `* @Reefact`. Sans approbation requise, l'effet est la demande de revue
-automatique — utile surtout le jour où un contributeur externe ouvre une PR.
+**Fait**, dans `.github/CODEOWNERS`. Une ligne, `* @Reefact`. Sans approbation requise
+(`required_approving_review_count` vaut 0), l'effet est la demande de revue automatique — utile
+surtout le jour où un contributeur externe ouvre une PR. Le fichier note pourquoi
+`require_code_owner_review` reste à `false` : avec un seul propriétaire, l'activer enfermerait le
+mainteneur dehors, GitHub interdisant d'approuver sa propre pull request.
 
 ### 4.3 `CONTRIBUTING.md` + `SECURITY.md`
+
+**Fait**, les deux, avec leurs traductions.
 
 `SECURITY.md` active le bouton *Report a vulnerability* et fait gagner un point Scorecard ;
 celui de la référence est réutilisable presque tel quel, en remplaçant le nom du projet et
@@ -179,6 +184,13 @@ convention de branche `<auteur>/<description>`, la convention de commit, la règ
 de lignes de tableau, mêmes tags de blocs de code), plus deux entrées dans `RootPages` de
 `DocumentationLinksTests`. Sans ça, la suite passe au rouge. C'est le poste le plus coûteux
 du plan, et le seul qui touche du code de test.
+
+Coût confirmé, et payé : la paire `CONTRIBUTING` s'est alignée sur 10 titres, 0 puce, 8 lignes de
+tableau et quatre blocs `sh` dans le même ordre. Ce que le plan n'avait pas anticipé, c'est que
+`CONTRIBUTING.md` documente surtout des règles que le dépôt applique déjà tout seul — la ruleset,
+le commit-lint, la baseline d'API, les gardes de documentation. La page tient donc de l'inventaire
+de ce qui est déjà vrai plutôt que de la promesse, ce qui la rend vérifiable : chaque affirmation
+y renvoie au fichier qui la fait respecter.
 
 ### 4.4 Commit-lint
 
