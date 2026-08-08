@@ -24,18 +24,29 @@ concurrency:
   group: sonar-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# One issue is ignored rather than fixed, and the reason lives here rather than as a click in the
-# SonarQube UI, where it would be invisible to a reader of this repository and lost if the project
-# were ever recreated:
+# Two rules are silenced below, and only two, because only these two can be silenced here: they are
+# SonarQube's own shell analysis, which nothing the build does can reach. A Roslyn diagnostic Sonar
+# merely republishes belongs at the source instead — silencing it here would leave the build and
+# every editor still proposing the change — so IDE0028 is declined in .editorconfig, where its
+# reason is written out, and not in this file.
 #
-#   shell:S5332 "Make sure that using clear-text protocols is safe here"
-#     on tests/PackageSmokeTest/run.sh
+# The reasons live in the repository rather than as clicks in the SonarQube UI, where they would be
+# invisible to a reader and lost if the project were ever recreated. The line drawn is between a
+# rule whose premise does not hold here — silenced — and a rule that is right and simply not acted
+# on yet, which stays visible as known debt. Four findings are deliberately in that second category:
+# three S3776 cognitive-complexity reports and one S4456.
 #
-# The line it flags does not choose a protocol. It greps the pattern `http://127.0.0.1:<port>` out
-# of the log Kestrel writes at start-up, to learn which port the test fixture was given. The traffic
-# is loopback inside a single CI job, and the string is a search pattern rather than a connection.
-# Scoped to that one file on purpose: a real `http://` appearing in any other script should still be
-# reported.
+#   shell:S5332 "using clear-text protocols" on tests/PackageSmokeTest/run.sh
+#     The line chooses no protocol. It greps `http://127.0.0.1:<port>` out of the log Kestrel writes
+#     at start-up, to learn which port the fixture was given: loopback inside a single CI job, and a
+#     search pattern rather than a connection.
+#
+#   shelldre:S7679 "assign this positional parameter to a local variable" on the same file
+#     Every occurrence is a one-line helper — `step`, `pass`, `fail`, `get`, `status` — whose whole
+#     body is a single printf or curl. Naming `$1` one token below the function's own name makes
+#     each of them longer and none of them clearer.
+#
+# Both are scoped to the file they concern, so the same rule breaking elsewhere is still reported.
 #
 # Least privilege: the analysis only reads the repository. Pull-request decoration is delivered by
 # the SonarQube Cloud GitHub App, which is why the project has to be bound to this repository and
@@ -126,9 +137,11 @@ jobs:
           /d:sonar.token="$SONAR_TOKEN"
           /d:sonar.host.url="https://sonarcloud.io"
           /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
-          /d:sonar.issue.ignore.multicriteria="e1"
+          /d:sonar.issue.ignore.multicriteria="e1,e2"
           /d:sonar.issue.ignore.multicriteria.e1.ruleKey="shell:S5332"
           /d:sonar.issue.ignore.multicriteria.e1.resourceKey="tests/PackageSmokeTest/run.sh"
+          /d:sonar.issue.ignore.multicriteria.e2.ruleKey="shelldre:S7679"
+          /d:sonar.issue.ignore.multicriteria.e2.resourceKey="tests/PackageSmokeTest/run.sh"
 
       # The build has to happen between `begin` and `end`: the scanner hooks MSBuild to observe the
       # compilation, so it cannot read a pre-built output and `--no-build` would leave it with
