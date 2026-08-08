@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Settings for the "XPlat Code Coverage" collector.
+
+  These drive coverlet.collector, referenced by each test project, to emit OpenCover XML rather than
+  its default Cobertura: SonarQube Cloud reads C# coverage through sonar.cs.opencover.reportsPaths
+  and does not consume Cobertura. Keeping the format in a committed file rather than on a command
+  line means a local run and the analysis produce the same report, so a coverage number can be
+  reproduced without reading a workflow.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>opencover</Format>
+          <!-- Generated code carries no coverage signal worth reporting: nobody chooses to test it,
+               and counting it only moves the percentage without saying anything about the library. -->
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
