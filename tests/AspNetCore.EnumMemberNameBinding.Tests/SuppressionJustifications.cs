@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
 /// <summary>
@@ -11,7 +13,12 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// Duplicated in the sibling test project rather than shared, matching how the packages treat their
 /// own suppression wording: a reason is local to the code it excuses, and a type shared across
 /// projects only to carry a string would outlive the reason it was written for.
+///
+/// Excluded from coverage for the reason given on the main package's copy: a class of constants has
+/// no behaviour to measure, and a <c>const</c> initialised from another constant is nevertheless
+/// counted as an executable line by Sonar's C# sensor — uncoverable by construction.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 internal static class SuppressionJustification {
 
     /// <summary>Simplify collection initialization.</summary>
