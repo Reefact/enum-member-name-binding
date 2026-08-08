@@ -11,7 +11,7 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
-## [1.0.0-preview.1] - 2026-08-07
+## [1.0.0-preview.1] - 2026-08-08
 
 ### Ajouté
 
@@ -73,6 +73,11 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
   derrière le placeholder par défaut. Le test de fumée vérifie les deux moitiés sur chaque paquet —
   que le `.nuspec` déclare une icône, et que le fichier qu'il nomme s'y trouve réellement — car garder
   l'inclusion sans la propriété produit un paquet parfaitement valide que nuget.org affiche gris.
+- L'attestation de provenance sur les deux paquets. Chaque `.nupkg` publié porte une attestation
+  signée qui le relie à l'exécution du workflow, au commit et au dépôt qui l'ont produit, vérifiable
+  avec `gh attestation verify`. Elle ne dit rien du code qu'il contient ; elle dit que le fichier
+  servi par nuget.org est bien celui que ce dépôt a construit — la seule affirmation qu'un
+  consommateur ne peut pas établir seul.
 
 - `EnumMemberNames.GetPublicName(Enum)`, pour la génération de liens. ASP.NET Core formate les valeurs
   de route sans consulter `TypeDescriptor` : un lien construit à partir d'une valeur d'énumération

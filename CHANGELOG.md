@@ -11,7 +11,7 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
-## [1.0.0-preview.1] - 2026-08-07
+## [1.0.0-preview.1] - 2026-08-08
 
 ### Added
 
@@ -66,6 +66,11 @@ The package version is independent of the .NET version it targets.
   default placeholder. The smoke test checks each package for both halves of it — that the `.nuspec`
   declares an icon, and that the file it names is really inside — since keeping the include without
   the property produces a perfectly valid package that nuget.org still shows grey.
+- Build provenance on both packages. Every published `.nupkg` carries a signed attestation tying it
+  to the workflow run, the commit and the repository that produced it, checkable with
+  `gh attestation verify`. It says nothing about the code inside; it says the file served by
+  nuget.org is the file this repository built, which is the one claim a consumer cannot establish on
+  their own.
 
 - `EnumMemberNames.GetPublicName(Enum)`, for generating links. ASP.NET Core formats route values
   without consulting `TypeDescriptor`, so a link built from an enum value carries the C# name and the
