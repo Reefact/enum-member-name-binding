@@ -1,0 +1,77 @@
+name: scorecard
+
+# OpenSSF Scorecard: an outside reading of this repository's security posture — are actions pinned,
+# are token permissions minimal, is the default branch protected, are releases signed, is there a
+# tool keeping dependencies current. It uploads its findings to the code-scanning dashboard and
+# publishes the score, which is what the README badge reads.
+#
+# It scores the REPOSITORY, not a diff, so there is no pull_request trigger: a pull request has no
+# branch protection and no release history to look at, and running it there would only produce a
+# number about something that does not exist yet.
+#
+# Turning it on is deliberate rather than free, because the badge shows the number to everyone. The
+# checks it rewards are the ones already landed — pinned actions, Dependabot, a security policy,
+# least-privilege tokens, branch protection, code review, CodeQL — which is why it arrives after
+# them and not before.
+
+on:
+  # Re-score when a branch protection rule changes, which is one of the things it grades.
+  branch_protection_rule:
+  schedule:
+    # Weekly, so a check shipped after a change still runs against it. Like CodeQL, most movement
+    # here comes from the analysis changing rather than the code.
+    - cron: '23 5 * * 1'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: scorecard-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    # It makes external calls — branch protection, dependency tooling, the publishing API — so it is
+    # slower than a lint and the cap sits well above its usual two or three minutes.
+    timeout-minutes: 15
+    permissions:
+      security-events: write   # upload the SARIF to the code-scanning dashboard
+      id-token: write          # publish the result to the public OpenSSF API, which feeds the badge
+      # contents/actions reads are deliberately absent: this repository is public, so the metadata
+      # Scorecard needs is already public and the token does not have to carry the scope. A private
+      # repository would need `contents: read` and `actions: read` here.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # A credential-free checkout, which Scorecard's own Token-Permissions check rewards. It
+          # only reads the tree; leaving a token behind in .git/config would be scored against us by
+          # the very tool being run.
+          persist-credentials: false
+
+      - name: Run Scorecard analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publishing is what makes the README badge work at all, and it is only available to
+          # public repositories. It also means the score is public whether or not it flatters.
+          publish_results: true
+
+      - name: Upload the SARIF as an artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: scorecard-sarif
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload the SARIF to code-scanning
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
+        with:
+          sarif_file: results.sarif
