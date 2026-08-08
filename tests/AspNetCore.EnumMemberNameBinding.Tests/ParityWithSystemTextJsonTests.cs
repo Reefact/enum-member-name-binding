@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -25,6 +26,11 @@ public sealed class ParityWithSystemTextJsonTests {
 
     // Built with an object initializer rather than a collection expression: the latter trips CA1825
     // on the 10.0.100 analyzers, which is the SDK floor declared in global.json and the one CI uses.
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
+                     Justification = "The collection expression this rule asks for trips CA1825 on the "
+                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
+                                     + "CI legs, where a warning is an error. The object initializer is what "
+                                     + "keeps that leg green.")]
     public static TheoryData<string> StatusInputs => new() {
         "available", "out_of_stock", "discontinued",
         "OutOfStock", "outofstock", "OUT_OF_STOCK", "Out_Of_Stock",
@@ -33,8 +39,18 @@ public sealed class ParityWithSystemTextJsonTests {
         " available", "available ", " available ", "avail able"
     };
 
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
+                     Justification = "The collection expression this rule asks for trips CA1825 on the "
+                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
+                                     + "CI legs, where a warning is an error. The object initializer is what "
+                                     + "keeps that leg green.")]
     public static TheoryData<string> PartialInputs => new() { "one", "One", "Two", "two", "TWO", "unknown" };
 
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
+                     Justification = "The collection expression this rule asks for trips CA1825 on the "
+                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
+                                     + "CI legs, where a warning is an error. The object initializer is what "
+                                     + "keeps that leg green.")]
     public static TheoryData<string> PermissionInputs => new() {
         "read", "write", "read, write", "read,write", "read, delete", "read, write, delete",
         "Read", "read, bogus", "bogus", "3",
