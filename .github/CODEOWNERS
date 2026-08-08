@@ -1,0 +1,12 @@
+# Who is asked to review what.
+#
+# One line, because there is one maintainer. The ruleset on `main` requires no approval
+# (required_approving_review_count is 0), so the effect here is not a gate: it is the automatic
+# review request on every pull request. That matters the day someone outside the project opens
+# one, and costs nothing until then.
+#
+# Requiring the review would mean turning on require_code_owner_review in
+# .github/rulesets/main.json — which, with a single owner, would lock the maintainer out of their
+# own repository, since GitHub does not let an author approve their own pull request.
+
+* @Reefact

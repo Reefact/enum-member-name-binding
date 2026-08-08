@@ -40,6 +40,9 @@ public sealed partial class DocumentationLinksTests {
     private static readonly (string English, string French)[] RootPages = [
         (EnglishFrontPage, "docs/README.fr.md"),
         ("CHANGELOG.md", "docs/CHANGELOG.fr.md"),
+        // GitHub links "Contributing guidelines" from the issue and pull-request forms when it
+        // finds this at the root; its translation follows the others into docs.
+        ("CONTRIBUTING.md", "docs/CONTRIBUTING.fr.md"),
         // GitHub only offers "Report a vulnerability" when it finds the policy at one of a few fixed
         // paths, of which the repository root is one; its translation follows the others into docs.
         ("SECURITY.md", "docs/SECURITY.fr.md"),
