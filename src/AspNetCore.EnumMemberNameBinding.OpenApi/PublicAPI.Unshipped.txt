@@ -1,3 +1,1 @@
 #nullable enable
-Microsoft.Extensions.DependencyInjection.EnumMemberNameOpenApiOptionsExtensions
-static Microsoft.Extensions.DependencyInjection.EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(this Microsoft.AspNetCore.OpenApi.OpenApiOptions! options) -> Microsoft.AspNetCore.OpenApi.OpenApiOptions!
