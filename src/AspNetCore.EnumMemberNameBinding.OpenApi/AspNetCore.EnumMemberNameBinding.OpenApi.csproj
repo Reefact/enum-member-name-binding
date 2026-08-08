@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The trimming and AOT rule identifiers used by this project's UnconditionalSuppressMessage
+         attributes. PrivateAssets is load-bearing here: this project is packable, and without it a
+         consumer of the published package would inherit a dependency on a compile-time catalogue. -->
+    <PackageReference Include="DiagnosticCatalog.Trimming" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <!--
       Microsoft.AspNetCore.OpenApi 10.0.x resolves Microsoft.OpenApi 2.0.0, which carries a known

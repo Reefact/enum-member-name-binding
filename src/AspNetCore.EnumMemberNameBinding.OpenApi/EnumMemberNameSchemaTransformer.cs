@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
+using DiagnosticCatalog.Trimming;
+
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -37,8 +39,8 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
     public EnumMemberNameSchemaTransformer() { }
 
     /// <inheritdoc />
-    [UnconditionalSuppressMessage("Trimming", "IL2026",
-        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
+    [UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id,
+        Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
     public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken cancellationToken) {
         ArgumentNullException.ThrowIfNull(schema);
         ArgumentNullException.ThrowIfNull(context);
