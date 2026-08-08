@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.CodeAnalysis;
 
 namespace AspNetCore.EnumMemberNameBinding.Analyzers.Tests;
@@ -12,6 +13,11 @@ public sealed class HelpLinkTests {
     private static readonly DirectoryInfo RepositoryRoot = FindRepositoryRoot();
     private static readonly string[]      Languages      = ["en", "fr"];
 
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
+                     Justification = "The collection expression this rule asks for trips CA1825 on the "
+                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
+                                     + "CI legs, where a warning is an error. The object initializer is what "
+                                     + "keeps that leg green.")]
     public static TheoryData<string> Descriptors {
         get {
             TheoryData<string> data = new();

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Builder;
@@ -41,6 +42,11 @@ public sealed class ShadowedMemberTests {
 
     }
 
+    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
+                     Justification = "The collection expression this rule asks for trips CA1825 on the "
+                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
+                                     + "CI legs, where a warning is an error. The object initializer is what "
+                                     + "keeps that leg green.")]
     public static TheoryData<Type> Shadowing => new() { typeof(ExactCasing), typeof(LowerCasing), typeof(UpperCasing) };
 
     [Theory]
