@@ -11,7 +11,7 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
-## [1.0.0-preview.1] - 2026-08-07
+## [1.0.0] - 2026-08-08
 
 ### Added
 
