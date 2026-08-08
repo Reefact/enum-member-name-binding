@@ -1,0 +1,124 @@
+name: sonar
+
+# SonarQube Cloud analysis, and the source of the two Quality badges on the front page.
+#
+# It is not a second opinion on what the build already enforces. The Roslyn analyzers and the
+# warnings-as-errors ratchet decide whether a change compiles; CodeQL asks whether untrusted input
+# reaches somewhere it should not. Sonar measures what neither reports: how much of the library the
+# tests actually execute, and whether the new code in a change carries the same quality as the rest.
+#
+# The Quality Gate is defined on "new code" — everything since the previous released version, which
+# is the organisation's default. A library keeps its history; what a pull request must not do is
+# make it worse.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: sonar-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the analysis only reads the repository. Pull-request decoration is delivered by
+# the SonarQube Cloud GitHub App, which is why the project has to be bound to this repository and
+# not created by hand — a manually created project analyses fine and decorates nothing.
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 'true'
+
+jobs:
+  analyze:
+    name: SonarQube Cloud analysis
+    runs-on: ubuntu-latest
+    # Scanner, build, tests and upload run in about three minutes; the cap bounds a stuck analysis.
+    timeout-minutes: 20
+    # A pull request from a fork cannot read SONAR_TOKEN, so the analysis would fail for a reason
+    # that has nothing to do with the contribution. Skipping is the honest outcome: an outside
+    # contributor sees the checks that can actually run, and main is analysed on merge anyway.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # Full history: Sonar attributes an issue to a commit through git blame, and works out
+          # what "new code" means by comparing against the previous version. A shallow clone leaves
+          # both blind.
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Setup Java
+        # The scanner itself runs on the JVM, whatever it is analysing; SonarQube Cloud requires 17+.
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache the Sonar analysis packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: Install the SonarScanner for .NET
+        run: |
+          set -euo pipefail
+          dotnet tool install --global dotnet-sonarscanner
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Begin analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >-
+          dotnet-sonarscanner begin
+          /k:"reefact_enum-member-name-binding"
+          /o:"reefact"
+          /d:sonar.token="$SONAR_TOKEN"
+          /d:sonar.host.url="https://sonarcloud.io"
+          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
+
+      # The build has to happen between `begin` and `end`: the scanner hooks MSBuild to observe the
+      # compilation, so it cannot read a pre-built output and `--no-build` would leave it with
+      # nothing to analyse.
+      - name: Build
+        # The warning ratchet is turned off for this compilation only. The scanner injects
+        # SonarAnalyzer, whose findings arrive as warnings — and with TreatWarningsAsErrors on
+        # (Directory.Build.props) the first one would fail the build before `end` ever uploads the
+        # results, turning "Sonar found something" into "the analysis crashed". The ratchet stays
+        # enforced where it belongs, in ci.yml on both SDKs; this leg measures rather than gates.
+        # MSBuildTreatWarningsAsErrors is disabled alongside it because the scanner neutralises only
+        # the first of the two.
+        run: >-
+          dotnet build EnumMemberNameBinding.slnx -c Release
+          -p:TreatWarningsAsErrors=false
+          -p:MSBuildTreatWarningsAsErrors=false
+
+      - name: Test with coverage
+        # --no-build so the tests run against the compilation the scanner just observed; rebuilding
+        # here would produce assemblies it never saw.
+        run: >-
+          dotnet test EnumMemberNameBinding.slnx -c Release --no-build
+          --collect:"XPlat Code Coverage"
+          --settings coverage.runsettings
+          --results-directory artifacts/coverage
+          --logger "console;verbosity=normal"
+
+      - name: End analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet-sonarscanner end /d:sonar.token="$SONAR_TOKEN"

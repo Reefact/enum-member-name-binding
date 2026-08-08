@@ -371,7 +371,7 @@ la raison pour laquelle il ne bloque pas la v1 — il suit à l'étape 6.
 
 | Ce que fait `first-class-errors` | Pourquoi pas ici |
 |---|---|
-| SonarQube Cloud (3 workflows + profil + gate) | Service tiers, configuration lourde ; les analyseurs Roslyn + `TreatWarningsAsErrors` couvrent déjà l'essentiel sur une base de code de cette taille |
+| ~~SonarQube Cloud~~ | **Repris**, dans une version réduite : un seul workflow, ni profil de qualité ni gate personnalisés. L'argument d'origine — les analyseurs Roslyn couvrent l'essentiel — reste vrai pour la *correction*, mais rate ce que Sonar apporte réellement ici : la mesure de couverture, que rien d'autre ne produit, et les deux badges *Quality* de la page d'accueil |
 | Tests de mutation (Stryker) | Coûteux en temps de runner, pertinent sur une base bien plus large |
 | `adr-check`, `gendoc-docs`, `canary`, `justdummies-*` | Répondent à des besoins qui n'existent pas ici (base d'ADR, générateur de doc, trains multiples) |
 | Release multi-trains (`lib-v*`, `cli-v*`, `dum-v*`) | Un seul train ici ; `v*` suffit |
