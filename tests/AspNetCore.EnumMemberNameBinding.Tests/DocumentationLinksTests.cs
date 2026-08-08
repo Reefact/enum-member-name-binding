@@ -8,15 +8,25 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// github.com. The pages under <c>docs</c> are only ever read on GitHub, so they link relatively.
 /// Both forms have to resolve — a documentation split is exactly where links rot.
 /// </summary>
-public sealed class DocumentationLinksTests {
+public sealed partial class DocumentationLinksTests {
 
     private const string BlobPrefix = "https://github.com/Reefact/enum-member-name-binding/blob/main/";
 
     private static readonly DirectoryInfo RepositoryRoot = FindRepositoryRoot();
-    private static readonly Regex        Link           = new(@"\[[^\]]*\]\((?<target>[^)\s]+)\)", RegexOptions.Compiled);
-    private static readonly Regex        Heading        = new(@"^(?<level>#{1,6})\s+(?<text>.+)$", RegexOptions.Compiled | RegexOptions.Multiline);
-    private static readonly Regex        Fence          = new(@"^```(?<tag>\w*)\s*$", RegexOptions.Compiled | RegexOptions.Multiline);
-    private static readonly Regex        FencedCode     = new(@"^```.*?^```", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.Singleline);
+    // Source-generated rather than constructed: the pattern is compiled at build time, so a mistake
+    // in one is a compile error rather than a first-use exception, and RegexOptions.Compiled becomes
+    // unnecessary — the generator emits the matcher itself.
+    [GeneratedRegex(@"\[[^\]]*\]\((?<target>[^)\s]+)\)")]
+    private static partial Regex Link();
+
+    [GeneratedRegex(@"^(?<level>#{1,6})\s+(?<text>.+)$", RegexOptions.Multiline)]
+    private static partial Regex Heading();
+
+    [GeneratedRegex(@"^```(?<tag>\w*)\s*$", RegexOptions.Multiline)]
+    private static partial Regex Fence();
+
+    [GeneratedRegex(@"^```.*?^```", RegexOptions.Multiline | RegexOptions.Singleline)]
+    private static partial Regex FencedCode();
 
     private const string EnglishFrontPage = "README.md";
 
@@ -62,7 +72,7 @@ public sealed class DocumentationLinksTests {
     public void every_link_to_a_file_of_this_repository_resolves(string page) {
         string source = File.ReadAllText(Path.Combine(RepositoryRoot.FullName, page));
 
-        foreach (Match match in Link.Matches(source)) {
+        foreach (Match match in Link().Matches(source)) {
             string target = match.Groups["target"].Value;
             if (target.StartsWith(BlobPrefix, StringComparison.Ordinal)) {
                 target = target[BlobPrefix.Length..];
@@ -90,7 +100,7 @@ public sealed class DocumentationLinksTests {
     public void the_readme_links_to_this_repository_absolutely() {
         string source = File.ReadAllText(Path.Combine(RepositoryRoot.FullName, EnglishFrontPage));
 
-        foreach (Match match in Link.Matches(source)) {
+        foreach (Match match in Link().Matches(source)) {
             string target = match.Groups["target"].Value;
             if (target.StartsWith("http", StringComparison.Ordinal) || target.StartsWith('#')) { continue; }
 
@@ -146,16 +156,25 @@ public sealed class DocumentationLinksTests {
                     $"{page} does not offer a link to {counterpart} in its language header.");
     }
 
+    [GeneratedRegex(@"^#{1,6} ", RegexOptions.Multiline)]
+    private static partial Regex HeadingLine();
+
+    [GeneratedRegex(@"^- ", RegexOptions.Multiline)]
+    private static partial Regex BulletLine();
+
+    [GeneratedRegex(@"^\|", RegexOptions.Multiline)]
+    private static partial Regex TableRowLine();
+
     private static readonly (string What, Regex Pattern)[] Structure = [
-        ("headings", new Regex(@"^#{1,6} ", RegexOptions.Compiled | RegexOptions.Multiline)),
-        ("bullets", new Regex(@"^- ", RegexOptions.Compiled | RegexOptions.Multiline)),
-        ("table rows", new Regex(@"^\|", RegexOptions.Compiled | RegexOptions.Multiline))
+        ("headings", HeadingLine()),
+        ("bullets", BulletLine()),
+        ("table rows", TableRowLine())
     ];
 
     private static int Count(string page, Regex pattern) {
         string source = File.ReadAllText(Path.Combine(RepositoryRoot.FullName, page));
 
-        return pattern.Count(FencedCode.Replace(source, string.Empty));
+        return pattern.Count(FencedCode().Replace(source, string.Empty));
     }
 
     private static string[] FenceTagsOf(string page) {
@@ -163,7 +182,7 @@ public sealed class DocumentationLinksTests {
         List<string>  tags   = [];
         bool          inside = false;
 
-        foreach (Match fence in Fence.Matches(source)) {
+        foreach (Match fence in Fence().Matches(source)) {
             if (!inside) { tags.Add(fence.Groups["tag"].Value); }
             inside = !inside;
         }
@@ -202,7 +221,7 @@ public sealed class DocumentationLinksTests {
     private static HashSet<string> AnchorsOf(string file) {
         HashSet<string> anchors = new(StringComparer.Ordinal);
 
-        foreach (Match heading in Heading.Matches(File.ReadAllText(file))) {
+        foreach (Match heading in Heading().Matches(File.ReadAllText(file))) {
             StringBuilder slug = new();
             foreach (char character in heading.Groups["text"].Value.Trim()) {
                 if (char.IsLetterOrDigit(character)) { slug.Append(char.ToLowerInvariant(character)); } else if (character is ' ' or '-') { slug.Append('-'); }

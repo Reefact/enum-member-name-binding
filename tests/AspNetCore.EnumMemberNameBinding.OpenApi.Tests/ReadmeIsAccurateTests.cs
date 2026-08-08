@@ -8,7 +8,7 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi.Tests;
 /// translated page is one more copy that can go stale.
 /// </summary>
 [Collection(nameof(OpenApiCollection))]
-public sealed class ReadmeIsAccurateTests(OpenApiTestApi api) {
+public sealed partial class ReadmeIsAccurateTests(OpenApiTestApi api) {
 
     [Theory]
     [InlineData("openapi.en.md")]
@@ -18,7 +18,7 @@ public sealed class ReadmeIsAccurateTests(OpenApiTestApi api) {
         string produced = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
         string source   = File.ReadAllText(Path.Combine(FindRepositoryRoot().FullName, "docs", page));
 
-        Match documented = Regex.Match(source, @"""pattern"":""(?<pattern>[^""]+)""");
+        Match documented = DocumentedPattern().Match(source);
         Assert.True(documented.Success, $"docs/{page} no longer shows a pattern; either restore it or drop this test.");
 
         // The page carries the pattern inside a JSON snippet in a markdown table, so backslashes
@@ -28,6 +28,9 @@ public sealed class ReadmeIsAccurateTests(OpenApiTestApi api) {
 
         Assert.Equal(produced, unescaped);
     }
+
+    [GeneratedRegex(@"""pattern"":""(?<pattern>[^""]+)""")]
+    private static partial Regex DocumentedPattern();
 
     private static DirectoryInfo FindRepositoryRoot() {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
