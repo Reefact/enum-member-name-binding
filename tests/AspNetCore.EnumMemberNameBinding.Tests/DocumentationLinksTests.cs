@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
 
+using DiagnosticCatalog.CodeStyle;
+
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
 /// <summary>
@@ -45,11 +47,8 @@ public sealed partial class DocumentationLinksTests {
         ("tests/PackageSmokeTest/README.md", "tests/PackageSmokeTest/README.fr.md")
     ];
 
-    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
-                     Justification = "The collection expression this rule asks for trips CA1825 on the "
-                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
-                                     + "CI legs, where a warning is an error. The object initializer is what "
-                                     + "keeps that leg green.")]
+    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
+                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> Pages {
         get {
             TheoryData<string> data = new();
@@ -61,11 +60,8 @@ public sealed partial class DocumentationLinksTests {
         }
     }
 
-    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
-                     Justification = "The collection expression this rule asks for trips CA1825 on the "
-                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
-                                     + "CI legs, where a warning is an error. The object initializer is what "
-                                     + "keeps that leg green.")]
+    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
+                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string, string> TranslationPairs {
         get {
             TheoryData<string, string> data = new();

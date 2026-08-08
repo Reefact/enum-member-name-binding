@@ -1,6 +1,8 @@
-using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+
+using DiagnosticCatalog.CodeStyle;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
@@ -47,11 +49,8 @@ public sealed class ConcurrentRegistrationTests {
         if (failure is not null) { throw failure; }
     }
 
-    [SuppressMessage("Style", "IDE0028:Simplify collection initialization",
-                     Justification = "The collection expression this rule asks for trips CA1825 on the "
-                                     + "10.0.100 analyzers — the SDK floor in global.json, and one of the two "
-                                     + "CI legs, where a warning is an error. The object initializer is what "
-                                     + "keeps that leg green.")]
+    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
+                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<Type> Racers => new() {
         typeof(Racer0), typeof(Racer1), typeof(Racer2), typeof(Racer3),
         typeof(Racer4), typeof(Racer5), typeof(Racer6), typeof(Racer7)

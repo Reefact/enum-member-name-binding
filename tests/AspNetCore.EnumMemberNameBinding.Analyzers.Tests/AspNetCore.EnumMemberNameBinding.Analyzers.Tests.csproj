@@ -14,6 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The rule identifiers used by this project's SuppressMessage attributes, as constants the
+         compiler resolves. PrivateAssets because nothing of it survives compilation: the constants
+         fold to literals and the analyzers are a build-time check. -->
+    <PackageReference Include="DiagnosticCatalog.CodeStyle" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <!-- Emits the coverage report the Sonar analysis reads. The format lives in

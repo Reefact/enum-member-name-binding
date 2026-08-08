@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
+using DiagnosticCatalog.Trimming;
+
 namespace AspNetCore.EnumMemberNameBinding;
 
 /// <summary>
@@ -59,10 +61,10 @@ internal sealed class EnumMemberNameConverter : EnumConverter {
     }
 
     /// <inheritdoc />
-    [UnconditionalSuppressMessage("Trimming", "IL2026",
-        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
-    [UnconditionalSuppressMessage("AOT", "IL3050",
-        Justification = "The constructor carries the requirement; an instance cannot exist without it.")]
+    [UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id,
+        Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
+    [UnconditionalSuppressMessage(TrimRule.IL3050.Category, TrimRule.IL3050.Id,
+        Justification = SuppressionJustification.IL3050.RequirementCarriedByConstructor)]
     public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType) {
         ArgumentNullException.ThrowIfNull(destinationType);
 
