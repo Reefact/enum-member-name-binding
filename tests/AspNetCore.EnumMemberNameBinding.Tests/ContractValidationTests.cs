@@ -85,6 +85,31 @@ public sealed class ContractValidationTests {
         Assert.Equal("available, out_of_stock, discontinued", EnumContract.For(typeof(ProductStatus)).AllowedValues);
     }
 
+    /// <summary>
+    /// A type that is not an enum is refused, and the refusal names the argument the caller actually
+    /// supplied.
+    /// </summary>
+    /// <remarks>
+    /// <c>EnumTypes</c> is the escape hatch for a caller holding a <see cref="Type" /> at run time,
+    /// so it is the one way a non-enum can get this far — <c>AddEnum&lt;TEnum&gt;()</c> states the
+    /// constraint in the type system.
+    ///
+    /// <c>ParamName</c> is asserted because it is the part a caller can act on, and the part nothing
+    /// else here would notice. It must stay <c>options</c>, the name of the lambda parameter of
+    /// <c>AddEnumMemberNameBinding(options =&gt; ...)</c>; the name of whatever local the
+    /// implementation unpacks that list into would mean nothing to the person reading the exception.
+    /// </remarks>
+    [Fact]
+    public void a_type_that_is_not_an_enum_is_refused_against_the_caller_s_own_argument() {
+        EnumMemberNameBindingOptions options = new();
+        options.EnumTypes.Add(typeof(string));
+
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => EnumMemberNameBindingRegistry.Register(options));
+
+        Assert.Equal("options", exception.ParamName);
+        Assert.Contains("is not an enum", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void a_partial_contract_is_rejected_by_default() {
         EnumMemberNameBindingOptions options = new();
