@@ -25,68 +25,40 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     private const string HelpBase      = "https://github.com/Reefact/enum-member-name-binding/blob/main/docs/rules/";
 
     /// <summary>EMN0001 — two members declare the same public name.</summary>
-    public static readonly DiagnosticDescriptor DuplicatePublicName = new(
-        "EMN0001",
-        "Two enum members declare the same public name",
-        "Members '{0}' and '{1}' both declare the public name '{2}'; a public name must identify exactly one member",
-        Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
-        "Two members declaring the same public name make the value impossible to resolve unambiguously.",
-        HelpBase + "EMN0001.en.md");
+    public static readonly DiagnosticDescriptor DuplicatePublicName = Describe("EMN0001", DiagnosticSeverity.Error);
 
     /// <summary>EMN0002 — the public name is empty or padded with whitespace.</summary>
-    public static readonly DiagnosticDescriptor InvalidPublicName = new(
-        "EMN0002",
-        "The public name is not usable",
-        "Member '{0}' declares the public name '{1}', which {2}",
-        Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
-        "An empty name, or a name padded with whitespace, cannot be sent reliably over HTTP.",
-        HelpBase + "EMN0002.en.md");
+    public static readonly DiagnosticDescriptor InvalidPublicName = Describe("EMN0002", DiagnosticSeverity.Error);
 
     /// <summary>EMN0003 — the enum declares a contract but some members are not annotated.</summary>
-    public static readonly DiagnosticDescriptor IncompleteContract = new(
-        "EMN0003",
-        "The enum contract is incomplete",
-        "Member '{0}' of '{1}' declares no public name, so its C# name '{0}' becomes part of the public API contract",
-        Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
-        "Once an enum declares a contract, every member must declare its public name. A member left "
-      + "unannotated answers to its C# name, which puts an internal identifier in the public contract "
-      + "and makes renaming it a breaking change — exactly what declaring a contract is meant to prevent.",
-        HelpBase + "EMN0003.en.md");
+    public static readonly DiagnosticDescriptor IncompleteContract = Describe("EMN0003", DiagnosticSeverity.Error);
 
     /// <summary>EMN0004 — a [Flags] public name contains a comma.</summary>
-    public static readonly DiagnosticDescriptor CommaInFlagsName = new(
-        "EMN0004",
-        "A [Flags] public name contains a comma",
-        "Member '{0}' declares the public name '{1}'; a comma separates values in a [Flags] enum and cannot appear inside a name",
-        Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
-        "A comma is the separator for combined values, so a name containing one cannot be parsed back.",
-        HelpBase + "EMN0004.en.md");
+    public static readonly DiagnosticDescriptor CommaInFlagsName = Describe("EMN0004", DiagnosticSeverity.Error);
 
     /// <summary>EMN0005 — a public name shadows the C# name of another member.</summary>
-    public static readonly DiagnosticDescriptor PublicNameShadowsAnotherMember = new(
-        "EMN0005",
-        "A public name shadows the C# name of another member",
-        "Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; "
-      + "the value '{1}' resolves to '{0}', so '{2}' is only reachable through a different casing",
-        Category, DiagnosticSeverity.Error, isEnabledByDefault: true,
-        "A declared public name is matched before an unannotated member's C# name, and case-sensitively. "
-      + "The shadowed member therefore answers to every casing of its name except its own, which no "
-      + "reader of the enum can guess. This matters most when EMN0003 has been turned off to allow "
-      + "partial contracts, where it is the only remaining protection.",
-        HelpBase + "EMN0005.en.md");
+    public static readonly DiagnosticDescriptor PublicNameShadowsAnotherMember = Describe("EMN0005", DiagnosticSeverity.Error);
 
     /// <summary>EMN0006 — the public name cannot travel on every input channel.</summary>
-    public static readonly DiagnosticDescriptor NameIsNotPortable = new(
-        "EMN0006",
-        "The public name cannot travel on every input channel",
-        "Member '{0}' declares the public name '{1}', which contains {2} and is refused on {3}",
-        Category, DiagnosticSeverity.Warning, isEnabledByDefault: true,
-        "The promise of one contract on every channel only holds for names every channel can carry. "
-      + "A slash is refused inside a route segment, and a line break or a character outside printable "
-      + "ASCII is refused in a header. Reported as a warning rather than an error because the failure "
-      + "depends on the channels an API actually binds from: a name refused only in a header is "
-      + "harmless in an API that never binds one.",
-        HelpBase + "EMN0006.en.md");
+    public static readonly DiagnosticDescriptor NameIsNotPortable = Describe("EMN0006", DiagnosticSeverity.Warning);
+
+    /// <summary>
+    /// A descriptor whose title, message, description and help link all derive from the rule id, so
+    /// the id is written once and EMN0003 cannot end up carrying EMN0004's wording.
+    /// </summary>
+    private static DiagnosticDescriptor Describe(string id, DiagnosticSeverity severity) {
+        return new DiagnosticDescriptor(
+            id,
+            GetText(id + "Title"),
+            GetText(id + "Message"),
+            Category, severity, isEnabledByDefault: true,
+            GetText(id + "Description"),
+            HelpBase + id + ".en.md");
+    }
+
+    private static LocalizableResourceString GetText(string key) {
+        return new LocalizableResourceString(key, Resources.Manager, typeof(Resources));
+    }
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(

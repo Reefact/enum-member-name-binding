@@ -55,8 +55,7 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
             // A combination is an open set, so it cannot be enumerated. A pattern describes it exactly.
             schema.Enum = null;
             schema.Pattern = BuildFlagsPattern(names);
-            schema.Description = Append(schema.Description,
-                                        $"One or more of: {string.Join(", ", names)}. Combine several with a comma, for example \"{string.Join(", ", names.Take(2))}\".");
+            schema.Description = Append(schema.Description, FlagsCombination(names));
 
             return Task.CompletedTask;
         }
@@ -64,6 +63,16 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
         schema.Enum = [.. names.Select(static name => (JsonNode)JsonValue.Create(name))];
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Describes the combinations a <c>[Flags]</c> enum accepts, which the pattern states exactly
+    /// but unreadably. The one text in this solution whose reader is not a developer: it travels in
+    /// the document, into whatever renders it.
+    /// </summary>
+    private static string FlagsCombination(IReadOnlyList<string> names) {
+        return $"One or more of: {string.Join(", ", names)}. "
+             + $"Combine several with a comma, for example \"{string.Join(", ", names.Take(2))}\".";
     }
 
     private static string BuildFlagsPattern(IReadOnlyList<string> names) {
