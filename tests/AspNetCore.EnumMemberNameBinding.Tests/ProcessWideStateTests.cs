@@ -69,6 +69,40 @@ public sealed class ProcessWideStateTests {
         Assert.IsNotType<EnumMemberNameConverter>(TypeDescriptor.GetConverter(typeof(ValidButRefusedAlongside)));
     }
 
+    public enum ValidBesideAPartialOne {
+
+        [JsonStringEnumMemberName("gamma")] Gamma
+
+    }
+
+    public enum PartiallyAnnotatedHere {
+
+        [JsonStringEnumMemberName("delta")] Delta,
+        Epsilon
+
+    }
+
+    /// <summary>
+    /// A partial contract is refused on the same terms as any other: nothing is installed.
+    /// </summary>
+    /// <remarks>
+    /// The sibling of the test above, and the reason it exists separately: the two refusals are
+    /// decided in different places. Whether a named type is an enum at all, and whether it declares
+    /// a contract, are settled before discovery yields anything; whether its contract is complete is
+    /// settled per type, and used to be settled inside the loop that installs. A caller cannot see
+    /// which check refused them, so both must leave the process alone.
+    /// </remarks>
+    [Fact]
+    public void a_partial_contract_refused_late_installs_nothing_either() {
+        EnumMemberNameBindingOptions options = new();
+        options.AddEnum<ValidBesideAPartialOne>();
+        options.AddEnum<PartiallyAnnotatedHere>();
+
+        Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+
+        Assert.IsNotType<EnumMemberNameConverter>(TypeDescriptor.GetConverter(typeof(ValidBesideAPartialOne)));
+    }
+
     [Fact]
     public void registering_the_same_type_repeatedly_leaves_one_converter_in_place() {
         for (int attempt = 0; attempt < 5; attempt++) {
