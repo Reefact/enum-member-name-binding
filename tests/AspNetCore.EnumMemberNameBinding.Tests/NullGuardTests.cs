@@ -1,5 +1,8 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+
+using DiagnosticCatalog.CodeStyle;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
@@ -32,6 +35,8 @@ public sealed class NullGuardTests {
           + "collection; the guard is covered by the extension's own tests instead.",
     };
 
+    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
+                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> GuardedParameters {
         get {
             TheoryData<string> data = new();
