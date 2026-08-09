@@ -113,13 +113,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         INamedTypeSymbol type = (INamedTypeSymbol)context.Symbol;
         if (type.TypeKind != TypeKind.Enum) { return; }
 
-        List<Member> members = [];
-        foreach (IFieldSymbol field in type.GetMembers().OfType<IFieldSymbol>().Where(f => f.HasConstantValue)) {
-            AttributeData? data = field.GetAttributes()
-                                       .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attributeType));
-            string? name = data?.ConstructorArguments.Length > 0 ? data.ConstructorArguments[0].Value as string : null;
-            members.Add(new Member(field, data, name));
-        }
+        List<Member> members = CollectMembers(type, attributeType);
 
         if (members.Count == 0 || members.All(m => m.Attribute is null)) { return; }
 
@@ -136,44 +130,82 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
             }
 
             Location location = LocationOf(member.Attribute) ?? member.Field.Locations.FirstOrDefault() ?? Location.None;
-            string? name = member.PublicName;
 
-            if (string.IsNullOrEmpty(name)) {
-                context.ReportDiagnostic(Diagnostic.Create(InvalidPublicName, location, member.Field.Name, name, "is empty"));
+            Diagnostic? rejection = Reject(member, isFlags, declared, location);
+            if (rejection is not null) {
+                context.ReportDiagnostic(rejection);
                 continue;
             }
 
-            if (char.IsWhiteSpace(name![0]) || char.IsWhiteSpace(name[name.Length - 1])) {
-                context.ReportDiagnostic(Diagnostic.Create(InvalidPublicName, location, member.Field.Name, name,
-                                                           "has leading or trailing whitespace"));
-                continue;
-            }
+            declared.Add(member.PublicName!, member);
+            ReportAdvice(context, member, members, location);
+        }
+    }
 
-            if (isFlags && name.IndexOf(',') >= 0) {
-                context.ReportDiagnostic(Diagnostic.Create(CommaInFlagsName, location, member.Field.Name, name));
-                continue;
-            }
+    /// <summary>The members carrying a constant value, each paired with its attribute if it has one.</summary>
+    private static List<Member> CollectMembers(INamedTypeSymbol type, INamedTypeSymbol attributeType) {
+        List<Member> members = [];
 
-            if (declared.TryGetValue(name, out Member existing)) {
-                context.ReportDiagnostic(Diagnostic.Create(DuplicatePublicName, location, existing.Field.Name, member.Field.Name, name));
-                continue;
-            }
+        foreach (IFieldSymbol field in type.GetMembers().OfType<IFieldSymbol>().Where(f => f.HasConstantValue)) {
+            AttributeData? data = field.GetAttributes()
+                                       .FirstOrDefault(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, attributeType));
+            string? name = data?.ConstructorArguments.Length > 0 ? data.ConstructorArguments[0].Value as string : null;
+            members.Add(new Member(field, data, name));
+        }
 
-            declared.Add(name, member);
+        return members;
+    }
 
-            if (FindUnportableCharacter(name) is var (description, channel)) {
-                context.ReportDiagnostic(Diagnostic.Create(NameIsNotPortable, location, member.Field.Name, name, description, channel));
-            }
+    /// <summary>
+    /// The diagnostic that disqualifies this member's declared name, or <c>null</c> if the name
+    /// stands.
+    /// </summary>
+    /// <remarks>
+    /// The order is the logic and not a preference: each test assumes the ones before it passed — an
+    /// empty name has no first character to inspect, and a name that is not yet claimed cannot be a
+    /// duplicate. A member earns at most one of these, which is why the caller stops at the first.
+    /// </remarks>
+    private static Diagnostic? Reject(Member member, bool isFlags, Dictionary<string, Member> declared, Location location) {
+        string? name = member.PublicName;
 
-            // Case-insensitive, because that is how the runtime looks up an unannotated member's C#
-            // name. An ordinal comparison here would let [JsonStringEnumMemberName("blue")] Red sit
-            // next to a Blue member unreported, which is the very shape this rule exists to catch.
-            Member? shadowed = members.FirstOrDefault(m => m.Attribute is null
-                                                        && string.Equals(m.Field.Name, name, System.StringComparison.OrdinalIgnoreCase));
-            if (shadowed is not null) {
-                context.ReportDiagnostic(Diagnostic.Create(PublicNameShadowsAnotherMember, location,
-                                                           member.Field.Name, name, shadowed.Field.Name));
-            }
+        if (string.IsNullOrEmpty(name)) {
+            return Diagnostic.Create(InvalidPublicName, location, member.Field.Name, name, "is empty");
+        }
+
+        if (char.IsWhiteSpace(name![0]) || char.IsWhiteSpace(name[name.Length - 1])) {
+            return Diagnostic.Create(InvalidPublicName, location, member.Field.Name, name, "has leading or trailing whitespace");
+        }
+
+        if (isFlags && name.IndexOf(',') >= 0) {
+            return Diagnostic.Create(CommaInFlagsName, location, member.Field.Name, name);
+        }
+
+        if (declared.TryGetValue(name, out Member existing)) {
+            return Diagnostic.Create(DuplicatePublicName, location, existing.Field.Name, member.Field.Name, name);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// The findings a valid name can still earn. Unlike <see cref="Reject" /> these do not disqualify
+    /// anything and do not exclude each other, so both are reported when both apply.
+    /// </summary>
+    private static void ReportAdvice(SymbolAnalysisContext context, Member member, List<Member> members, Location location) {
+        string name = member.PublicName!;
+
+        if (FindUnportableCharacter(name) is var (description, channel)) {
+            context.ReportDiagnostic(Diagnostic.Create(NameIsNotPortable, location, member.Field.Name, name, description, channel));
+        }
+
+        // Case-insensitive, because that is how the runtime looks up an unannotated member's C#
+        // name. An ordinal comparison here would let [JsonStringEnumMemberName("blue")] Red sit
+        // next to a Blue member unreported, which is the very shape this rule exists to catch.
+        Member? shadowed = members.FirstOrDefault(m => m.Attribute is null
+                                                    && string.Equals(m.Field.Name, name, System.StringComparison.OrdinalIgnoreCase));
+        if (shadowed is not null) {
+            context.ReportDiagnostic(Diagnostic.Create(PublicNameShadowsAnotherMember, location,
+                                                       member.Field.Name, name, shadowed.Field.Name));
         }
     }
 

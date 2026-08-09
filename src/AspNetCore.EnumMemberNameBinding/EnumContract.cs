@@ -66,25 +66,17 @@ internal sealed class EnumContract {
             IsContract = true;
             string name = attribute.Name;
 
-            if (string.IsNullOrEmpty(name)) {
-                problems.Add($"member '{field.Name}' declares an empty name.");
-                continue;
+            string? problem = MalformedNameProblem(field.Name, name, _isFlags);
+
+            // The duplicate test claims the name as it checks it, so it stays with the collection it
+            // claims from rather than moving into a function that would have to be handed it.
+            if (problem is null && !byContractName.TryAdd(name, value)) {
+                problem = $"member '{field.Name}' declares the name '{name}', which is already declared by another member. " +
+                          "Two members cannot share the same public name.";
             }
 
-            if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) {
-                problems.Add($"member '{field.Name}' declares the name '{name}', which has leading or trailing whitespace.");
-                continue;
-            }
-
-            if (_isFlags && name.Contains(',', StringComparison.Ordinal)) {
-                problems.Add($"member '{field.Name}' declares the name '{name}', which contains a comma. " +
-                             "A comma separates values in a [Flags] enum and cannot appear inside a name.");
-                continue;
-            }
-
-            if (!byContractName.TryAdd(name, value)) {
-                problems.Add($"member '{field.Name}' declares the name '{name}', which is already declared by another member. " +
-                             "Two members cannot share the same public name.");
+            if (problem is not null) {
+                problems.Add(problem);
                 continue;
             }
 
@@ -93,18 +85,7 @@ internal sealed class EnumContract {
             declaredBy[name] = field.Name;
         }
 
-        // A declared name is matched before an unannotated member's C# name, and case-sensitively,
-        // so the shadowed member ends up answering to every casing of its name except its own.
-        // The comparison is case-insensitive because that is how the C# names are looked up.
-        foreach (KeyValuePair<string, string> declared in declaredBy) {
-            string? shadowed = unannotated.Find(member => string.Equals(member, declared.Key, StringComparison.OrdinalIgnoreCase));
-            if (shadowed is null) { continue; }
-
-            problems.Add($"member '{declared.Value}' declares the public name '{declared.Key}', which is also the C# name " +
-                         $"of member '{shadowed}'. The value '{declared.Key}' resolves to '{declared.Value}', leaving " +
-                         $"'{shadowed}' reachable only through a different casing. Rename the public name, or annotate " +
-                         $"'{shadowed}' as well.");
-        }
+        AddShadowingProblems(declaredBy, unannotated, problems);
 
         if (problems.Count > 0) {
             throw new EnumContractException(enumType, problems);
@@ -116,6 +97,48 @@ internal sealed class EnumContract {
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
         AllowedValues       = string.Join(", ", PublicNames);
+    }
+
+    /// <summary>
+    /// Why a declared name is malformed on its own terms, or <c>null</c>. The tests run in this order
+    /// because each assumes the ones before it passed — an empty name has no first character to
+    /// inspect.
+    /// </summary>
+    private static string? MalformedNameProblem(string memberName, string name, bool isFlags) {
+        if (string.IsNullOrEmpty(name)) {
+            return $"member '{memberName}' declares an empty name.";
+        }
+
+        if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) {
+            return $"member '{memberName}' declares the name '{name}', which has leading or trailing whitespace.";
+        }
+
+        if (isFlags && name.Contains(',', StringComparison.Ordinal)) {
+            return $"member '{memberName}' declares the name '{name}', which contains a comma. " +
+                   "A comma separates values in a [Flags] enum and cannot appear inside a name.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Reports every declared name that is also the C# name of an unannotated member.
+    /// </summary>
+    /// <remarks>
+    /// A declared name is matched before an unannotated member's C# name, and case-sensitively, so
+    /// the shadowed member ends up answering to every casing of its name except its own. The
+    /// comparison is case-insensitive because that is how the C# names are looked up.
+    /// </remarks>
+    private static void AddShadowingProblems(Dictionary<string, string> declaredBy, List<string> unannotated, List<string> problems) {
+        foreach (KeyValuePair<string, string> declared in declaredBy) {
+            string? shadowed = unannotated.Find(member => string.Equals(member, declared.Key, StringComparison.OrdinalIgnoreCase));
+            if (shadowed is null) { continue; }
+
+            problems.Add($"member '{declared.Value}' declares the public name '{declared.Key}', which is also the C# name " +
+                         $"of member '{shadowed}'. The value '{declared.Key}' resolves to '{declared.Value}', leaving " +
+                         $"'{shadowed}' reachable only through a different casing. Rename the public name, or annotate " +
+                         $"'{shadowed}' as well.");
+        }
     }
 
     /// <summary>The described enum type.</summary>
