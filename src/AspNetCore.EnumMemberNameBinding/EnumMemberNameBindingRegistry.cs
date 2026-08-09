@@ -30,28 +30,51 @@ internal static class EnumMemberNameBindingRegistry {
     /// registers the converter. Every contract is validated here, at startup — an invalid one throws
     /// <see cref="EnumContractException" /> before the application serves its first request.
     /// </summary>
+    /// <remarks>
+    /// All or nothing: if any enum is refused, none is installed. That is a guarantee and not a
+    /// side effect of the ordering, because the alternative cannot be repaired — a caller who reads
+    /// the exception has no way to undo the registrations that preceded it.
+    /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     internal static IReadOnlyList<Type> Register(EnumMemberNameBindingOptions options) {
-        List<Type> registered = [];
+        // Three steps, in this order, and the order is the guarantee: resolve everything, refuse
+        // everything that must be refused, then install. TypeDescriptor.AddAttributes mutates
+        // process-wide state and cannot be undone, so a registration that installed part of its
+        // list before refusing the rest would leave the process in a state the caller never asked
+        // for and cannot roll back — after a failure they will read as "nothing happened".
+        List<Type> discovered = [.. Discover(options)];
 
-        foreach (Type enumType in Discover(options)) {
-            EnumContract contract = EnumContract.For(enumType);
+        foreach (Type enumType in discovered) {
+            RefuseIfContractIsPartial(enumType, options.AllowPartialContracts);
+        }
 
-            // Validated on every call, so a second registration with stricter options still fails.
-            if (!options.AllowPartialContracts && contract.UnannotatedMembers.Length > 0) {
-                throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
-            }
-
+        foreach (Type enumType in discovered) {
             lock (Gate) {
                 if (Registered.Add(enumType)) {
                     TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
                 }
             }
-
-            registered.Add(enumType);
         }
 
-        return registered;
+        return discovered;
+    }
+
+    /// <summary>
+    /// Refuses an enum that declares a name on some members only, unless the caller has said that is
+    /// what they want.
+    /// </summary>
+    /// <remarks>
+    /// Checked on every call rather than once per type, so a second registration with stricter
+    /// options still fails: what is allowed is a property of the call, not of the enum.
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    private static void RefuseIfContractIsPartial(Type enumType, bool allowPartialContracts) {
+        if (allowPartialContracts) { return; }
+
+        EnumContract contract = EnumContract.For(enumType);
+        if (contract.UnannotatedMembers.Length == 0) { return; }
+
+        throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
     }
 
     /// <summary>Builds the <c>System.Text.Json</c> converter for a single enum type.</summary>
