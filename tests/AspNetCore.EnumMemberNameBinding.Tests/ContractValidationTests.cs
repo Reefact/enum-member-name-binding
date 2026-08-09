@@ -69,8 +69,8 @@ public sealed class ContractValidationTests {
     public void distinct_names_sharing_one_numeric_value_are_both_accepted() {
         EnumContract contract = EnumContract.For(typeof(NumericAlias));
 
-        Assert.True(contract.TryParse("first", out object first));
-        Assert.True(contract.TryParse("uno", out object uno));
+        Assert.True(contract.TryParse("first", out object? first));
+        Assert.True(contract.TryParse("uno", out object? uno));
         Assert.Equal(first, uno);
     }
 

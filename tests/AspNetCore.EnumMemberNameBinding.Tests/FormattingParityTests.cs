@@ -2,6 +2,10 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using System.Diagnostics.CodeAnalysis;
+
+using DiagnosticCatalog.NetAnalyzers;
+
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
 /// <summary>
@@ -94,6 +98,8 @@ public sealed class FormattingParityTests {
     [InlineData(typeof(SignedFlags))]
     [InlineData(typeof(UnsignedFlags))]
     [InlineData(typeof(WithZeroMember))]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id,
+                     Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public void every_value_is_written_exactly_as_system_text_json_writes_it(Type enumType) {
         EnumContract contract = EnumContract.For(enumType);
         JsonSerializerOptions oracle = OracleFor(enumType);
@@ -124,6 +130,8 @@ public sealed class FormattingParityTests {
     [InlineData(typeof(SignedFlags))]
     [InlineData(typeof(UnsignedFlags))]
     [InlineData(typeof(WithZeroMember))]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id,
+                     Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public void what_is_written_reads_back_to_the_same_value(Type enumType) {
         EnumContract contract = EnumContract.For(enumType);
 
@@ -131,7 +139,7 @@ public sealed class FormattingParityTests {
             string? written = contract.Format(value);
             if (written is null) { continue; }
 
-            Assert.True(contract.TryParse(written, out object read), $"'{written}' was written but cannot be read back.");
+            Assert.True(contract.TryParse(written, out object? read), $"'{written}' was written but cannot be read back.");
             Assert.Equal(value, read);
         }
     }

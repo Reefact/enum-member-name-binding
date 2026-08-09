@@ -27,6 +27,9 @@ public sealed class EnumContractException : InvalidOperationException {
     public IReadOnlyList<string> Problems { get; }
 
     private static string BuildMessage(Type enumType, IReadOnlyList<string> problems) {
+        ArgumentNullException.ThrowIfNull(enumType);
+        ArgumentNullException.ThrowIfNull(problems);
+
         string details = string.Join(Environment.NewLine, problems.Select(static p => "  - " + p));
 
         return $"The enum contract declared on '{enumType.FullName}' is invalid:{Environment.NewLine}{details}";
