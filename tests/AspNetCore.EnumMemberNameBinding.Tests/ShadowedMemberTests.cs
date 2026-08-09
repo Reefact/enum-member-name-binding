@@ -64,9 +64,9 @@ public sealed class ShadowedMemberTests {
     public void a_public_name_that_collides_with_nothing_is_accepted() {
         EnumContract contract = EnumContract.For(typeof(NoCollision));
 
-        Assert.True(contract.TryParse("crimson", out object red));
+        Assert.True(contract.TryParse("crimson", out object? red));
         Assert.Equal(NoCollision.Red, red);
-        Assert.True(contract.TryParse("Blue", out object blue));
+        Assert.True(contract.TryParse("Blue", out object? blue));
         Assert.Equal(NoCollision.Blue, blue);
     }
 

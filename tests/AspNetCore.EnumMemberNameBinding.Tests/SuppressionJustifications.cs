@@ -21,6 +21,24 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 [ExcludeFromCodeCoverage]
 internal static class SuppressionJustification {
 
+    /// <summary>Validate arguments of public methods.</summary>
+    internal static class CA1062 {
+
+        /// <summary>
+        /// The parameter comes from ASP.NET Core model binding or from xUnit's theory data, so no
+        /// caller exists that could pass null and the guard would be unreachable — and unreachable
+        /// code cannot be covered.
+        /// </summary>
+        /// <remarks>
+        /// Per-site rather than an .editorconfig section for <c>tests/**</c>, which would also
+        /// silence the rule on a future test helper that really is called by hand.
+        /// </remarks>
+        internal const string ArgumentSuppliedByTheFramework =
+            "The parameter comes from ASP.NET Core model binding or from xUnit's own theory data, "
+          + "so no caller exists that could pass null and no guard could ever run.";
+
+    }
+
     /// <summary>Simplify collection initialization.</summary>
     internal static class IDE0028 {
 

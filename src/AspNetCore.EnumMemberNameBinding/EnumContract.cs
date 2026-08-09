@@ -184,11 +184,13 @@ internal sealed class EnumContract {
     /// assumed: the value as a whole is trimmed, each element of a <c>[Flags]</c> list is trimmed,
     /// and a single trailing comma is tolerated while a leading or repeated one is not.
     /// </remarks>
-    internal bool TryParse(string value, out object result) {
+    internal bool TryParse(string value, [MaybeNullWhen(false)] out object result) {
+        ArgumentNullException.ThrowIfNull(value);
+
         ReadOnlySpan<char> trimmed = value.AsSpan().Trim();
 
         if (trimmed.IsEmpty) {
-            result = null!;
+            result = null;
 
             return false;
         }
@@ -212,6 +214,8 @@ internal sealed class EnumContract {
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
     internal string? Format(object value) {
+        ArgumentNullException.ThrowIfNull(value);
+
         if (_names.TryGetValue(value, out string? name)) { return name; }
         if (!_isFlags) { return null; }
 
@@ -235,7 +239,7 @@ internal sealed class EnumContract {
         };
     }
 
-    private bool TryParseSingle(string token, out object result) {
+    private bool TryParseSingle(string token, [MaybeNullWhen(false)] out object result) {
         if (_byContractName.TryGetValue(token, out object? contract)) {
             result = contract;
 
@@ -248,13 +252,13 @@ internal sealed class EnumContract {
             return true;
         }
 
-        result = null!;
+        result = null;
 
         return false;
     }
 
-    private bool TryParseFlags(ReadOnlySpan<char> value, out object result) {
-        result = null!;
+    private bool TryParseFlags(ReadOnlySpan<char> value, [MaybeNullWhen(false)] out object result) {
+        result = null;
 
         int count = 0;
         foreach (Range _ in value.Split(',')) { count++; }
@@ -273,7 +277,7 @@ internal sealed class EnumContract {
                 return false;
             }
 
-            if (!TryParseSingle(token.ToString(), out object part)) { return false; }
+            if (!TryParseSingle(token.ToString(), out object? part)) { return false; }
 
             accumulator |= ToUInt64(part);
         }

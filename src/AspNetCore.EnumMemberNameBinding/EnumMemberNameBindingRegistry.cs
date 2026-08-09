@@ -37,6 +37,8 @@ internal static class EnumMemberNameBindingRegistry {
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     internal static IReadOnlyList<Type> Register(EnumMemberNameBindingOptions options) {
+        ArgumentNullException.ThrowIfNull(options);
+
         // Three steps, in this order, and the order is the guarantee: resolve everything, refuse
         // everything that must be refused, then install. TypeDescriptor.AddAttributes mutates
         // process-wide state and cannot be undone, so a registration that installed part of its
@@ -81,6 +83,8 @@ internal static class EnumMemberNameBindingRegistry {
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
     internal static JsonConverter CreateJsonConverter(Type enumType) {
+        ArgumentNullException.ThrowIfNull(enumType);
+
         Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
 
         return (JsonConverter)Activator.CreateInstance(converterType, null, false)!;

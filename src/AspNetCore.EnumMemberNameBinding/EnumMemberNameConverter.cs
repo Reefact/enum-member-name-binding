@@ -44,20 +44,28 @@ internal sealed class EnumMemberNameConverter : EnumConverter {
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
-    public EnumMemberNameConverter(Type type) : base(type) {
+    public EnumMemberNameConverter(Type type) : base(NotNull(type)) {
         _contract = EnumContract.For(type);
+    }
+
+    private static Type NotNull(Type type) {
+        ArgumentNullException.ThrowIfNull(type);
+
+        return type;
     }
 
     /// <inheritdoc />
     public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) {
+        ArgumentNullException.ThrowIfNull(value);
+
         if (value is string text) {
-            if (_contract.TryParse(text, out object result)) { return result; }
+            if (_contract.TryParse(text, out object? result)) { return result; }
 
             throw new FormatException(
                 $"'{text}' is not a valid value for {_contract.EnumType.Name}. Allowed values: {_contract.AllowedValues}.");
         }
 
-        return base.ConvertFrom(context!, culture, value);
+        return base.ConvertFrom(context, culture, value);
     }
 
     /// <inheritdoc />

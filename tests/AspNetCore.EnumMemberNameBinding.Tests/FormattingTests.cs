@@ -60,8 +60,8 @@ public sealed class FormattingTests {
     public void both_alias_names_are_read_back_to_the_same_value() {
         EnumContract contract = EnumContract.For(typeof(Aliased));
 
-        Assert.True(contract.TryParse("first", out object first));
-        Assert.True(contract.TryParse("uno", out object uno));
+        Assert.True(contract.TryParse("first", out object? first));
+        Assert.True(contract.TryParse("uno", out object? uno));
         Assert.Equal(first, uno);
         Assert.Equal(Aliased.First, first);
     }
@@ -102,7 +102,7 @@ public sealed class FormattingTests {
         string? written = contract.Format(value);
 
         Assert.NotNull(written);
-        Assert.True(contract.TryParse(written, out object read));
+        Assert.True(contract.TryParse(written, out object? read));
         Assert.Equal(value, read);
     }
 

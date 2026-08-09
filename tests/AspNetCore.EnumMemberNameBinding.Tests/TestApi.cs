@@ -7,6 +7,10 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using System.Diagnostics.CodeAnalysis;
+
+using DiagnosticCatalog.NetAnalyzers;
+
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
 /// <summary>A fully annotated contract enum.</summary>
@@ -64,6 +68,8 @@ public sealed class BindingController : ControllerBase {
     public IActionResult StatusFromForm([FromForm] ProductStatus value) => Ok(new Bound(value.ToString()));
 
     [HttpPost("/status/body")]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id,
+                     Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public IActionResult StatusFromBody([FromBody] Payload payload) => Ok(new Bound(payload.Value.ToString()));
 
     [HttpGet("/partial/query")]
