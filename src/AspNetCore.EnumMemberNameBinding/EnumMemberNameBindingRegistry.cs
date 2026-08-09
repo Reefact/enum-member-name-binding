@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -76,7 +77,29 @@ internal static class EnumMemberNameBindingRegistry {
         EnumContract contract = EnumContract.For(enumType);
         if (contract.UnannotatedMembers.Length == 0) { return; }
 
-        throw new EnumContractException(enumType, [BuildPartialContractProblem(contract)]);
+        throw new EnumContractException(enumType, [Problem.PartialContract(contract.UnannotatedMembers)]);
+    }
+
+    /// <summary>What this type says when it refuses to register an enum.</summary>
+    private static class Problem {
+
+        /// <summary>The plural agrees, so the sentence reads correctly for one member as for several.</summary>
+        internal static string PartialContract(ImmutableArray<string> unannotatedMembers) {
+            string members = string.Join(", ", unannotatedMembers.Select(static m => $"'{m}'"));
+            string plural  = unannotatedMembers.Length == 1 ? " carries" : " carry";
+
+            return $"{members}{plural} no [JsonStringEnumMemberName], so the C# name becomes part of the " +
+                   "public contract of the API. Annotate every member, or set " +
+                   $"{nameof(EnumMemberNameBindingOptions)}.{nameof(EnumMemberNameBindingOptions.AllowPartialContracts)} " +
+                   "if the enum is not yours to annotate.";
+        }
+
+        internal static string NoContractToApply() {
+            return "no member carries [JsonStringEnumMemberName], so there is no contract to apply. "
+                 + "Registering it would change how an ordinary enum binds and serializes. Annotate its "
+                 + "members, or drop the registration.";
+        }
+
     }
 
     /// <summary>Builds the <c>System.Text.Json</c> converter for a single enum type.</summary>
@@ -88,16 +111,6 @@ internal static class EnumMemberNameBindingRegistry {
         Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
 
         return (JsonConverter)Activator.CreateInstance(converterType, null, false)!;
-    }
-
-    private static string BuildPartialContractProblem(EnumContract contract) {
-        string members = string.Join(", ", contract.UnannotatedMembers.Select(static m => $"'{m}'"));
-        string plural  = contract.UnannotatedMembers.Length == 1 ? " carries" : " carry";
-
-        return $"{members}{plural} no [JsonStringEnumMemberName], so the C# name becomes part of the " +
-               "public contract of the API. Annotate every member, or set " +
-               $"{nameof(EnumMemberNameBindingOptions)}.{nameof(EnumMemberNameBindingOptions.AllowPartialContracts)} " +
-               "if the enum is not yours to annotate.";
     }
 
     /// <summary>
@@ -138,11 +151,7 @@ internal static class EnumMemberNameBindingRegistry {
         // serializes, which is exactly what this library promises never to do. Naming one
         // explicitly is a mistake worth reporting rather than a preference worth honouring.
         if (!EnumContract.For(explicitType).IsContract) {
-            throw new EnumContractException(explicitType, [
-                "no member carries [JsonStringEnumMemberName], so there is no contract to apply. "
-              + "Registering it would change how an ordinary enum binds and serializes. Annotate its "
-              + "members, or drop the registration."
-            ]);
+            throw new EnumContractException(explicitType, [Problem.NoContractToApply()]);
         }
     }
 

@@ -101,6 +101,12 @@ public sealed class NullGuardTests {
         foreach (Type type in typeof(EnumContract).Assembly.GetTypes()) {
             if (IsCompilerGenerated(type)) { continue; }
 
+            // A private nested type is inside its container's boundary, whatever its members
+            // declare: only the containing type can reach it, and a type trusts itself. Reading the
+            // member's own accessibility is not enough, since `internal` on a member of a private
+            // type is still private in effect.
+            if (type.IsNestedPrivate) { continue; }
+
             IEnumerable<MethodBase> members =
                 type.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                     .Cast<MethodBase>()

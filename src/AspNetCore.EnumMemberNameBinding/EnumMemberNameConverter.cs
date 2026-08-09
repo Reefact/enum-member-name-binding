@@ -61,11 +61,14 @@ internal sealed class EnumMemberNameConverter : EnumConverter {
         if (value is string text) {
             if (_contract.TryParse(text, out object? result)) { return result; }
 
-            throw new FormatException(
-                $"'{text}' is not a valid value for {_contract.EnumType.Name}. Allowed values: {_contract.AllowedValues}.");
+            throw new FormatException(NotAValidValue(text));
         }
 
         return base.ConvertFrom(context, culture, value);
+    }
+
+    private string NotAValidValue(string text) {
+        return $"'{text}' is not a valid value for {_contract.EnumType.Name}. Allowed values: {_contract.AllowedValues}.";
     }
 
     /// <inheritdoc />

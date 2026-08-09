@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="EMN0001Title" xml:space="preserve">
+    <value>Two enum members declare the same public name</value>
+  </data>
+  <data name="EMN0001Message" xml:space="preserve">
+    <value>Members '{0}' and '{1}' both declare the public name '{2}'; a public name must identify exactly one member</value>
+  </data>
+  <data name="EMN0001Description" xml:space="preserve">
+    <value>Two members declaring the same public name make the value impossible to resolve unambiguously.</value>
+  </data>
+  <data name="EMN0002Title" xml:space="preserve">
+    <value>The public name is not usable</value>
+  </data>
+  <data name="EMN0002Message" xml:space="preserve">
+    <value>Member '{0}' declares the public name '{1}', which {2}</value>
+  </data>
+  <data name="EMN0002Description" xml:space="preserve">
+    <value>An empty name, or a name padded with whitespace, cannot be sent reliably over HTTP.</value>
+  </data>
+  <data name="EMN0003Title" xml:space="preserve">
+    <value>The enum contract is incomplete</value>
+  </data>
+  <data name="EMN0003Message" xml:space="preserve">
+    <value>Member '{0}' of '{1}' declares no public name, so its C# name '{0}' becomes part of the public API contract</value>
+  </data>
+  <data name="EMN0003Description" xml:space="preserve">
+    <value>Once an enum declares a contract, every member must declare its public name. A member left unannotated answers to its C# name, which puts an internal identifier in the public contract and makes renaming it a breaking change — exactly what declaring a contract is meant to prevent.</value>
+  </data>
+  <data name="EMN0004Title" xml:space="preserve">
+    <value>A [Flags] public name contains a comma</value>
+  </data>
+  <data name="EMN0004Message" xml:space="preserve">
+    <value>Member '{0}' declares the public name '{1}'; a comma separates values in a [Flags] enum and cannot appear inside a name</value>
+  </data>
+  <data name="EMN0004Description" xml:space="preserve">
+    <value>A comma is the separator for combined values, so a name containing one cannot be parsed back.</value>
+  </data>
+  <data name="EMN0005Title" xml:space="preserve">
+    <value>A public name shadows the C# name of another member</value>
+  </data>
+  <data name="EMN0005Message" xml:space="preserve">
+    <value>Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; the value '{1}' resolves to '{0}', so '{2}' is only reachable through a different casing</value>
+  </data>
+  <data name="EMN0005Description" xml:space="preserve">
+    <value>A declared public name is matched before an unannotated member's C# name, and case-sensitively. The shadowed member therefore answers to every casing of its name except its own, which no reader of the enum can guess. This matters most when EMN0003 has been turned off to allow partial contracts, where it is the only remaining protection.</value>
+  </data>
+  <data name="EMN0006Title" xml:space="preserve">
+    <value>The public name cannot travel on every input channel</value>
+  </data>
+  <data name="EMN0006Message" xml:space="preserve">
+    <value>Member '{0}' declares the public name '{1}', which contains {2} and is refused on {3}</value>
+  </data>
+  <data name="EMN0006Description" xml:space="preserve">
+    <value>The promise of one contract on every channel only holds for names every channel can carry. A slash is refused inside a route segment, and a line break or a character outside printable ASCII is refused in a header. Reported as a warning rather than an error because the failure depends on the channels an API actually binds from: a name refused only in a header is harmless in an API that never binds one.</value>
+  </data>
+</root>

@@ -71,8 +71,7 @@ internal sealed class EnumContract {
             // The duplicate test claims the name as it checks it, so it stays with the collection it
             // claims from rather than moving into a function that would have to be handed it.
             if (problem is null && !byContractName.TryAdd(name, value)) {
-                problem = $"member '{field.Name}' declares the name '{name}', which is already declared by another member. " +
-                          "Two members cannot share the same public name.";
+                problem = Problem.DuplicateName(field.Name, name);
             }
 
             if (problem is not null) {
@@ -106,16 +105,15 @@ internal sealed class EnumContract {
     /// </summary>
     private static string? MalformedNameProblem(string memberName, string name, bool isFlags) {
         if (string.IsNullOrEmpty(name)) {
-            return $"member '{memberName}' declares an empty name.";
+            return Problem.EmptyName(memberName);
         }
 
         if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) {
-            return $"member '{memberName}' declares the name '{name}', which has leading or trailing whitespace.";
+            return Problem.SurroundingWhitespace(memberName, name);
         }
 
         if (isFlags && name.Contains(',', StringComparison.Ordinal)) {
-            return $"member '{memberName}' declares the name '{name}', which contains a comma. " +
-                   "A comma separates values in a [Flags] enum and cannot appear inside a name.";
+            return Problem.CommaInFlagsName(memberName, name);
         }
 
         return null;
@@ -134,11 +132,41 @@ internal sealed class EnumContract {
             string? shadowed = unannotated.Find(member => string.Equals(member, declared.Key, StringComparison.OrdinalIgnoreCase));
             if (shadowed is null) { continue; }
 
-            problems.Add($"member '{declared.Value}' declares the public name '{declared.Key}', which is also the C# name " +
-                         $"of member '{shadowed}'. The value '{declared.Key}' resolves to '{declared.Value}', leaving " +
-                         $"'{shadowed}' reachable only through a different casing. Rename the public name, or annotate " +
-                         $"'{shadowed}' as well.");
+            problems.Add(Problem.ShadowsAnotherMember(declared.Value, declared.Key, shadowed));
         }
+    }
+
+    /// <summary>
+    /// What this type says when a declared contract cannot be applied. One entry of
+    /// <see cref="EnumContractException.Problems" /> each.
+    /// </summary>
+    private static class Problem {
+
+        internal static string EmptyName(string memberName) {
+            return $"member '{memberName}' declares an empty name.";
+        }
+
+        internal static string SurroundingWhitespace(string memberName, string name) {
+            return $"member '{memberName}' declares the name '{name}', which has leading or trailing whitespace.";
+        }
+
+        internal static string CommaInFlagsName(string memberName, string name) {
+            return $"member '{memberName}' declares the name '{name}', which contains a comma. " +
+                   "A comma separates values in a [Flags] enum and cannot appear inside a name.";
+        }
+
+        internal static string DuplicateName(string memberName, string name) {
+            return $"member '{memberName}' declares the name '{name}', which is already declared by another member. " +
+                   "Two members cannot share the same public name.";
+        }
+
+        internal static string ShadowsAnotherMember(string memberName, string name, string shadowedMemberName) {
+            return $"member '{memberName}' declares the public name '{name}', which is also the C# name " +
+                   $"of member '{shadowedMemberName}'. The value '{name}' resolves to '{memberName}', leaving " +
+                   $"'{shadowedMemberName}' reachable only through a different casing. Rename the public name, or annotate " +
+                   $"'{shadowedMemberName}' as well.";
+        }
+
     }
 
     /// <summary>The described enum type.</summary>
