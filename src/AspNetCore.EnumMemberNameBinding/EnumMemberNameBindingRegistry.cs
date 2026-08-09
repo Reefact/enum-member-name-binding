@@ -73,37 +73,60 @@ internal static class EnumMemberNameBindingRegistry {
                "if the enum is not yours to annotate.";
     }
 
+    /// <summary>
+    /// The enums covered by <paramref name="options" />: those named explicitly, then those found by
+    /// scanning.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately not an iterator. Every explicit registration is checked here, before the first
+    /// element is produced, so an invalid one is refused before a single converter is installed —
+    /// <see cref="TypeDescriptor.AddAttributes(Type, Attribute[])" /> mutates process-wide state and
+    /// cannot be undone, which makes "all or nothing" the only honest outcome. An iterator would
+    /// defer these throws to the first <c>MoveNext</c>, and the caller would already have registered
+    /// whatever came before the bad entry.
+    /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static IEnumerable<Type> Discover(EnumMemberNameBindingOptions options) {
+        foreach (Type explicitType in options.EnumTypes) {
+            RefuseUnlessContractEnum(explicitType);
+        }
+
+        return Enumerate(options);
+    }
+
+    /// <summary>Why an explicitly named type cannot be registered, as an exception.</summary>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    private static void RefuseUnlessContractEnum(Type explicitType) {
+        if (!explicitType.IsEnum) {
+            throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", nameof(explicitType));
+        }
+
+        // Registering an enum that declares nothing would change how an ordinary enum binds and
+        // serializes, which is exactly what this library promises never to do. Naming one
+        // explicitly is a mistake worth reporting rather than a preference worth honouring.
+        if (!EnumContract.For(explicitType).IsContract) {
+            throw new EnumContractException(explicitType, [
+                "no member carries [JsonStringEnumMemberName], so there is no contract to apply. "
+              + "Registering it would change how an ordinary enum binds and serializes. Annotate its "
+              + "members, or drop the registration."
+            ]);
+        }
+    }
+
+    /// <summary>
+    /// The two discovery phases, in order: the explicit types, then whatever the scan adds. The
+    /// <c>seen</c> set carries from one into the other, which is what keeps a type named explicitly
+    /// from being yielded twice.
+    /// </summary>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    private static IEnumerable<Type> Enumerate(EnumMemberNameBindingOptions options) {
         HashSet<Type> seen = [];
 
         foreach (Type explicitType in options.EnumTypes) {
-            if (!explicitType.IsEnum) {
-                throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", nameof(options));
-            }
-
-            // Registering an enum that declares nothing would change how an ordinary enum binds and
-            // serializes, which is exactly what this library promises never to do. Naming one
-            // explicitly is a mistake worth reporting rather than a preference worth honouring.
-            if (!EnumContract.For(explicitType).IsContract) {
-                throw new EnumContractException(explicitType, [
-                    "no member carries [JsonStringEnumMemberName], so there is no contract to apply. "
-                  + "Registering it would change how an ordinary enum binds and serializes. Annotate its "
-                  + "members, or drop the registration."
-                ]);
-            }
-
             if (seen.Add(explicitType)) { yield return explicitType; }
         }
 
-        IEnumerable<Assembly> assemblies = options.Assemblies;
-
-        if (options.Assemblies.Count == 0 && options.EnumTypes.Count == 0) {
-            Assembly? entry = Assembly.GetEntryAssembly();
-            assemblies = entry is null ? Array.Empty<Assembly>() : new[] { entry };
-        }
-
-        foreach (Assembly assembly in assemblies.Distinct()) {
+        foreach (Assembly assembly in AssembliesToScan(options)) {
             foreach (Type type in GetLoadableTypes(assembly)) {
                 if (!type.IsEnum || !seen.Add(type)) { continue; }
 
@@ -111,6 +134,20 @@ internal static class EnumMemberNameBindingRegistry {
                 else { seen.Remove(type); }
             }
         }
+    }
+
+    /// <summary>
+    /// The assemblies to scan: those configured, or the entry assembly when nothing at all was
+    /// configured — naming types or assemblies is taken as "scan nothing else".
+    /// </summary>
+    private static IEnumerable<Assembly> AssembliesToScan(EnumMemberNameBindingOptions options) {
+        if (options.Assemblies.Count > 0 || options.EnumTypes.Count > 0) {
+            return options.Assemblies.Distinct();
+        }
+
+        Assembly? entry = Assembly.GetEntryAssembly();
+
+        return entry is null ? [] : [entry];
     }
 
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]

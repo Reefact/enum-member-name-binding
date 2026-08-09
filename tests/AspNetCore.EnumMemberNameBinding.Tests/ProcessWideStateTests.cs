@@ -34,6 +34,41 @@ public sealed class RepeatedController : ControllerBase {
 /// </summary>
 public sealed class ProcessWideStateTests {
 
+    public enum ValidButRefusedAlongside {
+
+        [JsonStringEnumMemberName("alpha")] Alpha
+
+    }
+
+    public enum DeclaresNoContract {
+
+        Beta
+
+    }
+
+    /// <summary>
+    /// A registration that names one good enum and one bad one installs neither.
+    /// </summary>
+    /// <remarks>
+    /// This matters more here than it would elsewhere, and that is why the test lives in this file:
+    /// <c>TypeDescriptor.AddAttributes</c> cannot be undone. A registration that installed the
+    /// converter for the members it had already reached before refusing the rest would leave the
+    /// process permanently in a state the caller never asked for and cannot roll back — a start-up
+    /// failure that still changed how the application behaves.
+    ///
+    /// The good enum is named first on purpose. It is the one that would have been installed.
+    /// </remarks>
+    [Fact]
+    public void a_refused_registration_installs_nothing_at_all() {
+        EnumMemberNameBindingOptions options = new();
+        options.AddEnum<ValidButRefusedAlongside>();
+        options.AddEnum<DeclaresNoContract>();
+
+        Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+
+        Assert.IsNotType<EnumMemberNameConverter>(TypeDescriptor.GetConverter(typeof(ValidButRefusedAlongside)));
+    }
+
     [Fact]
     public void registering_the_same_type_repeatedly_leaves_one_converter_in_place() {
         for (int attempt = 0; attempt < 5; attempt++) {
