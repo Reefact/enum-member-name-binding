@@ -116,14 +116,19 @@ internal static class EnumMemberNameBindingRegistry {
     /// <summary>
     /// The two discovery phases, in order: the explicit types, then whatever the scan adds. The
     /// <c>seen</c> set carries from one into the other, which is what keeps a type named explicitly
-    /// from being yielded twice.
+    /// from being yielded a second time by the scan.
     /// </summary>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static IEnumerable<Type> Enumerate(EnumMemberNameBindingOptions options) {
         HashSet<Type> seen = [];
 
-        foreach (Type explicitType in options.EnumTypes) {
-            if (seen.Add(explicitType)) { yield return explicitType; }
+        // Distinct() rather than filtering on what HashSet.Add returns. The two are equivalent —
+        // `seen` starts empty, so Add is true exactly on a first occurrence — but one of them says
+        // "each explicit type once" and the other says it as a side effect of remembering.
+        foreach (Type explicitType in options.EnumTypes.Distinct()) {
+            seen.Add(explicitType);
+
+            yield return explicitType;
         }
 
         foreach (Assembly assembly in AssembliesToScan(options)) {
