@@ -1,6 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-
-using DiagnosticCatalog.CodeStyle;
 
 using Microsoft.CodeAnalysis;
 
@@ -16,8 +13,6 @@ public sealed class HelpLinkTests {
     private static readonly DirectoryInfo RepositoryRoot = FindRepositoryRoot();
     private static readonly string[]      Languages      = ["en", "fr"];
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> Descriptors {
         get {
             TheoryData<string> data = new();

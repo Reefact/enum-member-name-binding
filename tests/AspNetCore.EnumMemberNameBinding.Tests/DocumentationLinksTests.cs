@@ -1,8 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.RegularExpressions;
-
-using DiagnosticCatalog.CodeStyle;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
@@ -50,8 +47,6 @@ public sealed partial class DocumentationLinksTests {
         ("tests/PackageSmokeTest/README.md", "tests/PackageSmokeTest/README.fr.md")
     ];
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> Pages {
         get {
             TheoryData<string> data = new();
@@ -63,8 +58,6 @@ public sealed partial class DocumentationLinksTests {
         }
     }
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string, string> TranslationPairs {
         get {
             TheoryData<string, string> data = new();

@@ -27,3 +27,11 @@ csharp_prefer_braces = true:warning
 # `internal` is included because the boundary is the type, not the assembly.
 dotnet_diagnostic.CA1062.severity = warning
 dotnet_code_quality.CA1062.api_surface = public, internal
+
+# IDE0028 asks for `[]`, which trips CA1825 on the 10.0.100 analyzers — the SDK floor declared in
+# global.json and one of the two CI legs, where a warning is an error. Nine sites, every one of them
+# a xUnit TheoryData, so this is one class of code rather than a handful of exceptions.
+#
+# Remove this the day the floor in global.json moves past the analyzers that disagree.
+[tests/**.cs]
+dotnet_diagnostic.IDE0028.severity = none

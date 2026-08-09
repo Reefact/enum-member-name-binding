@@ -1,7 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-
-using DiagnosticCatalog.CodeStyle;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,8 +41,6 @@ public sealed class ShadowedMemberTests {
 
     }
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<Type> Shadowing => new() { typeof(ExactCasing), typeof(LowerCasing), typeof(UpperCasing) };
 
     [Theory]

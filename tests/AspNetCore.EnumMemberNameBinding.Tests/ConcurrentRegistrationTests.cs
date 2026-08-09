@@ -1,8 +1,5 @@
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-
-using DiagnosticCatalog.CodeStyle;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
@@ -49,8 +46,6 @@ public sealed class ConcurrentRegistrationTests {
         if (failure is not null) { throw failure; }
     }
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<Type> Racers => new() {
         typeof(Racer0), typeof(Racer1), typeof(Racer2), typeof(Racer3),
         typeof(Racer4), typeof(Racer5), typeof(Racer6), typeof(Racer7)

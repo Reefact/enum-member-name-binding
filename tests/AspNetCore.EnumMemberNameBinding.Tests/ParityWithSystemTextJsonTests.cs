@@ -1,10 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-using DiagnosticCatalog.CodeStyle;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
@@ -26,8 +23,6 @@ public sealed class ParityWithSystemTextJsonTests {
         _api = api;
     }
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> StatusInputs => new() {
         "available", "out_of_stock", "discontinued",
         "OutOfStock", "outofstock", "OUT_OF_STOCK", "Out_Of_Stock",
@@ -36,12 +31,8 @@ public sealed class ParityWithSystemTextJsonTests {
         " available", "available ", " available ", "avail able"
     };
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> PartialInputs => new() { "one", "One", "Two", "two", "TWO", "unknown" };
 
-    [SuppressMessage(CodeStyleRule.IDE0028.Category, CodeStyleRule.IDE0028.Id,
-                     Justification = SuppressionJustification.IDE0028.CollectionExpressionBreaksTheFloorSdk)]
     public static TheoryData<string> PermissionInputs => new() {
         "read", "write", "read, write", "read,write", "read, delete", "read, write, delete",
         "Read", "read, bogus", "bogus", "3",
