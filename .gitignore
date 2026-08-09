@@ -56,5 +56,18 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.userprefs
+*.rsuser
+*.sln.docstates
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
 # The package smoke test builds a consumer against a locally packed feed.
 tests/PackageSmokeTest/.work/
