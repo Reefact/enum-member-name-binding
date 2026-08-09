@@ -88,17 +88,23 @@ internal static class EnumMemberNameBindingRegistry {
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static IEnumerable<Type> Discover(EnumMemberNameBindingOptions options) {
         foreach (Type explicitType in options.EnumTypes) {
-            RefuseUnlessContractEnum(explicitType);
+            RefuseUnlessContractEnum(explicitType, nameof(options));
         }
 
         return Enumerate(options);
     }
 
     /// <summary>Why an explicitly named type cannot be registered, as an exception.</summary>
+    /// <param name="explicitType">The type named by the caller.</param>
+    /// <param name="paramName">
+    /// The name to report on <see cref="ArgumentException.ParamName" />. Passed in rather than taken
+    /// from this method's own parameter: what a caller can act on is the argument they supplied,
+    /// which is the options object, not the local this loop happens to unpack it into.
+    /// </param>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
-    private static void RefuseUnlessContractEnum(Type explicitType) {
+    private static void RefuseUnlessContractEnum(Type explicitType, string paramName) {
         if (!explicitType.IsEnum) {
-            throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", nameof(explicitType));
+            throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", paramName);
         }
 
         // Registering an enum that declares nothing would change how an ordinary enum binds and
