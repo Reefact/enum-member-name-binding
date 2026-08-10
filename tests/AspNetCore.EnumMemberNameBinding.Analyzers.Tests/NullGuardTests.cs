@@ -11,8 +11,7 @@ public sealed class NullGuardTests {
     public void initializing_with_a_null_context_is_refused_rather_than_ignored() {
         EnumContractAnalyzer analyzer = new();
 
-        ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => analyzer.Initialize(null!));
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => analyzer.Initialize(null!));
 
         Assert.Equal("context", exception.ParamName);
     }

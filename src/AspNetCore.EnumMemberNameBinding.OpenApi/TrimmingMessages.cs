@@ -11,7 +11,6 @@ namespace AspNetCore.EnumMemberNameBinding.OpenApi;
 /// </remarks>
 internal static class TrimmingMessages {
 
-    internal const string Reflection =
-        "Enum member name binding reads enum metadata reflectively and is not compatible with trimming.";
+    internal const string Reflection = "Enum member name binding reads enum metadata reflectively and is not compatible with trimming.";
 
 }
