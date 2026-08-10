@@ -7,37 +7,45 @@ namespace AspNetCore.EnumMemberNameBinding.Documentation.Tests;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Scope is the documentation a <em>consumer</em> reads: the front page and everything under
-/// <c>docs</c>. Two bodies are left out, and for the same reason rather than as exceptions.
+/// Scope is the documentation a <em>consumer</em> reads: the front page, and everything under
+/// <c>docs/for-users</c>.
 /// </para>
 /// <para>
-/// The decision records under <c>docs/adr</c> quote C# to carry an argument — a shape, a signature,
-/// the line a decision turns on — and are meant to outlive the code they quote. Holding them to a
-/// contract written for teaching material would make a record answer to the thing it records.
+/// The maintainer documentation is out, as a body rather than page by page, because the exclusion is
+/// a property of what those pages ARE. A decision record quotes C# to carry an argument — a shape, a
+/// signature, the line a decision turns on — and is meant to outlive the code it quotes; holding it
+/// to a contract written for teaching material would make a record answer to the thing it records.
+/// That is now said by the directory a page is filed under rather than by a rule naming
+/// <c>adr</c>, which is what the split into <c>for-users</c> and <c>for-maintainers</c> bought: a
+/// maintainer page written tomorrow, in a folder created tomorrow, is out without anyone
+/// remembering to exclude it.
 /// </para>
 /// <para>
-/// <c>CONTRIBUTING</c>, <c>SECURITY</c> and <c>CHANGELOG</c> are about this repository, not about
-/// the library: their samples name <c>Problem</c>, <c>TrimRule</c> and other internals a consumer
-/// cannot reach, and compiling them against the shipped packages would be asking the wrong
-/// question. They stay under the link and translation contracts, which do apply to them.
+/// <c>CONTRIBUTING</c>, <c>SECURITY</c> and <c>CHANGELOG</c> are filed under <c>for-users</c>,
+/// beside the front page whose fate they share — GitHub renders all four from fixed names at the
+/// repository root, and only their translations could move. They are still out of the compile
+/// contract, and named one by one because that is what they are: three specific pages about this
+/// repository rather than about the library, whose samples reach for <c>Problem</c>,
+/// <c>TrimRule</c> and other internals a consumer cannot. They stay under the link and translation
+/// contracts, which do apply to them.
 /// </para>
 /// <para>
-/// Everything else under <c>docs</c> is in scope by construction rather than by enumeration, so a
-/// page created tomorrow is held to the contract from the day it exists — its author meets it while
-/// writing rather than never.
+/// Everything else under <c>for-users</c> is in scope by construction rather than by enumeration, so
+/// a page created tomorrow is held to the contract from the day it exists — its author meets it
+/// while writing rather than never.
 /// </para>
 /// </remarks>
 internal static partial class DocumentationCorpus {
 
     /// <summary>The front page, which GitHub and NuGet both render from this fixed name.</summary>
     private const string FrontPage = "README.md";
-    private const string FrenchFrontPage = "docs/README.fr.md";
+    private const string FrenchFrontPage = "docs/for-users/README.fr.md";
 
     /// <summary>
     /// The translations that live under <c>docs</c> only because GitHub insists their English
     /// original sits at the repository root. They document the repository, not the library.
     /// </summary>
-    private static readonly string[] RelocatedRootTranslations = ["docs/CHANGELOG.fr.md", "docs/CONTRIBUTING.fr.md", "docs/SECURITY.fr.md"];
+    private static readonly string[] RelocatedRootTranslations = ["docs/for-users/CHANGELOG.fr.md", "docs/for-users/CONTRIBUTING.fr.md", "docs/for-users/SECURITY.fr.md"];
 
     private static readonly Lazy<IReadOnlyList<DocumentationPage>> LazyPages = new(ReadPages);
 
@@ -91,8 +99,7 @@ internal static partial class DocumentationCorpus {
 
     private static bool IsInScope(string relativePath) {
         if (relativePath == FrontPage) { return true; }
-        if (!relativePath.StartsWith("docs/", StringComparison.Ordinal)) { return false; }
-        if (relativePath.StartsWith("docs/adr/", StringComparison.Ordinal)) { return false; }
+        if (!relativePath.StartsWith("docs/for-users/", StringComparison.Ordinal)) { return false; }
 
         return !RelocatedRootTranslations.Contains(relativePath, StringComparer.Ordinal);
     }
@@ -109,7 +116,7 @@ internal static partial class DocumentationCorpus {
     private static DirectoryInfo FindRepositoryRoot() {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
 
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "rules"))) {
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "for-users", "rules"))) {
             directory = directory.Parent;
         }
 

@@ -1,7 +1,7 @@
 # Security Policy
 
 🌍 **Languages:**  
-🇬🇧 English (this file) | 🇫🇷 [Français](docs/SECURITY.fr.md)
+🇬🇧 English (this file) | 🇫🇷 [Français](docs/for-users/SECURITY.fr.md)
 
 ## Supported versions
 

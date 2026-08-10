@@ -15,7 +15,7 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// test is what should go.
 /// <para>
 /// Reads the test sources of all three projects rather than this one, since the hazard belongs to
-/// the library and not to a project. See docs/adr/0001-nfluent-for-test-assertions.en.md.
+/// the library and not to a project. See docs/for-maintainers/adr/0001-nfluent-for-test-assertions.en.md.
 /// </para>
 /// </remarks>
 public sealed class AssertionStyleTests {
@@ -154,7 +154,7 @@ public sealed class AssertionStyleTests {
     private static DirectoryInfo RepositoryRoot() {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
 
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "rules"))) {
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "for-users", "rules"))) {
             directory = directory.Parent;
         }
 

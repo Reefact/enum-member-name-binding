@@ -1,7 +1,7 @@
 # Contribuer
 
 🌍 **Langues :**  
-🇬🇧 [English](../CONTRIBUTING.md) | 🇫🇷 Français (ce fichier)
+🇬🇧 [English](../../CONTRIBUTING.md) | 🇫🇷 Français (ce fichier)
 
 Merci d'envisager une contribution. Ce qui suit décrit surtout ce que le build impose déjà, afin
 que rien ici ne soit une surprise au moment de la revue : presque chaque règle ci-dessous est
@@ -165,7 +165,7 @@ le `Main` autour. L'enrobage dont un fragment a besoin est déduit en l'analysan
 
 ## Remontées des analyseurs
 
-Une remontée de Roslyn ou de SonarQube est une affirmation sur le code, et [CLAUDE.md](../CLAUDE.md)
+Une remontée de Roslyn ou de SonarQube est une affirmation sur le code, et [CLAUDE.md](../../CLAUDE.md)
 expose les six façons d'y répondre — de la correction au fait de la laisser visible comme dette
 connue. Deux méritent d'être connues avant qu'on y recoure : une suppression porte toujours une
 `Justification` disant pourquoi la prémisse de la règle ne tient pas à cet endroit, et une
@@ -175,10 +175,10 @@ règle partout où lui obéir aurait été juste.
 ## Les décisions qui méritent une trace
 
 Un choix qui survit à la pull request qui l'a pris — une bibliothèque, une convention, un compromis
-assumé — s'écrit sous [`docs/adr`](./adr), un fichier par décision, dans les deux langues comme
+assumé — s'écrit sous [`docs/for-maintainers/adr`](../for-maintainers/adr), un fichier par décision, dans les deux langues comme
 toute autre page. Ce qu'on y consigne, c'est le raisonnement : les solutions qui étaient réellement
 en lice à ce moment-là, et ce que la décision coûte, pour qu'un lecteur en désaccord voie ce qu'il
-aurait à renverser. La première est [NFluent pour les assertions de test](./adr/0001-nfluent-for-test-assertions.fr.md).
+aurait à renverser. La première est [NFluent pour les assertions de test](../for-maintainers/adr/0001-nfluent-for-test-assertions.fr.md).
 
 ## Signaler une vulnérabilité
 

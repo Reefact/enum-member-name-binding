@@ -20,7 +20,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     private const string Category      = "ApiContract";
     private const string AttributeName = "System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute";
     private const string FlagsName     = "System.FlagsAttribute";
-    private const string HelpBase      = "https://github.com/Reefact/enum-member-name-binding/blob/main/docs/rules/";
+    private const string HelpBase      = "https://github.com/Reefact/enum-member-name-binding/blob/main/docs/for-users/rules/";
 
     /// <summary>EMN0001 — two members declare the same public name.</summary>
     public static readonly DiagnosticDescriptor DuplicatePublicName = Describe("EMN0001", DiagnosticSeverity.Error);

@@ -16,10 +16,10 @@ public sealed partial class ReadmeIsAccurateTests(OpenApiTestApi api) {
     public void the_documented_flags_pattern_is_the_one_the_transformer_emits(string page) {
         // Scopes declares read, write and delete — the same three names the documentation illustrates.
         string produced = api.Schema(nameof(Scopes)).GetProperty("pattern").GetString()!;
-        string source   = File.ReadAllText(Path.Combine(FindRepositoryRoot().FullName, "docs", page));
+        string source   = File.ReadAllText(Path.Combine(FindRepositoryRoot().FullName, "docs", "for-users", page));
 
         Match documented = DocumentedPattern().Match(source);
-        Check.WithCustomMessage($"docs/{page} no longer shows a pattern; either restore it or drop this test.")
+        Check.WithCustomMessage($"docs/for-users/{page} no longer shows a pattern; either restore it or drop this test.")
              .That(documented.Success).IsTrue();
 
         // The page carries the pattern inside a JSON snippet in a markdown table, so backslashes

@@ -61,7 +61,7 @@
 
 * [ ] README / `docs/` updated
 * [ ] The French counterpart was updated to match
-* [ ] `CHANGELOG.md` and `docs/CHANGELOG.fr.md` both updated
+* [ ] `CHANGELOG.md` and `docs/for-users/CHANGELOG.fr.md` both updated
 * [ ] No documentation change required
 
 ## Related issues

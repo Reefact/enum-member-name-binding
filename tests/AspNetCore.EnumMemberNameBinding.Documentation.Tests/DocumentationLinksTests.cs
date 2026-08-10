@@ -35,14 +35,14 @@ public sealed partial class DocumentationLinksTests {
     /// beside them; every other page follows the file-suffix convention from inside <c>docs</c>.
     /// </summary>
     private static readonly (string English, string French)[] RootPages = [
-        (EnglishFrontPage, "docs/README.fr.md"),
-        ("CHANGELOG.md", "docs/CHANGELOG.fr.md"),
+        (EnglishFrontPage, "docs/for-users/README.fr.md"),
+        ("CHANGELOG.md", "docs/for-users/CHANGELOG.fr.md"),
         // GitHub links "Contributing guidelines" from the issue and pull-request forms when it
         // finds this at the root; its translation follows the others into docs.
-        ("CONTRIBUTING.md", "docs/CONTRIBUTING.fr.md"),
+        ("CONTRIBUTING.md", "docs/for-users/CONTRIBUTING.fr.md"),
         // GitHub only offers "Report a vulnerability" when it finds the policy at one of a few fixed
         // paths, of which the repository root is one; its translation follows the others into docs.
-        ("SECURITY.md", "docs/SECURITY.fr.md"),
+        ("SECURITY.md", "docs/for-users/SECURITY.fr.md"),
         // GitHub renders a directory's README.md and nothing else, so this one stays where it is.
         ("tests/PackageSmokeTest/README.md", "tests/PackageSmokeTest/README.fr.md")
     ];
@@ -242,7 +242,7 @@ public sealed partial class DocumentationLinksTests {
     private static DirectoryInfo FindRepositoryRoot() {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
 
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "rules"))) {
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "for-users", "rules"))) {
             directory = directory.Parent;
         }
 

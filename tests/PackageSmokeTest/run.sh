@@ -162,7 +162,7 @@ else
     expect_contains "the failure is EMN0003, from the packaged analyzer" \
                     "error EMN0003" "$(cat "$WORK/invalid-build.log")"
     expect_contains "the diagnostic links to its documentation page" \
-                    "docs/rules/EMN0003.en.md" "$(cat "$WORK/invalid-build.log")"
+                    "docs/for-users/rules/EMN0003.en.md" "$(cat "$WORK/invalid-build.log")"
 fi
 
 step "Start the consumer as a real application"

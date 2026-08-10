@@ -1,7 +1,7 @@
 # Changelog
 
 🌍 **Languages:**  
-🇬🇧 English (this file) | 🇫🇷 [Français](docs/CHANGELOG.fr.md)
+🇬🇧 English (this file) | 🇫🇷 [Français](docs/for-users/CHANGELOG.fr.md)
 
 All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -122,7 +122,7 @@ first one to make the trip is one that costs nothing to burn.
   trailing whitespace, and the trailing comma. The document advertised a stricter contract than the
   server honoured.
 - **The analyzer help links pointed at pages that did not exist**, so the IDE link led to a 404.
-  Every rule now has a page under `docs/rules`, and a test fails if a rule and its page ever diverge.
+  Every rule now has a page under `docs/for-users/rules`, and a test fails if a rule and its page ever diverge.
 - **Writing a `[Flags]` combination diverged from `System.Text.Json`.** The decomposition ran in
   declaration order, while the serializer sorts members topologically so that a combination covering
   several bits wins over its constituents. `7` was written `read, write, delete` where the serializer
@@ -154,7 +154,7 @@ first one to make the trip is one that costs nothing to burn.
 - **The documented one-package install of the OpenAPI companion did not compile.**
   `Microsoft.AspNetCore.OpenApi` enables the interceptor namespace its XML comment generator writes
   into, and it does so through MSBuild build assets, which NuGet does not flow transitively. A
-  consumer who took the companion and nothing else — exactly what `docs/openapi.en.md` instructs —
+  consumer who took the companion and nothing else — exactly what `docs/for-users/openapi.en.md` instructs —
   therefore inherited the generator without the property that makes its output legal, and their build
   failed with CS9137 inside generated code they never wrote. Referencing
   `Microsoft.AspNetCore.OpenApi` directly also cured it, and most consumers will already have done
@@ -177,20 +177,26 @@ first one to make the trip is one that costs nothing to burn.
 - The README was split. It had grown to a length nobody reads before adopting a package, so the front
   page now carries the problem, the installation, one example, the channel table, the guarantees and
   the two limitations worth knowing before adopting — the rest moved, unabridged, to
-  `docs/contract-rules.en.md`, `docs/analyzers.en.md`, `docs/openapi.en.md` and
-  `docs/limitations.en.md`.
+  `docs/for-users/contract-rules.en.md`, `docs/for-users/analyzers.en.md`,
+  `docs/for-users/openapi.en.md` and `docs/for-users/limitations.en.md`.
   The README is also the NuGet package page, where a relative link is dead, so it links to GitHub
   absolutely; a test fails on a relative one, and on any link — in any page — that points at a file
   or a heading that does not exist.
 - The documentation is now bilingual, following the convention used across Reefact projects: every
-  page exists as `Xxx.en.md` and `Xxx.fr.md` under `docs`, each opening with a link to its
+  page exists as `Xxx.en.md` and `Xxx.fr.md` under `docs/for-users`, each opening with a link to its
   counterpart. The README keeps its name and its place, since NuGet renders it; its French version is
-  `docs/README.fr.md`, and the changelog follows the same rule. Tests fail on a page that exists in
+  `docs/for-users/README.fr.md`, and the changelog follows the same rule. Tests fail on a page that exists in
   only one language, on a page that does not offer the other one, and on a translation whose
   structure no longer lines up with the original — words are translated, sections, bullets, table
   rows and snippets are neither dropped nor added. That last one is what catches an entry appended to
   one changelog and not the other. The analyzers' help links point at the English rule pages, which
   are the canonical ones.
+
+- The pages are filed by who reads them: `docs/for-users` for the documentation a consumer reads, and
+  `docs/for-maintainers` for the decision records. The split is what the suites read too — the
+  compile contract covers `for-users` and nothing else, so a maintainer page written tomorrow is out
+  of it without anyone remembering to exclude it. The analyzers' help links moved with the rule pages
+  they point at, to `docs/for-users/rules/`.
 
 ### Known limitations
 
