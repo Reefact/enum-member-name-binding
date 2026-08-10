@@ -31,6 +31,20 @@ first one to make the trip is one that costs nothing to burn.
   companion.
 - Start-up validation of every registered contract, raising `EnumContractException` for duplicate
   public names, names with surrounding whitespace, and commas inside a `[Flags]` member name.
+- Registration is all or nothing, on both paths — an explicit list and the assembly scan. Every
+  contract is resolved and validated before the first converter is installed, because
+  `TypeDescriptor` mutates process-wide state that cannot be undone: a list naming one good contract
+  and one malformed one would otherwise install the good one and then throw, leaving the process in a
+  state nobody asked for behind an exception that reads as though nothing had happened. The refusal
+  names `options`, the parameter the caller actually wrote, rather than a local the implementation
+  unpacks the list into.
+- Argument guards on every public and internal boundary, so a null the signature forbids raises
+  `ArgumentNullException` naming the parameter rather than a `NullReferenceException` from further
+  in. A nullable annotation binds only the callers that opted into it — not one compiled with
+  nullable disabled, and not a value arriving through reflection, dependency injection or a
+  deserializer. `TryParse` is the one whose answer changes rather than its message: `null` reached
+  `AsSpan()`, which yields an empty span, so a broken signature was reported exactly like the empty
+  string — a value a caller may legitimately send.
 - `[Flags]` support: comma-separated lists, matching `System.Text.Json`.
 - A parity test suite that uses `JsonSerializer` itself as the oracle — for each candidate input,
   the HTTP outcome must equal the body outcome.

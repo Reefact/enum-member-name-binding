@@ -34,6 +34,21 @@ brûler sans rien perdre.
   19 entrées dans le paquet principal, 2 dans le compagnon.
 - Validation au démarrage de chaque contrat enregistré, levant `EnumContractException` pour les noms
   publics en double, les noms entourés d'espaces et les virgules dans le nom d'un membre `[Flags]`.
+- L'enregistrement est tout ou rien, sur les deux chemins — une liste explicite et le scan
+  d'assembly. Chaque contrat est résolu et validé avant l'installation du premier convertisseur, car
+  `TypeDescriptor` modifie un état global au processus qu'on ne peut pas défaire : une liste nommant
+  un contrat correct et un contrat malformé installerait sinon le correct puis lèverait, laissant le
+  processus dans un état que personne n'a demandé, derrière une exception qui se lit comme si rien
+  ne s'était produit. Le refus nomme `options`, le paramètre que l'appelant a réellement écrit, et
+  non une variable locale dans laquelle l'implémentation dépaquette la liste.
+- Des gardes d'arguments sur chaque frontière publique et interne : un `null` que la signature
+  interdit lève une `ArgumentNullException` nommant le paramètre, plutôt qu'une
+  `NullReferenceException` venue de plus loin. Une annotation nullable n'engage que les appelants qui
+  l'ont acceptée — ni celui qui compile avec le nullable désactivé, ni une valeur arrivant par
+  réflexion, par injection de dépendances ou par un désérialiseur. `TryParse` est celui dont la
+  réponse change, et pas seulement le message : `null` atteignait `AsSpan()`, qui produit une étendue
+  vide, si bien qu'une signature rompue était rapportée exactement comme la chaîne vide — une valeur
+  qu'un appelant peut légitimement envoyer.
 - Prise en charge de `[Flags]` : listes séparées par des virgules, à l'identique de
   `System.Text.Json`.
 - Une suite de tests de parité qui utilise `JsonSerializer` lui-même comme oracle — pour chaque entrée
