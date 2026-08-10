@@ -71,3 +71,5 @@ Toutes les règles sauf `EMN0006` sont également appliquées au démarrage de l
 `EnumContractException` nomme alors le type, chaque problème et la correction attendue.
 
 Deux membres peuvent partager la même valeur numérique tant que leurs noms publics diffèrent.
+Réécrire cette valeur — dans un corps de réponse, ou via `EnumMemberNames.GetPublicName` — produit le
+nom que `System.Text.Json` écrit pour elle, qui n'est pas nécessairement le premier déclaré.

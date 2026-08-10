@@ -139,6 +139,15 @@ first one to make the trip is one that costs nothing to burn.
   and a trailing comma in a `[Flags]` list was refused where the body tolerates one. The behaviour was
   characterized against `JsonSerializer` and reproduced, and the whole matrix is now in the parity
   suite.
+- **Two members sharing a numeric value could be written under two different names in one
+  application.** The value-to-name map was built in declaration order, and `System.Text.Json` builds
+  it in `Enum.GetNames` order — which sorts by the binary value and, among members sharing one, does
+  not keep the order they were written in. So a response body said `shipped` while a link built with
+  `EnumMemberNames.GetPublicName` for the same value said `in_transit`. The map is now read off
+  `Enum.GetNames`, so the two agree by construction; seven shapes were measured against
+  `JsonSerializer` and three of them disagreed under the old rule. Reading is unaffected — both names
+  always parsed back to the same value — and the declaration order the OpenAPI document and the
+  "allowed values" sentence are built from is unchanged.
 - **A `[Flags]` contract enum bound a combination ASP.NET Core refuses**, which is the one thing this
   package promises never to do. The binder took `[Flags]` for an exemption from the undefined-value
   check and answered yes without asking, on the reasoning that a value built by OR-ing declared

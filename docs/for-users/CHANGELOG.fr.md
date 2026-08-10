@@ -152,6 +152,16 @@ brûler sans rien perdre.
   de la requête les accepte ; et une virgule finale dans une liste `[Flags]` était refusée là où le
   corps en tolère une. Le comportement a été caractérisé face à `JsonSerializer` puis reproduit, et
   toute la matrice figure désormais dans la suite de parité.
+- **Deux membres partageant une valeur numérique pouvaient être écrits sous deux noms différents dans
+  une même application.** La table valeur vers nom était bâtie dans l'ordre de déclaration, là où
+  `System.Text.Json` la bâtit dans l'ordre de `Enum.GetNames` — qui trie par la valeur binaire et,
+  entre membres partageant la même, ne conserve pas l'ordre d'écriture. Un corps de réponse disait
+  donc `shipped` pendant qu'un lien construit avec `EnumMemberNames.GetPublicName` pour la même
+  valeur disait `in_transit`. La table est désormais lue sur `Enum.GetNames`, si bien que les deux
+  s'accordent par construction ; sept formes ont été mesurées face à `JsonSerializer` et trois
+  divergeaient sous l'ancienne règle. La lecture est inchangée — les deux noms se sont toujours
+  relus vers la même valeur — de même que l'ordre de déclaration dont sont tirés le document OpenAPI
+  et la phrase des valeurs autorisées.
 - **Une énumération sous contrat `[Flags]` liait une combinaison qu'ASP.NET Core refuse**, la seule
   chose que ce paquet promet de ne jamais faire. Le binder prenait `[Flags]` pour une dispense du
   contrôle de valeur non déclarée et répondait oui sans demander, au motif qu'une valeur bâtie en

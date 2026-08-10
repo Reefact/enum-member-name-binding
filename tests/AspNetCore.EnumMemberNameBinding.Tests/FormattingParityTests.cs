@@ -23,6 +23,42 @@ public sealed class FormattingParityTests {
 
     }
 
+    /// <summary>
+    /// Aliases whose declaration order is not the order <c>Enum.GetNames</c> returns them in, which
+    /// <see cref="NumericAliases" /> above cannot show because it is written in ascending order —
+    /// the two orders coincide there, so it passed while the rule was wrong. Here 2 is declared
+    /// first, and of the two members sharing it the serializer writes the second.
+    /// </summary>
+    public enum AliasesOutOfOrder {
+
+        [JsonStringEnumMemberName("in_transit")] InTransit = 2,
+        [JsonStringEnumMemberName("shipped")]    Shipped   = 2,
+        [JsonStringEnumMemberName("pending")]    Pending   = 1
+
+    }
+
+    /// <summary>The same disagreement with the zero member last, and on a <c>[Flags]</c> enum.</summary>
+    [Flags]
+    public enum AliasesWithZeroLast {
+
+        [JsonStringEnumMemberName("read")]  Read  = 1,
+        [JsonStringEnumMemberName("write")] Write = 1,
+        [JsonStringEnumMemberName("none")]  None  = 0
+
+    }
+
+    /// <summary>
+    /// Aliases on a negative value, where <c>GetNames</c> orders by the binary value rather than the
+    /// signed one — so the order is neither the declared one nor the arithmetic one.
+    /// </summary>
+    public enum SignedAliases : sbyte {
+
+        [JsonStringEnumMemberName("negative")]       Negative      = -1,
+        [JsonStringEnumMemberName("negative_alias")] NegativeAlias = -1,
+        [JsonStringEnumMemberName("zero")]           Zero          = 0
+
+    }
+
     /// <summary>The combination is declared before the members it is made of.</summary>
     [Flags]
     public enum CompositeDeclaredFirst {
@@ -91,6 +127,9 @@ public sealed class FormattingParityTests {
 
     [Theory]
     [InlineData(typeof(NumericAliases))]
+    [InlineData(typeof(AliasesOutOfOrder))]
+    [InlineData(typeof(AliasesWithZeroLast))]
+    [InlineData(typeof(SignedAliases))]
     [InlineData(typeof(CompositeDeclaredFirst))]
     [InlineData(typeof(CompositeDeclaredLast))]
     [InlineData(typeof(OverlappingComposites))]
@@ -121,6 +160,9 @@ public sealed class FormattingParityTests {
     /// <summary>Whatever is written must be readable again, and yield the value it came from.</summary>
     [Theory]
     [InlineData(typeof(NumericAliases))]
+    [InlineData(typeof(AliasesOutOfOrder))]
+    [InlineData(typeof(AliasesWithZeroLast))]
+    [InlineData(typeof(SignedAliases))]
     [InlineData(typeof(CompositeDeclaredFirst))]
     [InlineData(typeof(CompositeDeclaredLast))]
     [InlineData(typeof(OverlappingComposites))]

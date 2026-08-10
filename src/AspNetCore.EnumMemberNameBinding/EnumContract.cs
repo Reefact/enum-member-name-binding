@@ -53,11 +53,15 @@ internal sealed class EnumContract {
 
         Dictionary<string, object> byContractName = new(StringComparer.Ordinal);
         Dictionary<string, object> byClrName      = new(StringComparer.OrdinalIgnoreCase);
-        Dictionary<object, string> names          = [];
         List<(object, string)>     ordered        = [];
         List<string>               problems       = [];
         List<string>               unannotated    = [];
         Dictionary<string, string> declaredBy     = new(StringComparer.Ordinal);
+
+        // Keyed by member and not by value, because which of two members sharing a value owns the
+        // name is not decided here — it is decided after the loop, in the order the serializer
+        // decides it. See NamesByValue.
+        Dictionary<string, (object Value, string Name)> byMember = new(StringComparer.Ordinal);
 
         foreach (FieldInfo field in enumType.GetFields(BindingFlags.Public | BindingFlags.Static)) {
             object value = field.GetValue(null)!;
@@ -65,7 +69,7 @@ internal sealed class EnumContract {
 
             if (attribute is null) {
                 byClrName.TryAdd(field.Name, value);
-                names.TryAdd(value, field.Name);
+                byMember[field.Name] = (value, field.Name);
                 ordered.Add((value, field.Name));
                 unannotated.Add(field.Name);
                 continue;
@@ -87,7 +91,7 @@ internal sealed class EnumContract {
                 continue;
             }
 
-            names.TryAdd(value, name);
+            byMember[field.Name] = (value, name);
             ordered.Add((value, name));
             declaredBy[name] = field.Name;
         }
@@ -98,10 +102,48 @@ internal sealed class EnumContract {
 
         _byContractName = byContractName.ToFrozenDictionary(StringComparer.Ordinal);
         _byClrName      = byClrName.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
-        _names          = names.ToFrozenDictionary();
+        _names          = NamesByValue(enumType, byMember);
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
         AllowedValues       = string.Join(", ", PublicNames);
+    }
+
+    /// <summary>
+    /// Value to public name: what <see cref="Format" /> answers for a declared member.
+    /// </summary>
+    /// <remarks>
+    /// Two members may share a numeric value, and only one of them can be the name it is written
+    /// back as. Which one is not this package's to choose — it has to be the one
+    /// <c>System.Text.Json</c> writes, or the same application answers a value with two names: the
+    /// response body says <c>shipped</c> while a link built through
+    /// <see cref="EnumMemberNames.GetPublicName" /> says <c>in_transit</c>.
+    /// <para>
+    /// The serializer walks the members in <see cref="Enum.GetNames(Type)" /> order and keeps the
+    /// first it meets for a value, so reading that order here makes the two agree by construction
+    /// rather than by imitation — the argument <see cref="Format" /> already makes when it hands a
+    /// combination to the serializer itself.
+    /// </para>
+    /// <para>
+    /// Declaration order is what this read, and it is not the same order: <c>GetNames</c> sorts by
+    /// the binary value, and among members sharing one it does not keep the order they were written
+    /// in. Seven shapes were measured against <c>JsonSerializer</c> and three disagreed, so this is
+    /// characterized rather than assumed; <c>FormattingParityTests</c> holds all of them. Reading it
+    /// once here rather than at each call is what keeps <see cref="Format" /> a lookup.
+    /// </para>
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    private static FrozenDictionary<object, string> NamesByValue(Type enumType, Dictionary<string, (object Value, string Name)> byMember) {
+        Dictionary<object, string> names = [];
+
+        // Every member is in byMember: the only path that skips one collects a problem, and a
+        // contract with problems threw above rather than reaching here.
+        foreach (string member in Enum.GetNames(enumType)) {
+            (object Value, string Name) declared = byMember[member];
+
+            names.TryAdd(declared.Value, declared.Name);
+        }
+
+        return names.ToFrozenDictionary();
     }
 
     /// <summary>
