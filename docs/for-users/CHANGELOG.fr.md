@@ -139,6 +139,16 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **De deux membres non annotés ne différant que par la casse, l'un était inatteignable.** Les noms
+  C# tenaient dans un unique dictionnaire insensible à la casse : `Read` et `read` entraient donc en
+  collision et le second était perdu — le jeton qui le nommait exactement se résolvait alors vers le
+  premier. `System.Text.Json` fait correspondre l'orthographe exacte avant de se rabattre, si bien
+  que la query string et le corps de la requête répondaient au même mot par deux valeurs
+  différentes, sur une énumération enregistrée avec `AllowPartialContracts`. Le nom exact est
+  désormais essayé d'abord, et seule une casse ne correspondant exactement à aucun se rabat — vers le
+  membre que choisit le sérialiseur, c'est-à-dire le premier dans l'ordre de `Enum.GetNames`, qui
+  n'est ni le premier déclaré ni celui de plus petite valeur. Les noms déclarés ne changent pas et
+  restent sensibles à la casse.
 - **`EMN0005` manquait l'essentiel de la forme qu'elle existe pour attraper.** L'analyseur comparait
   un nom public déclaré au nom C# d'un autre membre de façon ordinale, alors que l'exécution recherche
   ces noms sans tenir compte de la casse — si bien que `[JsonStringEnumMemberName("blue")]` à côté d'un

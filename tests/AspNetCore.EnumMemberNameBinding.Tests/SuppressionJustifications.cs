@@ -39,4 +39,23 @@ internal static class SuppressionJustification {
 
     }
 
+    /// <summary>Identifiers should differ by more than case.</summary>
+    internal static class CA1708 {
+
+        /// <summary>
+        /// The rule is right, and the fixture exists because the shape it warns about is a shape a
+        /// consumer's enum can have — one this library resolved wrongly. Renaming the member to
+        /// satisfy the rule would delete the test.
+        /// </summary>
+        /// <remarks>
+        /// Per-site rather than a section for <c>tests/**</c> in .editorconfig: everywhere else in
+        /// this suite the rule is one worth hearing, and these are the three fixtures that mean it.
+        /// </remarks>
+        internal const string TheShapeUnderTest =
+            "Two members differing only by case is the shape under test — a consumer's enum can "
+          + "declare it, and this library used to resolve it differently from System.Text.Json. "
+          + "Renaming either member would remove what the fixture exists to exercise.";
+
+    }
+
 }

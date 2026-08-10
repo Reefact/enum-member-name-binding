@@ -36,6 +36,7 @@ internal sealed class EnumContract {
 
     private readonly FrozenDictionary<string, object> _byContractName;
     private readonly FrozenDictionary<string, object> _byClrName;
+    private readonly FrozenDictionary<string, object> _byClrNameIgnoringCase;
     private readonly FrozenDictionary<object, string> _names;
     private readonly bool _isFlags;
 
@@ -52,7 +53,7 @@ internal sealed class EnumContract {
         _isFlags = enumType.IsDefined(typeof(FlagsAttribute), inherit: false);
 
         Dictionary<string, object> byContractName = new(StringComparer.Ordinal);
-        Dictionary<string, object> byClrName      = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, object> byClrName      = new(StringComparer.Ordinal);
         List<(object, string)>     ordered        = [];
         List<string>               problems       = [];
         List<string>               unannotated    = [];
@@ -68,7 +69,9 @@ internal sealed class EnumContract {
             JsonStringEnumMemberNameAttribute? attribute = field.GetCustomAttribute<JsonStringEnumMemberNameAttribute>();
 
             if (attribute is null) {
-                byClrName.TryAdd(field.Name, value);
+                // Ordinal, so two members differing only by case each keep their own entry. C# will
+                // not let two members share an exact name, so nothing can be claimed twice here.
+                byClrName[field.Name] = value;
                 byMember[field.Name] = (value, field.Name);
                 ordered.Add((value, field.Name));
                 unannotated.Add(field.Name);
@@ -101,11 +104,45 @@ internal sealed class EnumContract {
         if (problems.Count > 0) { throw new EnumContractException(enumType, problems); }
 
         _byContractName = byContractName.ToFrozenDictionary(StringComparer.Ordinal);
-        _byClrName      = byClrName.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+        _byClrName      = byClrName.ToFrozenDictionary(StringComparer.Ordinal);
         _names          = NamesByValue(enumType, byMember);
+        _byClrNameIgnoringCase = ClrNamesIgnoringCase(enumType, byClrName);
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
         AllowedValues       = string.Join(", ", PublicNames);
+    }
+
+    /// <summary>
+    /// The unannotated members again, reachable under any casing — the fallback that runs when no
+    /// member answers to the token exactly.
+    /// </summary>
+    /// <remarks>
+    /// One dictionary with a loose comparer cannot do both halves, and reading it as though it could
+    /// is what lost a member: <c>Read</c> and <c>read</c> collide under
+    /// <see cref="StringComparer.OrdinalIgnoreCase" />, so the second was dropped and the token
+    /// naming it exactly resolved to the first. <c>System.Text.Json</c> answers <c>read</c> with the
+    /// member spelled that way, so the query string and the request body disagreed on one word.
+    /// <para>
+    /// Which member a casing that matches none of them exactly resolves to is not this package's to
+    /// choose either, and it is the same answer as everywhere else here: the serializer walks
+    /// <see cref="Enum.GetNames(Type)" /> and keeps the first it meets, which is neither declaration
+    /// order nor the arithmetic one. Two shapes where the two orders disagree were measured against
+    /// <c>JsonSerializer</c> to establish it, and <c>ShadowedMemberTests</c> holds them.
+    /// </para>
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    private static FrozenDictionary<string, object> ClrNamesIgnoringCase(Type enumType, Dictionary<string, object> byClrName) {
+        Dictionary<string, object> ignoringCase = new(StringComparer.OrdinalIgnoreCase);
+
+        // The members carrying an attribute are in GetNames and not in byClrName: their C# name is
+        // replaced by the declared one, so it is not a name this enum answers to at all.
+        foreach (string member in Enum.GetNames(enumType)) {
+            if (!byClrName.TryGetValue(member, out object? value)) { continue; }
+
+            ignoringCase.TryAdd(member, value);
+        }
+
+        return ignoringCase.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -326,6 +363,12 @@ internal sealed class EnumContract {
 
         if (_byClrName.TryGetValue(token, out object? clr)) {
             result = clr;
+
+            return true;
+        }
+
+        if (_byClrNameIgnoringCase.TryGetValue(token, out object? ignoringCase)) {
+            result = ignoringCase;
 
             return true;
         }
