@@ -14,6 +14,12 @@ public sealed class ContractValidationTests {
 
     }
 
+    public enum EmptyName {
+
+        [JsonStringEnumMemberName("")] Nameless
+
+    }
+
     public enum PaddedName {
 
         [JsonStringEnumMemberName(" padded ")] Padded
@@ -35,12 +41,33 @@ public sealed class ContractValidationTests {
 
     }
 
+    /// <summary>Two members left unannotated, where <c>PartiallyAnnotated</c> leaves one.</summary>
+    public enum PartiallyAnnotatedTwice {
+
+        [JsonStringEnumMemberName("one")] One,
+        Two,
+        Three
+
+    }
+
     [Fact]
     public void two_members_cannot_declare_the_same_public_name() {
         EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(DuplicateNames))).Throws<EnumContractException>().Value;
 
         Check.That(exception.EnumType).IsEqualTo(typeof(DuplicateNames));
         Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("'same'", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The first of the malformed-name tests, and the reason they run in the order they do: every one
+    /// after it inspects a character of the name, which an empty one does not have.
+    /// </summary>
+    [Fact]
+    public void a_public_name_cannot_be_empty() {
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(EmptyName))).Throws<EnumContractException>().Value;
+
+        Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("empty name", StringComparison.Ordinal));
+        Check.That(exception.Problems).HasElementThatMatches(p => p.Contains(nameof(EmptyName.Nameless), StringComparison.Ordinal));
     }
 
     [Fact]
@@ -121,6 +148,37 @@ public sealed class ContractValidationTests {
         Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("'Two'", StringComparison.Ordinal));
         Check.That(exception.Message).Contains("public contract");
         Check.That(exception.Message).Contains(nameof(EnumMemberNameBindingOptions.AllowPartialContracts));
+    }
+
+    /// <summary>
+    /// The refusal names every member left unannotated, and its verb agrees with how many there are.
+    /// Both counts are asserted together because a message that agrees for one and not for the other
+    /// is the only way this can be wrong.
+    /// </summary>
+    [Fact]
+    public void the_refusal_of_a_partial_contract_agrees_in_number() {
+        EnumMemberNameBindingOptions one = new();
+        one.AddEnum<PartiallyAnnotated>();
+        EnumMemberNameBindingOptions several = new();
+        several.AddEnum<PartiallyAnnotatedTwice>();
+
+        EnumContractException single = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(one)).Throws<EnumContractException>().Value;
+        EnumContractException plural = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(several)).Throws<EnumContractException>().Value;
+
+        Check.That(single.Message).Contains("'Two' carries no");
+        Check.That(plural.Message).Contains("'Two', 'Three' carry no");
+    }
+
+    /// <summary>
+    /// The guard behind the refusal above: a caller holding a <see cref="Type" /> can hand over
+    /// anything, and the contract of a type that is not an enum cannot be resolved at all.
+    /// </summary>
+    [Fact]
+    public void the_contract_of_a_type_that_is_not_an_enum_cannot_be_resolved() {
+        ArgumentException exception = Check.ThatCode(() => EnumContract.For(typeof(string))).Throws<ArgumentException>().Value;
+
+        Check.That(exception.ParamName).IsEqualTo("enumType");
+        Check.That(exception.Message).Contains("is not an enum");
     }
 
     [Fact]

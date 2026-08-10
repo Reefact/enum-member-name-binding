@@ -15,6 +15,47 @@ public sealed class EnumContractAnalyzerTests {
         Check.That(ids).IsEmpty();
     }
 
+    /// <summary>
+    /// The analyzer is registered on every named type, and in any real compilation almost none of
+    /// them are enums. Each one still reaches it, so leaving them alone is a behaviour and not an
+    /// absence of one.
+    /// </summary>
+    /// <remarks>
+    /// The class is written as the one shape that would be reported if the analyzer looked no
+    /// further than the attribute: two constants declaring the same public name, which is EMN0001 on
+    /// an enum. <c>[JsonStringEnumMemberName]</c> targets a field, and a constant is one, so nothing
+    /// but the type check stands between this snippet and a diagnostic it must not earn.
+    /// </remarks>
+    [Fact]
+    public async Task a_type_that_is_not_an_enum_is_left_alone() {
+        IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + """
+            public sealed class Status {
+                [JsonStringEnumMemberName("same")] public const string Available = "a";
+                [JsonStringEnumMemberName("same")] public const string Discontinued = "d";
+                public string Name { get; set; } = "";
+            }
+
+            public interface IStatus { }
+
+            public struct Shipping {
+                [JsonStringEnumMemberName("same")] public const int First = 1;
+                [JsonStringEnumMemberName("same")] public const int Second = 2;
+            }
+            """);
+
+        Check.That(ids).IsEmpty();
+    }
+
+    /// <summary>An enum declaring no member at all declares no contract either.</summary>
+    [Fact]
+    public async Task an_enum_with_no_member_is_left_alone() {
+        IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + """
+            public enum Nothing { }
+            """);
+
+        Check.That(ids).IsEmpty();
+    }
+
     [Fact]
     public async Task a_fully_annotated_enum_reports_nothing() {
         IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + """

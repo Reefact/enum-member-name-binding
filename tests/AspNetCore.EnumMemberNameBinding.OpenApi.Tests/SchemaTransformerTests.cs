@@ -66,6 +66,17 @@ public sealed class SchemaTransformerTests(OpenApiTestApi api) {
         Check.That(api.Schema(nameof(Scopes)).GetProperty("description").GetString()!.ToUpperInvariant()).Contains("COMMA");
     }
 
+    /// <summary>
+    /// A description already written — by the application, by another transformer, or by the enum's
+    /// own XML comments — is kept, and the combination sentence follows it rather than replacing it.
+    /// </summary>
+    [Fact]
+    public void a_description_already_written_is_kept_and_continued() {
+        string description = api.Schema(nameof(Tricky)).GetProperty("description").GetString()!;
+
+        Check.That(description).StartsWith(OpenApiTestApiBase.DescribedElsewhere.TrimEnd() + " One or more of:");
+    }
+
     [Fact]
     public void every_parameter_of_a_contract_enum_points_at_the_corrected_schema() {
         foreach (string path in new[] { "/orders", "/orders/{state}" }) {
