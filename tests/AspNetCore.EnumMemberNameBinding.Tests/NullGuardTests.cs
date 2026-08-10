@@ -115,7 +115,6 @@ public sealed class NullGuardTests {
             foreach (MethodBase member in members) {
                 if (member.IsPrivate || member.IsFamily) { continue; }
                 if (member.DeclaringType != type) { continue; }
-
                 if (member is MethodInfo && member.IsSpecialName) { continue; }
 
                 foreach (ParameterInfo parameter in member.GetParameters()) {

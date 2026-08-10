@@ -93,6 +93,28 @@ jobs:
           name: packages-sdk-${{ matrix.sdk }}
           path: artifacts/*
 
+  # No compiler setting and no analyzer can express these — Roslyn's formatting options decide
+  # whether a single-line statement survives, never whether it should have been written that way —
+  # so it is a script, and it needs no SDK. Kept out of the matrix above because the answer cannot
+  # depend on which SDK asked.
+  style:
+    name: Coding style
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # First that the checker works, then what it says. In the other order a checker that reports
+      # nothing because it is broken reads exactly like a clean tree.
+      - name: The checker still recognises what it must and must not report
+        run: tools/style/lint-single-line-exits.test.sh
+
+      - name: A lone-exit guard is one line, and a run of them is one block
+        run: tools/style/lint-single-line-exits.sh
+
   # The one check `main` requires, and the only reason this job exists.
   #
   # The matrix above reports under names that carry the SDK it ran on — "build (SDK 10.0.100)" and
@@ -102,14 +124,18 @@ jobs:
   # job instead leaves the matrix free to grow an SDK or an operating system without anyone
   # remembering to go and edit a branch rule.
   #
-  # `if: always()` is load-bearing. Without it this job is skipped whenever the matrix fails or is
-  # cancelled, and GitHub counts a skipped required check as satisfied — so the gate would pass in
-  # precisely the cases it exists to catch. With it, the job runs regardless and reads the result
-  # itself. `needs.build.result` collapses the whole matrix: it is 'success' only when every leg
-  # succeeded, so a single red SDK is enough to fail here.
+  # `if: always()` is load-bearing. Without it this job is skipped whenever something it needs fails
+  # or is cancelled, and GitHub counts a skipped required check as satisfied — so the gate would
+  # pass in precisely the cases it exists to catch. With it, the job runs regardless and reads the
+  # results itself. `needs.build.result` collapses the whole matrix: it is 'success' only when every
+  # leg succeeded, so a single red SDK is enough to fail here.
+  #
+  # Anything added to `needs` must also be read below. A job listed there and not checked is worse
+  # than one that was never added: the pull request grows a check that looks required and gates
+  # nothing.
   ci:
     name: CI
-    needs: [build]
+    needs: [build, style]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -117,13 +143,15 @@ jobs:
       contents: read
 
     steps:
-      - name: Verify every matrix leg succeeded
+      - name: Verify every job this gate covers succeeded
         env:
-          RESULT: ${{ needs.build.result }}
+          BUILD: ${{ needs.build.result }}
+          STYLE: ${{ needs.style.result }}
         run: |
           set -euo pipefail
-          echo "build: $RESULT"
-          if [ "$RESULT" != "success" ]; then
-            echo "::error::the build matrix did not succeed (result: $RESULT)"
-            exit 1
-          fi
+          echo "build: $BUILD"
+          echo "style: $STYLE"
+          failed=0
+          [ "$BUILD" = "success" ] || { echo "::error::the build matrix did not succeed (result: $BUILD)"; failed=1; }
+          [ "$STYLE" = "success" ] || { echo "::error::the coding style check did not succeed (result: $STYLE)"; failed=1; }
+          exit "$failed"

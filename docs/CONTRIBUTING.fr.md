@@ -19,10 +19,11 @@ git config core.hooksPath .githooks
 dotnet build -c Release
 ```
 
-La ligne `core.hooksPath` active le hook `commit-msg`, qui vérifie un message avant qu'il ne soit
-enregistré. Un hook ne peut pas s'installer lui-même, d'où cette étape plutôt que de la magie. S'en
+La ligne `core.hooksPath` active deux hooks : `commit-msg`, qui vérifie un message avant qu'il ne
+soit enregistré, et `pre-commit`, qui vérifie le C# indexé au regard de la règle de style
+ci-dessous. Un hook ne peut pas s'installer lui-même, d'où cette étape plutôt que de la magie. S'en
 passer ne coûte rien au moment du commit, et coûte une réécriture d'historique plus tard, quand la
-CI passe le même contrôle.
+CI passe les mêmes contrôles.
 
 ## Compiler et tester
 
@@ -39,6 +40,27 @@ réponse HTTP : c'est le seul contrôle qui remarquerait un paquet qui compile e
 La CI compile et teste sur deux SDK — le plancher de `global.json` et le dernier 10.0.x — parce
 qu'un désaccord entre versions d'analyseurs a sa place ici plutôt que dans le build d'un
 consommateur.
+
+## Style de code
+
+L'essentiel tient dans `.editorconfig`, que votre éditeur lit déjà. Une règle qu'il ne sait pas
+exprimer : un `if` dont tout le corps est une seule sortie — `return`, `throw`, `continue`, `break` —
+s'écrit sur une ligne.
+
+```csharp
+if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
+if (isFlags && name.Contains(',')) { return Problem.CommaInFlagsName(memberName, name); }
+```
+
+La garde et ce qu'elle fait sont une seule pensée, et trois lignes obligent le lecteur à la
+reconstituer. Une suite de gardes forme un seul bloc : pas de ligne vide entre elles, sans quoi on
+rend la hauteur que la forme sur une ligne venait de gagner. Tout ce qui est moins trivial qu'une
+sortie nue garde la forme multiligne, ainsi qu'une garde qui dépasserait 140 caractères une fois
+repliée, car au-delà la ligne unique cesse d'être la plus lisible. C'est un plafond et non une
+dispense : une garde trop large est en général une garde dont la condition demande un nom.
+
+`tools/style/lint-single-line-exits.sh` signale ce qui n'y répond pas, `--fix` le réécrit, et la CI
+l'exécute sans l'option. C'est donc vérifié plutôt que retenu.
 
 ## Branches
 
