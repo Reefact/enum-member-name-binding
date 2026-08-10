@@ -1,0 +1,85 @@
+name: Bug report
+description: A value binds, is refused, or is reported differently from what the contract says.
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        One thing before you start: if what you found lets a request reach a value the declared
+        contract does not allow, or gets past start-up validation, that is a vulnerability rather
+        than a bug. Close this and
+        [open a private advisory](https://github.com/Reefact/enum-member-name-binding/security/advisories/new)
+        instead, so a fix exists before the problem is public.
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      description: The version of `AspNetCore.EnumMemberNameBinding`, and of the `.OpenApi` companion if it is involved.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: dotnet
+    attributes:
+      label: .NET version
+      description: The output of `dotnet --version`, and the target framework of your project.
+      placeholder: "10.0.100, net10.0"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: channels
+    attributes:
+      label: Where it happens
+      description: >-
+        Every channel you have reproduced it on. Which ones are affected and which are not is
+        usually the fastest clue there is — the whole point of this library is that they agree.
+      options:
+        - label: Route value
+        - label: Query string
+        - label: Form field
+        - label: Header (`[FromHeader]`)
+        - label: Request body, handled by `System.Text.Json`
+        - label: OpenAPI document
+        - label: An analyzer diagnostic, `EMN0001` to `EMN0006`
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: The enum, the action, and the request
+      description: >-
+        The smallest thing that shows it: the enum with its `[JsonStringEnumMemberName]` attributes,
+        the action signature it is bound through, and the request you sent. This ends up pasted into
+        a test, so being complete beats being brief.
+      placeholder: |
+        public enum ProductStatus
+        {
+            [JsonStringEnumMemberName("out_of_stock")] OutOfStock
+        }
+
+        [HttpGet] public IActionResult Search([FromQuery] ProductStatus status) => Ok(status);
+
+        GET /products?status=out_of_stock
+    validations:
+      required: true
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: What you expected, and what happened instead
+      description: The status code and the response body where there is one, or the diagnostic and the line it landed on.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: >-
+        Whether an earlier version behaved differently, a workaround you found, something you ruled
+        out. What you ruled out is worth as much as what you found.
+    validations:
+      required: false

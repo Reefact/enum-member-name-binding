@@ -1,0 +1,24 @@
+# Blank issues stay enabled, deliberately.
+#
+# GitHub Discussions is off, so a blank issue is the only home a question has. Closing that door on
+# a project with an empty tracker would cost more than the tidiness it buys — someone with a
+# question does not write a bug report, they write nothing.
+#
+# What the templates are for is the two kinds of report that benefit from structure, and the routing
+# below is what actually matters: a suspected vulnerability must not arrive as a public issue, and
+# the link is offered at the moment somebody is about to open one. SECURITY.md and the README say
+# the same thing, but neither is on screen here.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Reefact/enum-member-name-binding/security/advisories/new
+    about: >-
+      Not as an issue. A suspected vulnerability goes through a private advisory, so that a fix
+      exists before the problem is public. Acknowledged within 3 business days.
+
+  - name: How to contribute
+    url: https://github.com/Reefact/enum-member-name-binding/blob/main/CONTRIBUTING.md
+    about: >-
+      Building and testing, the coding style, the commit grammar, and what the build already
+      enforces so that nothing is a surprise at review time.
