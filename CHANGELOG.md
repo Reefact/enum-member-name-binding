@@ -127,6 +127,14 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **Of two unannotated members differing only by case, one was unreachable.** The C# names were held
+  in a single case-insensitive dictionary, so `Read` and `read` collided and the second was dropped —
+  the token naming it exactly then resolved to the first. `System.Text.Json` matches the exact
+  spelling before falling back, so the query string and the request body answered the same word with
+  two different values, on an enum registered with `AllowPartialContracts`. The exact name is now
+  matched first, and only a casing matching none of them exactly falls back — to the member the
+  serializer picks, which is the one first in `Enum.GetNames` order and neither the first declared
+  nor the lowest-valued. Declared names are unaffected and stay case-sensitive.
 - **`EMN0005` missed most of the shape it exists to catch.** The analyzer compared a declared public
   name against another member's C# name ordinally, while the runtime looks those names up
   case-insensitively — so `[JsonStringEnumMemberName("blue")]` next to a `Blue` member went
