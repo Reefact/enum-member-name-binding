@@ -45,7 +45,11 @@ known to disagree.
 ## The `[Flags]` pattern
 
 The pattern covers exactly what the binder accepts, whitespace and trailing comma included — see
-[contract rules](contract-rules.en.md#a-flags-enum). It is written in the ECMA-262 dialect a JSON Schema
+[contract rules](contract-rules.en.md#a-flags-enum). One shape falls outside that, and only one: an
+enum declaring overlapping composites, where a list the pattern admits can decompose into no member
+and be refused with a 400 — see
+[limitations](limitations.en.md#a-combination-naming-no-member-is-refused-outside-the-body).
+It is written in the ECMA-262 dialect a JSON Schema
 `pattern` is read with, so only syntax characters are escaped: `Regex.Escape` would produce `\ ` and
 `\#`, which are not valid identity escapes there and would make a strict consumer reject the whole
 pattern. A test rejects any other escape.

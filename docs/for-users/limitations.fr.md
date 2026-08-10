@@ -55,12 +55,23 @@ ne déclare. Tous les autres canaux répondent 400 à la même entrée :
 // requête ?value=out_of_stock,discontinued       →  400
 ```
 
-L'`EnumTypeModelBinder` d'ASP.NET Core refuse de lier une valeur non déclarée à une énumération sans
-`[Flags]`, quel que soit le convertisseur qui l'a produite — les `[Flags]` en sont dispensées, ce qui
-explique que `read,write` se lie. Ce n'est pas atteignable d'ici et, surtout, le corriger serait une
-erreur : une énumération que ce paquet ne touche jamais est refusée de la même façon, donc une
-énumération sous contrat qui accepterait `3` sur une query string serait *plus* permissive qu'une
-ordinaire. La suite de parité épingle les deux moitiés, témoin compris.
+L'`EnumTypeModelBinder` d'ASP.NET Core refuse de lier une valeur non déclarée, quel que soit le
+convertisseur qui l'a produite, et `[Flags]` n'est pas une dispense : `Enum.IsDefined` ne sait pas
+répondre pour une combinaison, il compare donc le texte de la valeur à son nombre sous-jacent et
+refuse celle qui renvoie le nombre. `read,write` se lie parce que `1 | 2` se décompose en
+`Read, Write`, non parce que l'attribut lèverait le contrôle. Ce n'est pas atteignable d'ici et,
+surtout, le corriger serait une erreur : une énumération que ce paquet ne touche jamais est refusée
+de la même façon, donc une énumération sous contrat qui accepterait `3` sur une query string serait
+*plus* permissive qu'une ordinaire. La suite de parité épingle les deux moitiés, témoin compris.
+
+La moitié `[Flags]` a une conséquence qui mérite d'être nommée. Une énumération dont les membres
+déclarés sont des composites qui se recouvrent peut produire, par OU, une valeur ne se décomposant
+en aucun d'eux — `3 | 6` vaut `7` sur une énumération ne déclarant que `3` et `6` — et cette valeur
+est refusée hors du corps, exactement comme une combinaison non déclarée sur une énumération
+ordinaire. Le motif OpenAPI l'ignore : il décrit toute liste de noms déclarés séparés par des
+virgules, si bien que pour cette forme-là seule, le document promet une combinaison à laquelle le
+serveur répond 400. Déclarer les bits individuels comme membres, plutôt que des composites qui se
+recouvrent uniquement, l'évite.
 
 Les combinaisons qui nomment bien un membre sont acceptées, sur tous les canaux — voir
 [règles de contrat](contract-rules.fr.md#une-virgule-sépare-les-valeurs-sur-toutes-les-énumérations).

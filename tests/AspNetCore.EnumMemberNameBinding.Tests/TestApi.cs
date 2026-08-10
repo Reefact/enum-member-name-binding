@@ -40,6 +40,29 @@ public enum Permissions {
 
 }
 
+/// <summary>
+/// A [Flags] contract enum whose declared members are composites that overlap, so an OR of two of
+/// them lands on a value decomposing into neither: 3 | 6 is 7, and nothing declares the low bit on
+/// its own. The shape that showed the [Flags] branch of the binder's IsDefined was answering without
+/// asking.
+/// </summary>
+[Flags]
+public enum Scopes {
+
+    [JsonStringEnumMemberName("read_write")]   ReadWrite   = 3,
+    [JsonStringEnumMemberName("write_delete")] WriteDelete = 6
+
+}
+
+/// <summary>The same shape, untouched by this package — the control for the refusal above.</summary>
+[Flags]
+public enum PlainScopes {
+
+    ReadWrite   = 3,
+    WriteDelete = 6
+
+}
+
 /// <summary>No attribute at all — must keep ASP.NET Core's stock behaviour.</summary>
 public enum PlainPriority {
 
@@ -84,6 +107,12 @@ public sealed class BindingController : ControllerBase {
 
     [HttpGet("/permissions/query")]
     public IActionResult PermissionsFromQuery([FromQuery] Permissions value) => Ok(new Bound(value.ToString()));
+
+    [HttpGet("/scopes/query")]
+    public IActionResult ScopesFromQuery([FromQuery] Scopes value) => Ok(new Bound(value.ToString()));
+
+    [HttpGet("/plain-scopes/query")]
+    public IActionResult PlainScopesFromQuery([FromQuery] PlainScopes value) => Ok(new Bound(value.ToString()));
 
     [HttpGet("/plain/query")]
     public IActionResult PlainFromQuery([FromQuery] PlainPriority value) => Ok(new Bound(value.ToString()));
@@ -147,7 +176,8 @@ public sealed class TestApi : IAsyncLifetime {
                .AddEnumMemberNameBinding(options => {
                     options.AddEnum<ProductStatus>()
                            .AddEnum<PartiallyAnnotated>()
-                           .AddEnum<Permissions>();
+                           .AddEnum<Permissions>()
+                           .AddEnum<Scopes>();
                     // Opted in, so the parity suite can exercise the System.Text.Json-exact
                     // behaviour of an unannotated member. The default rejects it — see
                     // ContractValidationTests.

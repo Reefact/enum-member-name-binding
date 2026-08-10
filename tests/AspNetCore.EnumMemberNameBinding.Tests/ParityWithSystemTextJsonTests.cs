@@ -142,6 +142,57 @@ public sealed class ParityWithSystemTextJsonTests {
              .That(control.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
+    /// <summary>
+    /// The same rule on a <c>[Flags]</c> enum, which reads as though it were exempt and is not.
+    /// <see cref="Enum.IsDefined(Type, object)" /> cannot answer for a combination, so
+    /// <c>EnumTypeModelBinder</c> compares the value's own text against its underlying number
+    /// instead, and refuses the one that prints the number back. Two declared composites that
+    /// overlap reach it: <c>3 | 6</c> is <c>7</c>, which decomposes into neither.
+    /// </summary>
+    /// <remarks>
+    /// The control is the whole test. <c>PlainScopes</c> is the same shape untouched by this
+    /// package and is refused for the same reason, so a contract enum binding <c>7</c> here would be
+    /// more permissive than an ordinary one — which is what this suite exists to rule out.
+    /// <para>
+    /// The binder answered <see langword="true" /> for every <c>[Flags]</c> value until this test
+    /// was written, and nothing caught it: every <c>[Flags]</c> fixture in the suite declared atoms,
+    /// where the branch cannot be reached because each combination decomposes by construction. The
+    /// reasoning in the binder said exactly that, and took it for a property of all enums.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public async Task a_flags_combination_naming_no_member_is_refused_too() {
+        const string Contract = "read_write,write_delete";
+        const string Control  = "ReadWrite,WriteDelete";
+
+        Check.WithCustomMessage("the body is the channel that still accepts it, which is what makes this a divergence rather than a rule.")
+             .That(DeserializeWithSystemTextJson<Scopes>(Contract)).IsEqualTo((Scopes)7);
+
+        using HttpResponseMessage contract = await _api.Client.GetAsync("/scopes/query?value=" + Uri.EscapeDataString(Contract), TestContext.Current.CancellationToken);
+        using HttpResponseMessage control = await _api.Client.GetAsync("/plain-scopes/query?value=" + Uri.EscapeDataString(Control), TestContext.Current.CancellationToken);
+
+        Check.That(contract.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        Check.WithCustomMessage("an enum this package never touches must be refused for the same reason.")
+             .That(control.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// The other half, without which the test above also passes on a binder that refuses every
+    /// combination: a value that does decompose is still bound — on the enum whose members are
+    /// composites, and on the one whose members are atoms.
+    /// </summary>
+    [Fact]
+    public async Task a_flags_combination_that_does_name_members_still_binds() {
+        using HttpResponseMessage composite = await _api.Client.GetAsync("/scopes/query?value=read_write", TestContext.Current.CancellationToken);
+        using HttpResponseMessage atoms = await _api.Client.GetAsync("/permissions/query?value=" + Uri.EscapeDataString("read,write"), TestContext.Current.CancellationToken);
+
+        Check.That(composite.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadBoundValue(composite)).IsEqualTo(nameof(Scopes.ReadWrite));
+
+        Check.That(atoms.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadBoundValue(atoms)).IsEqualTo("Read, Write");
+    }
+
     [Fact]
     public async Task a_rejected_value_produces_a_validation_error_not_a_default_value() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/status/query?value=bogus", TestContext.Current.CancellationToken);

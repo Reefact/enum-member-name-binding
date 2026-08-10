@@ -46,7 +46,11 @@ seul où document et serveur peuvent être connus comme divergents.
 ## Le motif `[Flags]`
 
 Le motif couvre exactement ce que le binder accepte, espaces et virgule finale compris — voir
-[règles du contrat](contract-rules.fr.md#une-énumération-flags). Il est écrit dans le dialecte
+[règles du contrat](contract-rules.fr.md#une-énumération-flags). Une seule forme y échappe : une
+énumération déclarant des composites qui se recouvrent, où une liste admise par le motif peut ne se
+décomposer en aucun membre et être refusée par un 400 — voir
+[limitations](limitations.fr.md#une-combinaison-qui-ne-nomme-aucun-membre-est-refusée-hors-du-corps).
+Il est écrit dans le dialecte
 ECMA-262 avec lequel un `pattern` de JSON Schema est lu : seuls les caractères de syntaxe sont
 échappés. `Regex.Escape` produirait `\ ` et `\#`, qui ne sont pas des échappements d'identité valides
 dans ce dialecte et feraient rejeter le motif entier par un consommateur strict. Un test rejette tout
