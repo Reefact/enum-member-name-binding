@@ -17,11 +17,10 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// API, which this package's is now that 1.0.0 fixes it.
 ///
 /// Excluded from coverage because there is no behaviour here to measure. That is true of any class
-/// of constants, but this one made it visible: <see cref="IL3050.RequirementCarriedByConstructor" />
-/// is initialised from another constant rather than from a literal, and Sonar's C# sensor counts
-/// that as an executable line. A <c>const</c> compiles to no code at all, so no coverage report can
-/// ever mention it and no test can be written to reach it — the gate would have failed forever on a
-/// line that does not exist at run time.
+/// of constants, but this one made it visible: a constant initialised from another constant rather
+/// than from a literal is counted as an executable line by Sonar's C# sensor. A <c>const</c>
+/// compiles to no code at all, so no coverage report can ever mention it and no test can be written
+/// to reach it — the gate would have failed forever on a line that does not exist at run time.
 /// </remarks>
 [ExcludeFromCodeCoverage]
 internal static class SuppressionJustification {
@@ -53,28 +52,6 @@ internal static class SuppressionJustification {
         /// </para>
         /// </remarks>
         internal const string RequirementCarriedByConstructor = "The constructor carries the requirement; an instance cannot exist without it.";
-
-    }
-
-    /// <summary>Code that needs runtime code generation.</summary>
-    internal static class IL3050 {
-
-        /// <summary>
-        /// The same reason as <see cref="IL2026.RequirementCarriedByConstructor" />, for the same
-        /// member: it carries both constraints, and the constructor answers for both.
-        /// </summary>
-        /// <remarks>
-        /// Deliberately an alias rather than a second copy of the sentence. One member is excused
-        /// once, for one reason, under two rules — so rewording it must reword both, and an alias
-        /// makes that true by construction instead of by whoever remembers.
-        /// <para>
-        /// The constraints themselves are not the same and are annotated separately elsewhere:
-        /// reading enum metadata needs reflection but no code generation, so only the path that
-        /// really builds a converter at run time is told about dynamic code. See
-        /// <see cref="TrimmingMessages" />.
-        /// </para>
-        /// </remarks>
-        internal const string RequirementCarriedByConstructor = IL2026.RequirementCarriedByConstructor;
 
     }
 

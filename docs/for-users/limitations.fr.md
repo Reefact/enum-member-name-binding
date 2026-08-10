@@ -19,8 +19,8 @@ des options MVC. C'est le côté entrée qui est hors de portée.
 
 ## La génération de liens n'utilise pas le nom public
 
-ASP.NET Core formate les valeurs de route sans consulter `TypeDescriptor` : un lien construit à partir
-de la valeur d'énumération elle-même porte le nom C# — et cette API même y répond 400 :
+ASP.NET Core formate une valeur de route avec le `ToString()` de la valeur elle-même : un lien
+construit à partir de l'énumération porte donc le nom C# — et cette API même y répond 400 :
 
 ```csharp
 // /products/OutOfStock  →  400
@@ -38,7 +38,7 @@ formes sont couvertes par des tests, y compris le 400 sur la première.
 ## Une valeur vide sur un paramètre d'énumération nullable lie `null`
 
 Là où `System.Text.Json` rejette `""`, ASP.NET Core résout une valeur vide comme une valeur absente
-avant que le moindre `TypeConverter` ne soit consulté ; c'est donc hors de portée d'ici. Voir
+avant qu'aucune analyse ne soit atteinte ; c'est donc hors de portée d'ici. Voir
 [valeurs vides et absentes](contract-rules.fr.md#valeurs-vides-et-absentes), qui couvre aussi l'autre
 ligne à connaître : une valeur absente sur un paramètre **non nullable** lie le premier membre au lieu
 d'échouer. Aucun de ces deux comportements n'est introduit par ce paquet — un test vérifie qu'une
@@ -81,7 +81,7 @@ réduire. Voir [OpenAPI](openapi.fr.md).
 
 ## Incompatible avec le trimming et Native AOT
 
-`TypeDescriptor` et le scan d'assembly reposent sur la réflexion. Chaque point d'entrée est annoté
+Résoudre un contrat et scanner un assembly reposent sur la réflexion. Chaque point d'entrée est annoté
 plutôt que de voir ses avertissements supprimés : un consommateur qui compile pour l'un ou l'autre
 obtient ainsi un avertissement exact au lieu d'un échec silencieux à l'exécution.
 

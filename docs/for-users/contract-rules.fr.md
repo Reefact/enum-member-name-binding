@@ -140,8 +140,8 @@ Deux lignes méritent l'attention, et **aucune des deux n'est introduite par ce 
   ce paquet ne touche jamais se comporte de façon identique. Utilisez `ProductStatus?` ou `[Required]`
   si vous voulez un 400.
 - **Une valeur vide sur un paramètre nullable lie `null`,** là où `System.Text.Json` rejette `""`.
-  ASP.NET Core la traite comme une valeur absente avant que le moindre `TypeConverter` ne soit
-  consulté ; c'est donc hors de portée d'ici.
+  ASP.NET Core la traite comme une valeur absente avant qu'aucune analyse ne soit atteinte ;
+  c'est donc hors de portée d'ici.
 
 Les deux sont couvertes par des tests, afin qu'elles restent visibles plutôt que de devenir du
 folklore.

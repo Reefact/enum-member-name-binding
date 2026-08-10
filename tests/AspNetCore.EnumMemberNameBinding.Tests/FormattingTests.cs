@@ -143,9 +143,9 @@ public sealed class FormattingTests {
     }
 
     /// <summary>
-    /// Characterizes a real gap: ASP.NET Core formats route values without consulting
-    /// <c>TypeDescriptor</c>, so a link built from the enum value carries the C# name and this very
-    /// API answers 400 to it. It cannot be corrected from a TypeConverter, hence
+    /// Characterizes a real gap: ASP.NET Core formats a route value with the value's own
+    /// <c>ToString()</c>, so a link built from the enum value carries the C# name and this very API
+    /// answers 400 to it. No binder is reached on the way out, hence
     /// <see cref="EnumMemberNames.GetPublicName" />.
     /// </summary>
     [Fact]

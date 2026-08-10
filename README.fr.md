@@ -115,16 +115,18 @@ GET /products?status=OutOfStock   → 400   { "errors": { "status": ["The value 
 ## Garanties
 
 - **Le même vocabulaire partout.** Les règles de correspondance ne sont pas inventées ici : elles
-  portent celles que `System.Text.Json` applique au corps de la requête — jusqu'aux espaces et à la
-  virgule finale d'une liste `[Flags]`. Chaque règle a été mesurée face à `JsonSerializer`, jamais
-  lue dans une spécification.
+  portent celles que `System.Text.Json` applique au corps de la requête — jusqu'aux espaces, à la
+  liste séparée par des virgules et à sa virgule finale. Chaque règle a été mesurée face à
+  `JsonSerializer`, jamais lue dans une spécification.
 - **Vérifié, pas déclaré.** La suite de tests fait passer chaque entrée candidate à la fois par
   `JsonSerializer` et par une vraie requête HTTP, et exige que les deux résultats soient identiques.
   Si .NET change ses règles de correspondance, le build casse.
 - **Rien d'autre ne change.** Une énumération qui ne porte aucun `[JsonStringEnumMemberName]` est
   **laissée totalement intacte** : même liaison, même validation, même format JSON qu'en l'absence du
   paquet. La fabrique globale `JsonStringEnumConverter` n'est jamais installée — un convertisseur est
-  enregistré par énumération sous contrat.
+  enregistré par énumération sous contrat. Aucune autre application ne change non plus : tout est
+  enregistré dans le conteneur de l'application appelante, donc un second hôte du même processus reste
+  intact.
 - **Les erreurs sont des erreurs de compilation.** Des analyseurs Roslyn sont livrés dans le paquet,
   sans installation supplémentaire : un nom public en double, un contrat incomplet ou un nom qui
   masque le nom C# d'un autre membre sont signalés dans votre éditeur, pas découverts au démarrage.
@@ -140,9 +142,9 @@ Les deux à connaître avant d'adopter le paquet :
   `static TryParse` ou un `BindAsync` sur le type lié, ce qu'on ne peut pas ajouter à une `enum` —
   c'est une contrainte de la plateforme, pas un manque d'implémentation. Les réponses, *elles*, sont
   couvertes.
-- **La génération de liens n'utilise pas le nom public.** ASP.NET Core formate les valeurs de route
-  sans consulter `TypeDescriptor` : un lien construit à partir de la valeur d'énumération porte le nom
-  C#, et cette API même y répond 400. `EnumMemberNames.GetPublicName(value)` est le contournement.
+- **La génération de liens n'utilise pas le nom public.** ASP.NET Core formate une valeur de route
+  avec le `ToString()` de la valeur elle-même : un lien construit à partir de l'énumération porte le
+  nom C#, et cette API même y répond 400. `EnumMemberNames.GetPublicName(value)` est le contournement.
 
 La liste complète — valeurs vides, portabilité par canal, trimming et Native AOT, et pourquoi
 l'enregistrement doit avoir lieu au démarrage — est dans [limitations](./docs/for-users/limitations.fr.md).

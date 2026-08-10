@@ -23,11 +23,12 @@ brûler sans rien perdre.
 - `AddEnumMemberNameBinding()` sur `IMvcBuilder` : les valeurs de route, les chaînes de requête, les
   champs de formulaire et les en-têtes acceptent les noms de membres d'énumération déclarés avec
   `[JsonStringEnumMemberName]`.
-- La liaison via un `TypeConverter` piloté par l'attribut natif. ASP.NET Core résout les
-  binders de types simples via `TypeDescriptor` : aucun model binder n'est donc remplacé, et les
-  énumérations nullables, les en-têtes et les champs de formulaire sont couverts par construction. Le
-  convertisseur est un détail d'implémentation : `AddEnumMemberNameBinding()` est la seule entrée
-  supportée.
+- La liaison via un model binder enregistré sur les `MvcOptions` de l'application elle-même, inséré
+  juste devant le fournisseur qu'ASP.NET Core utilise pour les énumérations — et non en tête, ce qui
+  retirerait `[FromBody]` à `System.Text.Json`. Tout ce que l'enregistrement configure vit dans le
+  conteneur de cette application : une seconde application hébergée dans le même processus reste
+  intacte, qu'elle démarre avant ou après. Le binder est un détail d'implémentation :
+  `AddEnumMemberNameBinding()` est la seule entrée supportée.
 - Une base de référence versionnée de l'API publique des deux paquets, pour qu'un changement de la
   surface publiée soit une différence relue et non un effet de bord. La surface a été lue symbole par
   symbole avant cette publication et volontairement réduite à ce dont un consommateur a besoin :
@@ -40,14 +41,13 @@ brûler sans rien perdre.
   l'enregistrement pour une application qui configure ses convertisseurs elle-même. Nommer quoi que
   ce soit vaut « ne scanne rien d'autre » : l'assembly d'entrée est un défaut, pas un ajout.
 - Validation au démarrage de chaque contrat enregistré, levant `EnumContractException` pour les noms
-  publics en double, les noms entourés d'espaces et les virgules dans le nom d'un membre `[Flags]`.
+  publics en double, les noms entourés d'espaces et les virgules dans le nom d'un membre.
 - L'enregistrement est tout ou rien, sur les deux chemins — une liste explicite et le scan
-  d'assembly. Chaque contrat est résolu et validé avant l'installation du premier convertisseur, car
-  `TypeDescriptor` modifie un état global au processus qu'on ne peut pas défaire : une liste nommant
-  un contrat correct et un contrat malformé installerait sinon le correct puis lèverait, laissant le
-  processus dans un état que personne n'a demandé, derrière une exception qui se lit comme si rien
-  ne s'était produit. Le refus nomme `options`, le paramètre que l'appelant a réellement écrit, et
-  non une variable locale dans laquelle l'implémentation dépaquette la liste.
+  d'assembly. Chaque contrat est résolu et validé avant que quoi que ce soit ne soit configuré : une
+  liste nommant un contrat correct et un contrat malformé laisserait sinon le correct branché,
+  derrière une exception qui se lit comme si rien ne s'était produit. Le refus nomme `options`, le
+  paramètre que l'appelant a réellement écrit, et non une variable locale dans laquelle
+  l'implémentation dépaquette la liste.
 - Des gardes d'arguments sur chaque frontière publique et interne : un `null` que la signature
   interdit lève une `ArgumentNullException` nommant le paramètre, plutôt qu'une
   `NullReferenceException` venue de plus loin. Une annotation nullable n'engage que les appelants qui
@@ -56,8 +56,10 @@ brûler sans rien perdre.
   réponse change, et pas seulement le message : `null` atteignait `AsSpan()`, qui produit une étendue
   vide, si bien qu'une signature rompue était rapportée exactement comme la chaîne vide — une valeur
   qu'un appelant peut légitimement envoyer.
-- Prise en charge de `[Flags]` : listes séparées par des virgules, à l'identique de
-  `System.Text.Json`.
+- Les listes séparées par des virgules, à l'identique de `System.Text.Json` — sur toutes les
+  énumérations et pas seulement sur les `[Flags]`, car ni `Enum.Parse` ni `System.Text.Json` ne
+  regardent l'attribut avant de découper. Les refuser aurait rendu une énumération enregistrée plus
+  stricte que la même énumération laissée tranquille.
 - Une suite de tests de parité qui utilise `JsonSerializer` lui-même comme oracle — pour chaque entrée
   candidate, le résultat HTTP doit être égal au résultat obtenu par le corps.
 - `EMN0006`, qui signale un nom public qu'au moins un canal ne peut pas transporter. L'ensemble
@@ -103,9 +105,14 @@ brûler sans rien perdre.
   `AddEnumMemberNames()` sur `OpenApiOptions`, installe un transformateur de schéma qui fait décrire
   au document généré ce que le serveur accepte réellement : un type `string` explicite,
   les noms publics déclarés, et — pour les énumérations `[Flags]`, qu'ASP.NET Core documente sans
-  aucune valeur — une expression régulière couvrant les combinaisons séparées par des virgules. Ses
-  tests vérifient la cohérence document/exécution en rejouant chaque valeur annoncée face au serveur
-  en fonctionnement.
+  aucune valeur — une expression régulière couvrant les combinaisons séparées par des virgules. Il
+  décrit les énumérations que l'application a enregistrées et aucune autre : porter l'attribut n'est
+  pas la même chose qu'être couvert, et une énumération que personne n'a enregistrée se lie par ses
+  noms C# et se sérialise en nombre, donc annoncer ses noms déclarés serait faux pour la query string
+  et pour le corps à la fois. Utilisé sans le paquet principal, il n'a aucun enregistrement à
+  consulter et décrit toutes les énumérations sous contrat, ce qui est la forme voulue par une
+  application qui sérialise avec ses propres convertisseurs. Ses tests vérifient la cohérence
+  document/exécution en rejouant chaque valeur annoncée face au serveur en fonctionnement.
 - Le compagnon relève le plancher de `Microsoft.OpenApi` à 2.11.0. `Microsoft.AspNetCore.OpenApi`
   10.0.x résout 2.0.0, qui porte l'avis de sécurité GHSA-v5pm-xwqc-g5wc.
 - Une icône sur les deux paquets, pour qu'ils soient identifiables sur nuget.org au lieu d'apparaître
@@ -175,10 +182,11 @@ brûler sans rien perdre.
 - **Le README montrait le motif `[Flags]` précédent**, celui d'avant l'autorisation des espaces
   autour et de la virgule finale. Corrigé, et un test compare désormais le motif documenté à celui que
   le transformateur émet.
-- **Enregistrer deux fois la même énumération empilait un nouveau fournisseur `TypeDescriptor` à
-  chaque fois.** Un type n'est désormais enregistré qu'une fois par processus, tandis que la
-  validation s'exécute toujours à chaque appel, de sorte qu'un second enregistrement avec des options
-  plus strictes échoue encore. Couvert par des tests qui hébergent plusieurs applications côte à côte.
+- **Enregistrer deux fois la même énumération empilait un second enregistrement à chaque fois.** Un
+  seul fournisseur de binder est désormais installé par application, quel que soit le nombre d'appels,
+  tandis que la validation s'exécute toujours à chaque appel, de sorte qu'un second enregistrement
+  avec des options plus strictes échoue encore. Couvert par des tests qui hébergent plusieurs
+  applications côte à côte, inscrites et non inscrites.
 - **L'installation en un seul paquet du compagnon OpenAPI, telle que documentée, ne compilait pas.**
   `Microsoft.AspNetCore.OpenApi` active l'espace de noms d'intercepteurs dans lequel écrit son
   générateur de commentaires XML, et il le fait via des assets MSBuild `build`, que NuGet ne propage
@@ -240,10 +248,15 @@ brûler sans rien perdre.
   qu'on ne peut pas ajouter à une `enum`. C'est une contrainte de la plateforme, pas un manque
   d'implémentation.
 - **Une valeur vide sur un paramètre d'énumération nullable lie `null`** au lieu d'être rejetée, là où
-  `System.Text.Json` rejette `""`. ASP.NET Core la résout avant que le moindre `TypeConverter` ne soit
-  consulté. Un test épingle le comportement.
-- **Incompatible avec le trimming et Native AOT.** `TypeDescriptor` et le scan d'assembly reposent sur
-  la réflexion. Le point d'entrée public est annoté en conséquence, plutôt que de supprimer
-  silencieusement les avertissements.
+  `System.Text.Json` rejette `""`. ASP.NET Core tranche une valeur vide avant qu'aucune analyse ne soit
+  atteinte. Un test épingle le comportement.
+- **Une combinaison qui ne nomme aucun membre se lie dans le corps et nulle part ailleurs.**
+  `"out_of_stock,discontinued"` vaut `(ProductStatus)3`, que `System.Text.Json` accepte et que le
+  binder d'ASP.NET Core refuse sur une énumération sans `[Flags]` — y compris sur une énumération que
+  ce paquet ne touche jamais, ce qui rend sa fermeture contraire au sens voulu. Caractérisée, témoin
+  compris.
+- **Incompatible avec le trimming et Native AOT.** Résoudre un contrat et scanner un assembly
+  reposent sur la réflexion. Le point d'entrée public est annoté en conséquence, plutôt que de
+  supprimer silencieusement les avertissements.
 - L'enregistrement doit avoir lieu au démarrage : ASP.NET Core met en cache le model binder construit
   pour un type à la première utilisation.

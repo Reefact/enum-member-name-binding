@@ -24,8 +24,8 @@ public sealed class EmptyValueTests {
 
     /// <summary>
     /// A documented divergence from <c>System.Text.Json</c>, which rejects <c>""</c>.
-    /// ASP.NET Core's <c>SimpleTypeModelBinder</c> treats an empty value for a nullable type as an
-    /// absent value before any <c>TypeConverter</c> is consulted, so this is not reachable from here.
+    /// An empty value for a nullable type is settled as an absent one before any parse is reached,
+    /// which is ASP.NET Core's rule and is reproduced rather than chosen, so this is out of reach.
     /// </summary>
     [Fact]
     public async Task an_empty_query_value_binds_to_null_for_a_nullable_enum() {
@@ -77,9 +77,8 @@ public sealed class EmptyValueTests {
     /// </summary>
     /// <remarks>
     /// Asserted on the contract rather than over a channel, because no channel can deliver this case.
-    /// ASP.NET Core settles an empty value in <c>SimpleTypeModelBinder</c>, before any
-    /// <see cref="System.ComponentModel.TypeConverter" /> is consulted — which is what the two tests
-    /// above characterize. The behaviour still has to be right for the day something else calls it.
+    /// An empty value is settled before any parse is reached — which is what the two tests above
+    /// characterize. The behaviour still has to be right for the day something else calls it.
     /// </remarks>
     [Theory]
     [InlineData("")]

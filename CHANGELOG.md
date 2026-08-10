@@ -21,10 +21,12 @@ first one to make the trip is one that costs nothing to burn.
 
 - `AddEnumMemberNameBinding()` on `IMvcBuilder`: route values, query strings, form fields and
   headers accept the enum member names declared with `[JsonStringEnumMemberName]`.
-- Binding through a `TypeConverter` driven by the native attribute. ASP.NET Core resolves
-  simple-type binders through `TypeDescriptor`, so no model binder is replaced and nullable enums,
-  headers and form fields are covered by construction. The converter is an implementation detail:
-  `AddEnumMemberNameBinding()` is the only supported way in.
+- Binding through a model binder registered on the application's own `MvcOptions`, inserted
+  immediately ahead of the provider ASP.NET Core uses for enums — not at the front, which would take
+  `[FromBody]` away from `System.Text.Json`. Everything the registration configures lives in that
+  application's container, so a second application hosted in the same process is untouched whether
+  it starts before or after. The binder is an implementation detail: `AddEnumMemberNameBinding()` is
+  the only supported way in.
 - A committed public API baseline for both packages, so a change to the published surface is a
   reviewed diff rather than a side effect. The surface was read symbol by symbol before this
   release and deliberately kept to what a consumer needs: 19 entries in the main package, 2 in the
@@ -37,14 +39,12 @@ first one to make the trip is one that costs nothing to burn.
   registration for an application that configures its converters itself. Naming anything at all is
   taken as "scan nothing else", so the entry assembly is a default rather than an addition.
 - Start-up validation of every registered contract, raising `EnumContractException` for duplicate
-  public names, names with surrounding whitespace, and commas inside a `[Flags]` member name.
+  public names, names with surrounding whitespace, and commas inside a member name.
 - Registration is all or nothing, on both paths — an explicit list and the assembly scan. Every
-  contract is resolved and validated before the first converter is installed, because
-  `TypeDescriptor` mutates process-wide state that cannot be undone: a list naming one good contract
-  and one malformed one would otherwise install the good one and then throw, leaving the process in a
-  state nobody asked for behind an exception that reads as though nothing had happened. The refusal
-  names `options`, the parameter the caller actually wrote, rather than a local the implementation
-  unpacks the list into.
+  contract is resolved and validated before anything at all is configured: a list naming one good
+  contract and one malformed one would otherwise leave the good one wired up behind an exception that
+  reads as though nothing had happened. The refusal names `options`, the parameter the caller actually
+  wrote, rather than a local the implementation unpacks the list into.
 - Argument guards on every public and internal boundary, so a null the signature forbids raises
   `ArgumentNullException` naming the parameter rather than a `NullReferenceException` from further
   in. A nullable annotation binds only the callers that opted into it — not one compiled with
@@ -52,7 +52,9 @@ first one to make the trip is one that costs nothing to burn.
   deserializer. `TryParse` is the one whose answer changes rather than its message: `null` reached
   `AsSpan()`, which yields an empty span, so a broken signature was reported exactly like the empty
   string — a value a caller may legitimately send.
-- `[Flags]` support: comma-separated lists, matching `System.Text.Json`.
+- Comma-separated lists, matching `System.Text.Json` — on every enum and not only on a `[Flags]`
+  one, because neither `Enum.Parse` nor `System.Text.Json` looks at the attribute before splitting.
+  Refusing them would have made a registered enum stricter than the same enum left alone.
 - A parity test suite that uses `JsonSerializer` itself as the oracle — for each candidate input,
   the HTTP outcome must equal the body outcome.
 - `EMN0006`, reporting a public name at least one channel cannot carry. The forbidden set was
@@ -94,7 +96,12 @@ first one to make the trip is one that costs nothing to burn.
   `AddEnumMemberNames()` on `OpenApiOptions`, installs a schema transformer that makes the
   generated document describe what the server accepts: an explicit `string` type, the declared public
   names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
-  expression covering comma-separated combinations. Its tests assert document/runtime coherence by
+  expression covering comma-separated combinations. It describes the enums the application
+  registered and no others — carrying the attribute is not the same as being covered, and an enum
+  nobody registered binds by its C# names and serializes as a number, so announcing its declared
+  names would be wrong about the query string and the body at once. Used without the main package it
+  has no registration to consult and describes every contract enum, which is the shape an application
+  serializing through its own converters wants. Its tests assert document/runtime coherence by
   replaying every advertised value against the running server.
 - The companion raises the floor of `Microsoft.OpenApi` to 2.11.0. `Microsoft.AspNetCore.OpenApi`
   10.0.x resolves 2.0.0, which carries advisory GHSA-v5pm-xwqc-g5wc.
@@ -158,10 +165,10 @@ first one to make the trip is one that costs nothing to burn.
 - **The README showed the previous `[Flags]` pattern**, before surrounding whitespace and the
   trailing comma were allowed. Corrected, and a test now compares the documented pattern against the
   one the transformer emits.
-- **Registering the same enum twice stacked a new `TypeDescriptor` provider each time.** A type is
-  now registered once per process, while validation still runs on every call so a second
-  registration with stricter options still fails. Covered by tests that host several applications
-  side by side.
+- **Registering the same enum twice stacked a second registration each time.** One binder provider
+  is now installed per application however many times the method is called, while validation still
+  runs on every call so a second registration with stricter options still fails. Covered by tests
+  that host several applications side by side, opted in and opted out.
 - **The documented one-package install of the OpenAPI companion did not compile.**
   `Microsoft.AspNetCore.OpenApi` enables the interceptor namespace its XML comment generator writes
   into, and it does so through MSBuild build assets, which NuGet does not flow transitively. A
@@ -221,9 +228,13 @@ first one to make the trip is one that costs nothing to burn.
   `TypeDescriptor`; it requires a `static TryParse`/`BindAsync` on the bound type, which cannot be
   added to an `enum`. This is a platform-level constraint, not an implementation gap.
 - **An empty value on a nullable enum parameter binds `null`** rather than being rejected, where
-  `System.Text.Json` rejects `""`. ASP.NET Core resolves it before any `TypeConverter` is consulted.
+  `System.Text.Json` rejects `""`. ASP.NET Core settles an empty value before any parse is reached.
   A test pins the behaviour.
-- **Not compatible with trimming or Native AOT.** `TypeDescriptor` and the assembly scan rely on
+- **A combination naming no member binds in the body and nowhere else.**
+  `"out_of_stock,discontinued"` is `(ProductStatus)3`, which `System.Text.Json` accepts and
+  ASP.NET Core's own binder refuses on a non-`[Flags]` enum — including on an enum this package never
+  touches, which is why closing it would be the wrong direction. Characterized, control included.
+- **Not compatible with trimming or Native AOT.** Resolving a contract and the assembly scan rely on
   reflection. The public entry point is annotated accordingly rather than silently suppressing the
   warnings.
 - Registration must happen at start-up: ASP.NET Core caches the model binder built for a type on
