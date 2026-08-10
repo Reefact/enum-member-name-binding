@@ -26,8 +26,35 @@ public sealed class NonInterferenceTests {
         using HttpResponseMessage response = await _api.Client.GetAsync("/plain/query?value=" + input, TestContext.Current.CancellationToken);
 
         Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadValue(response)).IsEqualTo(expected);
+    }
+
+    private static async Task<string> ReadValue(HttpResponseMessage response) {
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Check.That(document.RootElement.GetProperty("value").GetString()).IsEqualTo(expected);
+
+        return document.RootElement.GetProperty("value").GetString()!;
+    }
+
+    /// <summary>
+    /// Registering an enum must not make it stricter than an enum left alone. A comma separates
+    /// values on any enum — `Enum.Parse` has always split on it, so stock ASP.NET Core accepts
+    /// `Low,Normal` on a query string — and a contract enum has to accept the same shape, spelled
+    /// with the declared names.
+    /// </summary>
+    /// <remarks>
+    /// The two halves are asserted together on purpose. Each alone reads as a fact about one enum;
+    /// side by side they are the comparison, which is the thing that must not drift.
+    /// </remarks>
+    [Fact]
+    public async Task a_contract_enum_accepts_a_comma_list_exactly_as_an_untouched_enum_does() {
+        using HttpResponseMessage control = await _api.Client.GetAsync("/plain/query?value=Low,Normal", TestContext.Current.CancellationToken);
+        using HttpResponseMessage contract = await _api.Client.GetAsync("/status/query?value=available,out_of_stock", TestContext.Current.CancellationToken);
+
+        Check.That(control.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadValue(control)).IsEqualTo(nameof(PlainPriority.Normal));
+
+        Check.That(contract.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadValue(contract)).IsEqualTo(nameof(ProductStatus.OutOfStock));
     }
 
     [Theory]

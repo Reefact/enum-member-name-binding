@@ -132,15 +132,32 @@ public sealed class EnumContractAnalyzerTests {
         Check.That(diagnostic.Id).IsEqualTo("EMN0004");
     }
 
+    /// <summary>
+    /// The rule used to stop at <c>[Flags]</c>, on the reading that a comma only separates values
+    /// there. It separates them everywhere — <c>Enum.Parse</c> and <c>System.Text.Json</c> both split
+    /// before they look at the type — so a name carrying one is unreadable on an ordinary enum too.
+    /// </summary>
     [Fact]
-    public async Task a_comma_is_allowed_in_a_non_flags_name() {
-        IReadOnlyList<string> ids = await AnalyzerHarness.IdsAsync(Using + """
+    public async Task EMN0004_reports_a_comma_inside_an_ordinary_name_as_well() {
+        IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """
             public enum Status {
                 [JsonStringEnumMemberName("a,b")] Only
             }
             """);
 
-        Check.That(ids).IsEmpty();
+        Check.That(diagnostics).HasOneElementOnly();
+        Check.That(diagnostics.Single().Id).IsEqualTo("EMN0004");
+    }
+
+    [Fact]
+    public async Task EMN0004_does_not_mention_flags_in_a_message_it_reports_on_any_enum() {
+        IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """
+            public enum Status {
+                [JsonStringEnumMemberName("a,b")] Only
+            }
+            """);
+
+        Check.That(diagnostics.Single().GetMessage()).Not.Contains("[Flags]");
     }
 
     /// <summary>

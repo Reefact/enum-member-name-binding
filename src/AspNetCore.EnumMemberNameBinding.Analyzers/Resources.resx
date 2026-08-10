@@ -61,13 +61,13 @@
     <value>Once an enum declares a contract, every member must declare its public name. A member left unannotated answers to its C# name, which puts an internal identifier in the public contract and makes renaming it a breaking change — exactly what declaring a contract is meant to prevent.</value>
   </data>
   <data name="EMN0004Title" xml:space="preserve">
-    <value>A [Flags] public name contains a comma</value>
+    <value>A public name contains a comma</value>
   </data>
   <data name="EMN0004Message" xml:space="preserve">
-    <value>Member '{0}' declares the public name '{1}'; a comma separates values in a [Flags] enum and cannot appear inside a name</value>
+    <value>Member '{0}' declares the public name '{1}'; a comma separates the values of a combination and cannot appear inside a name</value>
   </data>
   <data name="EMN0004Description" xml:space="preserve">
-    <value>A comma is the separator for combined values, so a name containing one cannot be parsed back.</value>
+    <value>A comma is the separator for combined values on any enum, so a name containing one cannot be parsed back.</value>
   </data>
   <data name="EMN0005Title" xml:space="preserve">
     <value>A public name shadows the C# name of another member</value>

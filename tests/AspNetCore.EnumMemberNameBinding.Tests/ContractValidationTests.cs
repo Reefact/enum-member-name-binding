@@ -33,6 +33,12 @@ public sealed class ContractValidationTests {
 
     }
 
+    public enum CommaInOrdinaryName {
+
+        [JsonStringEnumMemberName("read,write")] ReadWrite = 1
+
+    }
+
     public enum NumericAlias {
 
         [JsonStringEnumMemberName("first")]  First  = 1,
@@ -77,9 +83,15 @@ public sealed class ContractValidationTests {
         Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("whitespace", StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void a_flags_public_name_cannot_contain_a_comma() {
-        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(CommaInFlagsName))).Throws<EnumContractException>().Value;
+    /// <summary>
+    /// Both are refused, and the pair is the point: the comma separates values on every enum, so a
+    /// name carrying one cannot be told apart from a combination on any of them.
+    /// </summary>
+    [Theory]
+    [InlineData(typeof(CommaInFlagsName))]
+    [InlineData(typeof(CommaInOrdinaryName))]
+    public void a_public_name_cannot_contain_a_comma(Type enumType) {
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(enumType)).Throws<EnumContractException>().Value;
 
         Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("comma", StringComparison.Ordinal));
     }

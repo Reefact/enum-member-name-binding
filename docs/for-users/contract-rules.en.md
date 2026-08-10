@@ -102,6 +102,23 @@ Those whitespace and comma rules are not a choice made here — they were measur
 `System.Text.Json` and reproduced, down to the trailing comma. The same holds for a simple enum:
 `?status=%20available%20` is accepted, because the body accepts `" available "`.
 
+## A comma separates values on every enum
+
+A comma is not reserved to `[Flags]`. `Enum.Parse` has always split on it, and `System.Text.Json`
+splits before it looks at the type, so a list is accepted on an ordinary enum too and the values are
+combined bitwise:
+
+| Request | Result |
+|---|---|
+| `GET /products?status=available,` | ✅ `Available` — one trailing comma is tolerated |
+| `GET /products?status=available,out_of_stock` | ✅ `OutOfStock` — `0 \| 1` names a member |
+| `GET /products?status=out_of_stock,discontinued` | ❌ 400 — `1 \| 2` names none, see [limitations](limitations.en.md#a-combination-naming-no-member-is-refused-outside-the-body) |
+
+Refusing the shape would make a registered enum stricter than the same enum left alone: stock
+ASP.NET Core accepts `?priority=Low,Normal` on an enum this package never touches. The last row is
+the one input the body accepts and no other channel does, and the refusal there is ASP.NET Core's
+rather than this package's.
+
 ## Empty and absent values
 
 | Parameter | Request | Result |
