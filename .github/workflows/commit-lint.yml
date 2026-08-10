@@ -39,6 +39,13 @@ jobs:
           # The pull request's own commits are needed, so a shallow tip will not do.
           fetch-depth: 0
 
+      # First that the linter works, then what it says — the same order as the style job in ci.yml,
+      # and for the same reason. This job reads a handful of messages and reports what it found, so
+      # a linter that has stopped refusing anything reads here exactly like a branch whose commits
+      # all conform. It shipped precisely that: exit 0 on headers its own grammar rejects.
+      - name: The linter still refuses what it must and exempts what it must
+        run: tools/commit-lint/lint-commit-message.test.sh
+
       - name: Lint the commits this pull request adds
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

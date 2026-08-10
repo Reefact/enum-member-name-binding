@@ -97,7 +97,10 @@ else
 
   if ! printf '%s' "$subject" | grep -Eq "^(${TYPES})(\(${SCOPE_SHAPE}\))?!?: [a-z]"; then
     # Not well formed. Rather than repeat the grammar, say which part is wrong — the author is
-    # looking at a rejected commit, not at a specification.
+    # looking at a rejected commit, not at a specification. Which four of them try to; the count is
+    # taken first so the catch-all below can tell whether any of them managed it.
+    before="$errors"
+
     if ! printf '%s' "$subject" | grep -Eq '^[^:]+: .'; then
       err "expected '<type>[(scope)][!]: <description>' — nothing looks like ': ' after the type"
     fi
@@ -119,6 +122,17 @@ else
       [A-Z]) err "the description starts with a capital; write it imperative and lowercase ('add', not 'Add' or 'Added')" ;;
       *) ;;
     esac
+
+    # None of the four recognised the fault, and the header is still one the grammar above rejects.
+    # Without this the message accumulates no error at all, falls through to `exit 0`, and both the
+    # hook and CI call it conforming — which is what "the header is validated in full" above claimed
+    # it could not do. Three that reached it: `feat: 1 add the thing` and `feat: -add the thing`,
+    # whose descriptions do not start on a letter, and `feat : add the thing`, whose colon does not
+    # follow the type. Each has a colon, a known type, no scope and no capital, so all four looked
+    # away. The sentence names the shape rather than the fault, because by here nothing knows it.
+    if [ "$errors" -eq "$before" ]; then
+      err "expected '<type>[(scope)][!]: <description>', with the description starting on a lowercase letter"
+    fi
   fi
 
   case "$subject" in
