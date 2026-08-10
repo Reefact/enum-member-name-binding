@@ -68,9 +68,15 @@ public static class EnumMemberNames {
     }
 
     /// <summary>
-    /// Whether <paramref name="enumType" /> is a contract enum that also carries <c>[Flags]</c>,
-    /// and therefore accepts comma-separated combinations.
+    /// Whether <paramref name="enumType" /> is a contract enum that also carries <c>[Flags]</c>.
     /// </summary>
+    /// <remarks>
+    /// Not whether it accepts comma-separated combinations: a combination is accepted on every enum,
+    /// matching <c>System.Text.Json</c>, which splits before it looks at the attribute. What
+    /// <c>[Flags]</c> decides is that every combination of declared members is itself a value the
+    /// application will bind — which is why a document can describe one with a pattern, and why
+    /// <see cref="GetPublicName" /> has a combination to write.
+    /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     public static bool IsFlagsContract(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);

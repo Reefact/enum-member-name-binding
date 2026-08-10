@@ -73,7 +73,7 @@ brûler sans rien perdre.
 - Des analyseurs Roslyn, livrés dans le paquet sous `analyzers/dotnet/cs`, pour qu'une erreur de
   contrat soit une erreur de compilation plutôt qu'une exception au démarrage : `EMN0001` nom public en
   double, `EMN0002` nom public inutilisable, `EMN0003` contrat incomplet, `EMN0004` virgule dans un nom
-  `[Flags]`, `EMN0005` un nom public masquant le nom C# d'un autre membre — ce qui laisse ce membre
+  public, `EMN0005` un nom public masquant le nom C# d'un autre membre — ce qui laisse ce membre
   répondre à toutes les casses de son nom sauf la sienne. Ces cinq-là sont des erreurs ; `EMN0006`
   ci-dessus est le seul avertissement, car une limite de portabilité dépend des canaux depuis lesquels
   une API lie réellement, là où les cinq autres signalent une ambiguïté fausse sur tous les canaux.

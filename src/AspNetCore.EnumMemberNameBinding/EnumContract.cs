@@ -173,7 +173,14 @@ internal sealed class EnumContract {
     /// <summary>Whether at least one member carries <c>[JsonStringEnumMemberName]</c>.</summary>
     internal bool IsContract { get; }
 
-    /// <summary>Whether the enum carries <c>[Flags]</c> and therefore accepts comma-separated combinations.</summary>
+    /// <summary>Whether the enum carries <c>[Flags]</c>.</summary>
+    /// <remarks>
+    /// Not what decides whether a comma-separated combination is <em>accepted</em>: one is accepted on
+    /// every enum, for the reason given on this class. What the attribute decides is that every
+    /// combination of declared members is itself a bindable value — which is what lets
+    /// <see cref="Format" /> write a combination back out, and the OpenAPI companion describe the
+    /// schema with a pattern rather than a closed list.
+    /// </remarks>
     internal bool IsFlags => _isFlags;
 
     /// <summary>The public names, in declaration order.</summary>
