@@ -110,6 +110,14 @@ git switch -c jane/flags-enum-pattern main
 `main` takes no direct push, no force push and no merge commit. It moves only through a pull
 request, squashed or rebased, so its history stays linear.
 
+The merge commit is the half of that a contributor can trip over, so CI refuses one rather than
+leaving it to be found at the merge button — where GitHub reports it as a rebase that cannot be
+done, after review rather than before it. Bring `main` in by rebasing onto it:
+
+```sh
+git fetch origin main && git rebase origin/main
+```
+
 ## Commit messages
 
 [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/), enforced by

@@ -1,10 +1,16 @@
 name: commit-lint
 
-# Lint every non-merge commit a pull request adds, with the same script the local hook runs.
+# Hold a pull request to the two rules about its commits: each message follows the convention, and
+# the branch carries no merge commit.
 #
-# The hook is the fast feedback; this is the guarantee. `git commit --no-verify` bypasses the hook
-# silently, and a contributor who never ran `git config core.hooksPath .githooks` has no hook at
-# all — so without this the convention would hold only for people who opted into it.
+# The messages are checked with the same script the local hook runs. The hook is the fast feedback;
+# this is the guarantee. `git commit --no-verify` bypasses the hook silently, and a contributor who
+# never ran `git config core.hooksPath .githooks` has no hook at all — so without this the
+# convention would hold only for people who opted into it.
+#
+# The merge commit has no hook to bypass. It was the one rule in CONTRIBUTING.md that nothing
+# checked, and an unchecked rule is discovered late: GitHub refuses to rebase the pull request, at
+# the merge button, after review.
 
 on:
   pull_request:
@@ -39,11 +45,36 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
+
+          # `main` moves only by rebase or squash, so its history stays linear — see CONTRIBUTING.md.
+          # Checked over the range rather than inside lint-commit-message.sh, and that is the whole
+          # distinction: that script reads one message and exempts a merge's, correctly, because git
+          # wrote it and no convention can hold a generated sentence. Whether a merge commit belongs
+          # on the branch at all is a property of the set, which only this workflow knows.
+          merge_status=0
+          merges="$(git rev-list --merges "${BASE_SHA}..${HEAD_SHA}")"
+          if [ -n "${merges}" ]; then
+            echo "This pull request carries a merge commit, which main does not take:"
+            for sha in ${merges}; do
+              echo "── $(git log -1 --format='%h %s' "${sha}")"
+            done
+            echo "   Rebase onto main rather than merging it in:"
+            echo "     git fetch origin main && git rebase origin/main"
+            echo
+            merge_status=1
+          else
+            # Says so even when there is nothing to say, and that is the point: a check silent on
+            # the clean path cannot be told apart in the log from a check that never ran.
+            echo "No merge commit in the range."
+          fi
+
           echo "Linting non-merge commits in ${BASE_SHA}..${HEAD_SHA}"
           commits="$(git rev-list --no-merges "${BASE_SHA}..${HEAD_SHA}")"
           if [ -z "${commits}" ]; then
+            # Not an early exit any more. A pull request whose every commit is a merge has nothing
+            # to lint and is still refused above, so the answer has to come from both checks.
             echo "No non-merge commits to lint."
-            exit 0
+            exit "${merge_status}"
           fi
 
           status=0
@@ -75,5 +106,11 @@ jobs:
             echo
             echo "One or more commit messages do not follow the convention."
             echo "Fix them with an interactive rebase (git rebase -i) before merge."
+          fi
+
+          # Both answers, never one: a branch can carry a merge commit and a malformed message at
+          # once, and reporting only the first would cost a second round trip to find the second.
+          if [ "${merge_status}" -ne 0 ]; then
+            status=1
           fi
           exit "${status}"
