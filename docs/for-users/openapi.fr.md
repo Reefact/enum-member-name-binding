@@ -28,6 +28,21 @@ type**, ce que le compagnon corrige. Et pour une énumération `[Flags]`, il n'�
 valeur : une liste fermée ne peut pas exprimer les combinaisons, alors le compagnon émet à la place
 une expression régulière, à la fois précise et vérifiable par une machine.
 
+## Uniquement les énumérations que cette application a enregistrées
+
+Le compagnon décrit une énumération parce que `AddEnumMemberNameBinding` l'a enregistrée, pas
+simplement parce qu'elle porte `[JsonStringEnumMemberName]`. Les deux se lisent comme la même chose
+et ne le sont pas : une énumération annotée que personne n'a enregistrée se lie par ses noms C# et se
+sérialise en nombre, donc annoncer ses noms déclarés comme une chaîne serait faux pour la query
+string *et* pour le corps, et un client généré depuis ce document enverrait des requêtes auxquelles
+le serveur répond 400.
+
+Utilisé seul — par une application qui enregistre elle-même son `JsonStringEnumConverter<T>` et
+n'appelle jamais `AddEnumMemberNameBinding` — il n'y a aucun enregistrement à consulter, et toutes
+les énumérations sous contrat sont décrites comme avant. Un registre absent n'est pas un registre
+vide : ce que le registre écarte, c'est le cas où il existe et où l'énumération n'y figure pas, le
+seul où document et serveur peuvent être connus comme divergents.
+
 ## Le motif `[Flags]`
 
 Le motif couvre exactement ce que le binder accepte, espaces et virgule finale compris — voir
