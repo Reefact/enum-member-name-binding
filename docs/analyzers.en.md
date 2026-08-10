@@ -21,6 +21,7 @@ enums it has nothing to do with.
 
 ## EMN0005, the one worth reading twice
 
+<!-- emn:allow=EMN0003,EMN0005 -->
 ```csharp
 public enum Colour
 {

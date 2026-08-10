@@ -44,6 +44,7 @@ annotation répond donc à son nom C#, et cet identifiant interne devient silenc
 votre contrat public — l'exact opposé de la raison pour laquelle vous avez déclaré un contrat. Oublier
 un membre est une erreur, pas un choix.
 
+<!-- emn:allow=EMN0003 -->
 ```csharp
 public enum Shipping
 {
@@ -59,6 +60,7 @@ servir un contrat qui fuit.
 
 Si l'énumération ne vous appartient pas, activez-le explicitement :
 
+<!-- emn:skip -->
 ```csharp
 .AddEnumMemberNameBinding(options => options.AllowPartialContracts = true);
 ```

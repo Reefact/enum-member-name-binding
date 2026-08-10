@@ -81,6 +81,13 @@ brûler sans rien perdre.
   fixture est censée *ne pas* compiler, pour qu'`EMN0003` doive venir de l'analyseur contenu dans le
   `.nupkg` ; l'assertion est positive, car « aucun diagnostic n'est apparu » est aussi ce à quoi
   ressemble un analyseur absent.
+- Une suite de tests de documentation : chaque exemple C# sous `docs/` et dans le README est compilé
+  contre les paquets publiés, puis les analyseurs sont passés sur le résultat. La documentation est la
+  seule chose que rien n'exécute, donc une option renommée ou un exemple écrit de mémoire se lit
+  parfaitement et reste faux jusqu'à ce qu'un nouveau venu le découvre. Un exemple qui montre
+  volontairement une erreur déclare la règle qu'il illustre, et une autorisation qui ne se déclenche
+  plus échoue aussi — une page qui dit « voici à quoi ressemble `EMN0001` », au-dessus d'un code qui
+  ne le déclenche plus, a cessé d'être un exemple.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont le transformateur de schéma
   fait décrire au document généré ce que le serveur accepte réellement : un type `string` explicite,
   les noms publics déclarés, et — pour les énumérations `[Flags]`, qu'ASP.NET Core documente sans

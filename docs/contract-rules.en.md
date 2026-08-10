@@ -42,6 +42,7 @@ An attribute **replaces** a member's name, it does not add an alias. So a member
 answers to its C# name, and that internal identifier silently becomes part of your public contract —
 the exact opposite of why you declared a contract. Forgetting one member is a mistake, not a choice.
 
+<!-- emn:allow=EMN0003 -->
 ```csharp
 public enum Shipping
 {
@@ -56,6 +57,7 @@ registration throws `EnumContractException` at start-up rather than serving a le
 
 If the enum is not yours to annotate, opt in explicitly:
 
+<!-- emn:skip -->
 ```csharp
 .AddEnumMemberNameBinding(options => options.AllowPartialContracts = true);
 ```

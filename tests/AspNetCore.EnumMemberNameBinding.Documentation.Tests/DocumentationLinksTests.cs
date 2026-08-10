@@ -1,7 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace AspNetCore.EnumMemberNameBinding.Tests;
+namespace AspNetCore.EnumMemberNameBinding.Documentation.Tests;
 
 /// <summary>
 /// The README is also the NuGet package page, where a relative link is dead: it must point at
