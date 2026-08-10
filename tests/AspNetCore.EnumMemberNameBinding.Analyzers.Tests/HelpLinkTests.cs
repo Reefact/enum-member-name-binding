@@ -41,6 +41,7 @@ public sealed class HelpLinkTests {
     [InlineData("fr")]
     public void every_rule_is_documented_and_every_page_documents_a_rule(string language) {
         string[] documented = [.. Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "for-users", "rules"), $"*.{language}.md")
+                                            .Where(path => !IsIndex(path))
                                             .Select(path => Path.GetFileName(path)[..^$".{language}.md".Length])
                                             .Order()];
         string[] declared = [.. new EnumContractAnalyzer().SupportedDiagnostics.Select(d => d.Id).Order()];
@@ -51,11 +52,20 @@ public sealed class HelpLinkTests {
     /// <summary>A rule page in one language and not the other is a half-finished translation.</summary>
     [Fact]
     public void no_rule_page_exists_in_only_one_language() {
-        foreach (string path in Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "for-users", "rules"), "*.md")) {
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "for-users", "rules"), "*.md").Where(path => !IsIndex(path))) {
             string name = Path.GetFileName(path);
             Check.WithCustomMessage($"{name} carries no language suffix; rule pages are named EMNxxxx.en.md and EMNxxxx.fr.md.")
                  .That(Languages.Any(language => name.EndsWith($".{language}.md", StringComparison.Ordinal))).IsTrue();
         }
+    }
+
+    /// <summary>
+    /// The folder's index, which is not a rule page. It has to be called <c>README.md</c> — that is
+    /// the only name GitHub renders when someone opens the folder — so it cannot carry a language
+    /// suffix, and the two rules below would read it as a rule named "README" without this.
+    /// </summary>
+    private static bool IsIndex(string path) {
+        return Path.GetFileName(path) is "README.md" or "README.fr.md";
     }
 
     private static DirectoryInfo FindRepositoryRoot() {

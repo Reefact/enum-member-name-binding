@@ -1,7 +1,7 @@
 # AspNetCore.EnumMemberNameBinding
 
 🌍 **Languages:**  
-🇬🇧 English (this file) | 🇫🇷 [Français](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/for-users/README.fr.md)
+🇬🇧 English (this file) | 🇫🇷 [Français](https://github.com/Reefact/enum-member-name-binding/blob/main/README.fr.md)
 
 |  |  |
 | :-- | :-- |
