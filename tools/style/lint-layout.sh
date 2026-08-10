@@ -85,6 +85,8 @@ fi
 # the other three the span is not fixed. `unclosed` is the same site with no closing bracket found:
 # reported and left alone, since a file that unbalanced is not one a line-joiner should be editing.
 scan() {
+    local file="$1"
+
     awk -v max="$MAX_WIDTH" -v valueMax="$MAX_VALUE_WIDTH" '
         function isExit(line) {
             return line ~ /^[ \t]*if \(.*\) \{ *(return|throw|continue|break)([ \t(].*)?; *\}[ \t]*$/
@@ -185,16 +187,21 @@ scan() {
                 print i "\tcollapse\t" collapsed
             }
         }
-    ' "$1"
+    ' "$file"
 }
 
+# The same four values in the same order as apply() below. Named rather than read as $1..$4
+# because the two are called one after the other in the same loop, and two sibling helpers taking
+# file, line and action in two different orders is a bug waiting for whoever edits one of them.
 report_of() {
-    case "$2" in
-        collapse) printf '%s:%s: an if whose body is a lone exit belongs on one line\n    %s\n' "$1" "$3" "$4" ;;
-        unblank)  printf '%s:%s: blank line between two one-line guards; a run of them is one block\n' "$1" "$3" ;;
-        joinvalue) printf '%s:%s: this value fits beside its name; do not break after the =\n    %s\n' "$1" "$3" "$4" ;;
-        suppression) printf '%s:%s: a suppression belongs on one line, so a duplicate is seen rather than read\n    %s\n' "$1" "$3" "$4" ;;
-        unclosed) printf '%s:%s: a suppression belongs on one line; this one never closes\n' "$1" "$3" ;;
+    local file="$1" line="$2" action="$3" collapsed="$4"
+
+    case "$action" in
+        collapse)    printf '%s:%s: an if whose body is a lone exit belongs on one line\n    %s\n' "$file" "$line" "$collapsed" ;;
+        unblank)     printf '%s:%s: blank line between two one-line guards; a run of them is one block\n' "$file" "$line" ;;
+        joinvalue)   printf '%s:%s: this value fits beside its name; do not break after the =\n    %s\n' "$file" "$line" "$collapsed" ;;
+        suppression) printf '%s:%s: a suppression belongs on one line, so a duplicate is seen rather than read\n    %s\n' "$file" "$line" "$collapsed" ;;
+        unclosed)    printf '%s:%s: a suppression belongs on one line; this one never closes\n' "$file" "$line" ;;
     esac
 }
 
@@ -247,7 +254,7 @@ for file in "${paths[@]}"; do
         [[ -n "$sites" ]] || continue
 
         while IFS=$'\t' read -r line action collapsed end; do
-            report_of "$file" "$action" "$line" "$collapsed"
+            report_of "$file" "$line" "$action" "$collapsed"
             reported=$((reported + 1))
         done <<< "$sites"
 
