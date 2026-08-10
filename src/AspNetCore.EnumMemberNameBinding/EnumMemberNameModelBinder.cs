@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace AspNetCore.EnumMemberNameBinding;
@@ -101,7 +103,7 @@ internal sealed class EnumMemberNameModelBinder : IModelBinder {
 
     /// <summary>
     /// Whether ASP.NET Core will let this value through — the check that keeps a combination naming
-    /// no member out of a non-<c>[Flags]</c> parameter.
+    /// no member out of a parameter.
     /// </summary>
     /// <remarks>
     /// Reproduced from <c>EnumTypeModelBinder</c>, and this is the one input where a channel and the
@@ -112,18 +114,31 @@ internal sealed class EnumMemberNameModelBinder : IModelBinder {
     /// of the two, and the promise runs the other way. It is written down in
     /// <c>docs/for-users/limitations.en.md</c>.
     /// <para>
-    /// A <c>[Flags]</c> parameter is answered without asking, where the original runs a test of its
-    /// own — <see cref="Enum.IsDefined(Type, object)" /> does not work on a combination, so it
-    /// compares the value's text against its underlying number to find one that decomposes into no
-    /// members. Nothing reaching here can be that value: it was built by OR-ing members the contract
-    /// declares, so it decomposes into them by construction. Running the test anyway would be a
-    /// branch that cannot be taken, dressed as a decision.
+    /// A <c>[Flags]</c> parameter is not exempt, which is the half that reads as though it should
+    /// be. <see cref="Enum.IsDefined(Type, object)" /> does not answer for a combination, so the
+    /// original runs a different test rather than no test: it compares the value's own text against
+    /// its underlying number, because a value that decomposes into members prints their names and
+    /// one that decomposes into nothing prints the number back.
+    /// </para>
+    /// <para>
+    /// This answered <see langword="true" /> without asking, on the reasoning that a value built by
+    /// OR-ing members the contract declares decomposes into them by construction. It does not: two
+    /// declared composites that overlap can together cover a bit no single member supplies, and on
+    /// an enum declaring <c>3</c> and <c>6</c> the pair ORs to <c>7</c>, which decomposes into
+    /// neither. ASP.NET Core answers 400 to that on an enum it owns, and this answered 200 — the
+    /// contract enum more permissive than the ordinary one, which is the one thing this package
+    /// promises never to do. <c>ParityWithSystemTextJsonTests</c> pins it with a control.
     /// </para>
     /// </remarks>
     private static bool IsDefined(ModelBindingContext bindingContext, object model) {
-        if (bindingContext.ModelMetadata.IsFlagsEnum) { return true; }
+        Type enumType = bindingContext.ModelMetadata.UnderlyingOrModelType;
 
-        return Enum.IsDefined(bindingContext.ModelMetadata.UnderlyingOrModelType, model);
+        if (!bindingContext.ModelMetadata.IsFlagsEnum) { return Enum.IsDefined(enumType, model); }
+
+        string? decomposed = model.ToString();
+        string? number     = Convert.ChangeType(model, Enum.GetUnderlyingType(enumType), CultureInfo.InvariantCulture).ToString();
+
+        return !string.Equals(decomposed, number, StringComparison.OrdinalIgnoreCase);
     }
 
 }

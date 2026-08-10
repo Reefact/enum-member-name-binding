@@ -152,6 +152,15 @@ brûler sans rien perdre.
   de la requête les accepte ; et une virgule finale dans une liste `[Flags]` était refusée là où le
   corps en tolère une. Le comportement a été caractérisé face à `JsonSerializer` puis reproduit, et
   toute la matrice figure désormais dans la suite de parité.
+- **Une énumération sous contrat `[Flags]` liait une combinaison qu'ASP.NET Core refuse**, la seule
+  chose que ce paquet promet de ne jamais faire. Le binder prenait `[Flags]` pour une dispense du
+  contrôle de valeur non déclarée et répondait oui sans demander, au motif qu'une valeur bâtie en
+  combinant des membres déclarés se décompose en eux par construction. C'est faux : deux composites
+  déclarés qui se recouvrent peuvent couvrir un bit qu'aucun membre ne fournit seul, si bien qu'une
+  énumération déclarant `3` et `6` liait `read_write,write_delete` en `7` là où la même énumération
+  laissée intacte répond 400. Il exécute désormais le test qu'exécute `EnumTypeModelBinder` — une
+  valeur qui se décompose écrit les noms de ses membres, une qui ne se décompose pas renvoie son
+  nombre — et la suite de parité l'épingle avec, pour témoin, une énumération intacte de même forme.
 - **Le motif `[Flags]` du document OpenAPI excluait des formes que le binder accepte** — les espaces
   en tête et en fin, et la virgule finale. Le document annonçait un contrat plus strict que celui que
   le serveur honorait.

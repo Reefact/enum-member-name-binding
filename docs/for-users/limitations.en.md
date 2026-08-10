@@ -55,11 +55,21 @@ declares. Every other channel answers 400 to the same input:
 // query  ?value=out_of_stock,discontinued       →  400
 ```
 
-ASP.NET Core's `EnumTypeModelBinder` refuses to bind an undefined value to a non-`[Flags]` enum,
-whichever converter produced it — `[Flags]` enums are exempt, which is why `read,write` binds. This
-is not reachable from here and, more to the point, closing it would be wrong: an enum this package
-never touches is refused the same way, so a contract enum accepting `3` on a query string would be
-*more* permissive than an ordinary one. The parity suite pins both halves, control included.
+ASP.NET Core's `EnumTypeModelBinder` refuses to bind an undefined value, whichever converter
+produced it, and `[Flags]` is not an exemption: `Enum.IsDefined` cannot answer for a combination, so
+it compares the value's own text against its underlying number instead and refuses the one that
+prints the number back. `read,write` binds because `1 | 2` decomposes into `Read, Write`, not
+because the attribute waives the check. This is not reachable from here and, more to the point,
+closing it would be wrong: an enum this package never touches is refused the same way, so a contract
+enum accepting `3` on a query string would be *more* permissive than an ordinary one. The parity
+suite pins both halves, control included.
+
+The `[Flags]` half has one consequence worth naming. An enum whose declared members are composites
+that overlap can OR to a value decomposing into none of them — `3 | 6` is `7` on an enum declaring
+only `3` and `6` — and that value is refused off the body exactly as an undeclared combination is on
+an ordinary enum. The OpenAPI pattern does not know it: it describes every comma-separated list of
+declared names, so for that shape alone the document promises a combination the server answers 400
+to. Declaring the individual bits as members, rather than only overlapping composites, avoids it.
 
 Combinations that do name a member are accepted, on every channel — see
 [contract rules](contract-rules.en.md#a-comma-separates-values-on-every-enum).

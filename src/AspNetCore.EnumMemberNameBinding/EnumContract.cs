@@ -176,10 +176,16 @@ internal sealed class EnumContract {
     /// <summary>Whether the enum carries <c>[Flags]</c>.</summary>
     /// <remarks>
     /// Not what decides whether a comma-separated combination is <em>accepted</em>: one is accepted on
-    /// every enum, for the reason given on this class. What the attribute decides is that every
-    /// combination of declared members is itself a bindable value — which is what lets
-    /// <see cref="Format" /> write a combination back out, and the OpenAPI companion describe the
-    /// schema with a pattern rather than a closed list.
+    /// every enum, for the reason given on this class. What the attribute decides is that the set of
+    /// bindable values is open rather than closed — which is what lets <see cref="Format" /> write a
+    /// combination back out, and the OpenAPI companion describe the schema with a pattern rather
+    /// than a closed list.
+    /// <para>
+    /// Open is not unbounded, and reading it that way is what put a bug in the binder: a combination
+    /// decomposing into no declared member is refused off the body like any other undefined value,
+    /// which two declared composites that overlap can produce. <c>EnumMemberNameModelBinder</c> holds
+    /// that, and <c>docs/for-users/limitations.en.md</c> writes it down.
+    /// </para>
     /// </remarks>
     internal bool IsFlags => _isFlags;
 

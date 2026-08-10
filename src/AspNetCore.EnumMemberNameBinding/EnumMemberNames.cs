@@ -73,9 +73,14 @@ public static class EnumMemberNames {
     /// <remarks>
     /// Not whether it accepts comma-separated combinations: a combination is accepted on every enum,
     /// matching <c>System.Text.Json</c>, which splits before it looks at the attribute. What
-    /// <c>[Flags]</c> decides is that every combination of declared members is itself a value the
-    /// application will bind — which is why a document can describe one with a pattern, and why
-    /// <see cref="GetPublicName" /> has a combination to write.
+    /// <c>[Flags]</c> decides is that the values the application will bind are an open set rather
+    /// than the declared members alone — which is why a document can describe one with a pattern,
+    /// and why <see cref="GetPublicName" /> has a combination to write.
+    /// <para>
+    /// Open, not unbounded: a combination decomposing into no declared member is refused off the
+    /// request body exactly as an undefined value is on any other enum. Members that are overlapping
+    /// composites can produce one — see <c>docs/for-users/limitations.en.md</c>.
+    /// </para>
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     public static bool IsFlagsContract(Type enumType) {

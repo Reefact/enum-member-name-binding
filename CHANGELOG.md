@@ -139,6 +139,14 @@ first one to make the trip is one that costs nothing to burn.
   and a trailing comma in a `[Flags]` list was refused where the body tolerates one. The behaviour was
   characterized against `JsonSerializer` and reproduced, and the whole matrix is now in the parity
   suite.
+- **A `[Flags]` contract enum bound a combination ASP.NET Core refuses**, which is the one thing this
+  package promises never to do. The binder took `[Flags]` for an exemption from the undefined-value
+  check and answered yes without asking, on the reasoning that a value built by OR-ing declared
+  members decomposes into them by construction. It does not: two declared composites that overlap can
+  cover a bit no single member supplies, so an enum declaring `3` and `6` bound `read_write,write_delete`
+  as `7` where the same enum left alone answers 400. It now runs the test `EnumTypeModelBinder` runs —
+  a value that decomposes prints its members' names, one that does not prints its number back — and
+  the parity suite pins it with an untouched enum of the same shape as the control.
 - **The `[Flags]` pattern in the OpenAPI document excluded forms the binder accepts** — leading and
   trailing whitespace, and the trailing comma. The document advertised a stricter contract than the
   server honoured.
