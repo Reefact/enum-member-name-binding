@@ -81,7 +81,7 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
         // Surrounding whitespace and a single trailing comma are accepted by the binder, because
         // System.Text.Json accepts them. A pattern that excluded them would advertise a contract
         // stricter than the one the server honours.
-        return $"^\\s*({alternatives})(\\s*,\\s*({alternatives}))*\\s*,?\\s*$";
+        return $@"^\s*({alternatives})(\s*,\s*({alternatives}))*\s*,?\s*$";
     }
 
     /// <summary>
