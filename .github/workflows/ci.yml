@@ -110,10 +110,10 @@ jobs:
       # First that the checker works, then what it says. In the other order a checker that reports
       # nothing because it is broken reads exactly like a clean tree.
       - name: The checker still recognises what it must and must not report
-        run: tools/style/lint-single-line-exits.test.sh
+        run: tools/style/lint-layout.test.sh
 
-      - name: A lone-exit guard is one line, and a run of them is one block
-        run: tools/style/lint-single-line-exits.sh
+      - name: Guards, runs of guards, and values that fit beside their name
+        run: tools/style/lint-layout.sh
 
   # The one check `main` requires, and the only reason this job exists.
   #

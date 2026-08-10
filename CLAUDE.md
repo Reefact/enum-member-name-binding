@@ -55,9 +55,23 @@ be a single `return`, `throw`, `continue` or `break` — anything else keeps the
 so does a guard that would run past 140 characters collapsed — a ceiling, not an exemption: a guard
 too wide to fit is usually one whose condition wants a name.
 
-`tools/style/lint-single-line-exits.sh` decides the cases that can be decided mechanically, and CI
-runs it. It has no exception mechanism on purpose: everything it reports already fits, so the only
-answer is to rewrite it — and everything too wide it never reports at all.
+## A value that fits goes beside its name
+
+```csharp
+internal const string Reflection = "Enum member name binding reads enum metadata reflectively…";
+```
+
+Breaking after the `=` leaves a name with no value above a value with no name. Break there only
+when the value genuinely needs more than one line — a concatenation, a long initializer — and never
+merely because the whole declaration is wide. A declaration too wide even for that usually has a
+seam of its own: break at the call, not between the name and what it is.
+
+## The checker
+
+`tools/style/lint-layout.sh` decides all three of the above, and CI runs it — the test first, then
+the check, since a checker that reports nothing because it is broken reads exactly like a clean
+tree. It has no exception mechanism on purpose: everything it reports already fits, so the only
+answer is to rewrite it, and everything too wide it never reports at all.
 
 ## An `if` wrapping the rest of a method becomes a guard
 

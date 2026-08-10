@@ -40,24 +40,32 @@ because a disagreement between analyzer versions belongs here rather than in a c
 
 ## Coding style
 
-Most of it lives in `.editorconfig`, which your editor already reads. One rule it cannot express: an
-`if` whose whole body is a single exit — `return`, `throw`, `continue`, `break` — is written on one
-line.
+Most of it lives in `.editorconfig`, which your editor already reads. Two rules it cannot express,
+both the same complaint: a line that is not a thought, leaving the reader to assemble one.
+
+An `if` whose whole body is a single exit — `return`, `throw`, `continue`, `break` — is written on
+one line, and a run of them is one block with no blank line between them:
 
 ```csharp
 if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
 if (isFlags && name.Contains(',')) { return Problem.CommaInFlagsName(memberName, name); }
 ```
 
-The guard and what it does are one thought, and three lines make the reader assemble it. A run of
-them is one block, so consecutive guards take no blank line between them — the height the one-line
-form saves is the whole point of it. Anything less trivial than a bare exit keeps the multi-line
-form, and so does a guard that would run past 140 characters collapsed, since beyond that width the
-one line stops being the easier read. That is a ceiling rather than an exemption: a guard too wide
-to fit is usually one whose condition wants a name.
+A declaration does not break after the `=` when its value fits beside the name:
 
-`tools/style/lint-single-line-exits.sh` reports what does not follow this, `--fix` rewrites it, and
-CI runs it without the flag. So this is checked rather than remembered.
+```csharp
+internal const string Reflection = "Enum member name binding reads enum metadata reflectively…";
+```
+
+The guard and what it does are one thought; a name and its value are another. Anything less trivial
+than a bare exit keeps the multi-line form, and so does a value that genuinely needs more than one
+line — a concatenation, a long initializer. Width is a ceiling in both cases, 140 characters for a
+guard and 160 for a value, and a ceiling rather than an exemption: something too wide to fit is
+usually something that wants a name of its own.
+
+`tools/style/lint-layout.sh` reports what does not follow this, `--fix` rewrites it, and CI runs it
+without the flag — running the checker's own test first, so that "nothing to report" means
+something. This is checked rather than remembered.
 
 ## Branches
 

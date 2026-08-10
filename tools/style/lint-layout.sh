@@ -1,18 +1,25 @@
 #!/usr/bin/env bash
 #
-# An `if` whose whole body is one exit — return, throw, continue, break — is written on one line,
-# and a run of them is written with nothing between:
+# Three rules about where a statement is allowed to break, all of them the same complaint: a line
+# that is not a thought, leaving the reader to assemble one.
+#
+#   1. An `if` whose whole body is one exit — return, throw, continue, break — is written on one
+#      line. The guard and what it does are one thought.
+#   2. A run of those takes no blank line between them, which would give back the height the
+#      one-line form had just saved.
+#   3. A declaration does not break after the `=` when its value fits beside the name, because the
+#      two halves are then a name with no value and a value with no name.
 #
 #     if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
 #     if (isFlags && name.Contains(',')) { return Problem.CommaInFlagsName(memberName, name); }
 #
-# The guard and what it does are one thought, and three lines make the reader assemble it. Blank
-# lines between consecutive guards give back the height the one-line form just saved, which was the
-# point of it. Anything less trivial than a bare exit keeps the multi-line form, which is why this
-# only ever looks at those four statements: it has no way to judge the rest, so it does not try.
+#     internal const string Reflection = "…is not compatible with trimming.";
+#
+# Anything less trivial than a bare exit keeps the multi-line form, and so does a value that needs
+# more than one line: this only ever looks at the shapes it can decide, and does not try the rest.
 #
 # Usage:
-#   tools/style/lint-single-line-exits.sh [--fix] [path ...]
+#   tools/style/lint-layout.sh [--fix] [path ...]
 #
 # With no path, every tracked C# file outside obj/ and bin/. Exits 1 when something is reported,
 # which is what makes it usable from CI. `--fix` rewrites the files instead of reporting.
@@ -28,6 +35,13 @@ set -euo pipefail
 # and the answer is usually to name what the condition says — which is how the three widest sites
 # in the analyzer came to fit.
 readonly MAX_WIDTH=140
+
+# The same idea for a declaration, at a different number, because a declaration carries one `=` and
+# the eye goes straight to it while a guard carries a condition and an action. Calibrated on this
+# repository rather than derived from anything: the widest value that is a single literal or a
+# single call measures 154, and the one site above this has a real seam to break at instead — a
+# fluent call, where the break belongs between the calls rather than between name and value.
+readonly MAX_VALUE_WIDTH=160
 
 fix=0
 paths=()
@@ -50,8 +64,12 @@ fi
 # on its line, which is what rules out an `if` that carries an `else`.
 #
 # unblank — a blank line with a single-line exit on either side of it.
+#
+# joinvalue — a line ending in `=` whose next line completes the statement, where the two joined
+# still fit. A value spread over several lines is never touched, since the second line would not
+# end the statement.
 scan() {
-    awk -v max="$MAX_WIDTH" '
+    awk -v max="$MAX_WIDTH" -v valueMax="$MAX_VALUE_WIDTH" '
         function isExit(line) {
             return line ~ /^[ \t]*if \(.*\) \{ *(return|throw|continue|break)([ \t(].*)?; *\}[ \t]*$/
         }
@@ -72,6 +90,22 @@ scan() {
                 if (i + 2 <= NR && isExit(lines[i]) && lines[i + 1] ~ /^[ \t]*$/ && isExit(lines[i + 2])) {
                     print (i + 1) "\tunblank\t"
                     continue
+                }
+
+                if (i + 1 <= NR && lines[i] ~ /[^=!<>+*\/%&|^-] =[ \t]*$/ && lines[i] !~ /^[ \t]*\/\// \
+                                && lines[i + 1] ~ /;[ \t]*$/ && lines[i + 1] !~ /^[ \t]*$/) {
+                    head = lines[i]
+                    sub(/[ \t]*$/, "", head)
+
+                    value = lines[i + 1]
+                    sub(/^[ \t]*/, "", value)
+                    sub(/[ \t]*$/, "", value)
+
+                    joined = head " " value
+                    if (length(joined) <= valueMax) {
+                        print i "\tjoinvalue\t" joined
+                        continue
+                    }
                 }
 
                 if (i + 2 > NR) { continue }
@@ -109,6 +143,7 @@ report_of() {
     case "$2" in
         collapse) printf '%s:%s: an if whose body is a lone exit belongs on one line\n    %s\n' "$1" "$3" "$4" ;;
         unblank)  printf '%s:%s: blank line between two one-line guards; a run of them is one block\n' "$1" "$3" ;;
+        joinvalue) printf '%s:%s: this value fits beside its name; do not break after the =\n    %s\n' "$1" "$3" "$4" ;;
     esac
 }
 
@@ -127,6 +162,13 @@ apply() {
             ;;
         unblank)
             awk -v target="$line" 'NR != target' "$file" > "$file.tmp"
+            ;;
+        joinvalue)
+            COLLAPSED="$collapsed" awk -v target="$line" '
+                NR == target     { print ENVIRON["COLLAPSED"]; next }
+                NR == target + 1 { next }
+                { print }
+            ' "$file" > "$file.tmp"
             ;;
     esac
 
@@ -180,5 +222,5 @@ if [ "$fix" -eq 1 ]; then
     exit 0
 fi
 
-printf '\n%d site(s). Run tools/style/lint-single-line-exits.sh --fix to rewrite them.\n' "$reported"
+printf '\n%d site(s). Run tools/style/lint-layout.sh --fix to rewrite them.\n' "$reported"
 exit 1
