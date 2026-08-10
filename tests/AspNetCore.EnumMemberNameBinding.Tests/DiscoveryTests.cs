@@ -83,6 +83,25 @@ public sealed class DiscoveryTests {
     }
 
     /// <summary>
+    /// <c>ScanAssemblyContaining&lt;T&gt;</c> is the supported way to fill <c>Assemblies</c>: it names
+    /// the assembly declaring <c>T</c>, and hands the options back so several calls chain.
+    /// </summary>
+    /// <remarks>
+    /// The type named is the library's own, for the reason at the top of this file — what it resolves
+    /// to has to be an assembly this suite can afford to scan.
+    /// </remarks>
+    [Fact]
+    public void scanning_the_assembly_containing_a_type_names_that_assembly() {
+        EnumMemberNameBindingOptions options = new();
+
+        EnumMemberNameBindingOptions returned = options.ScanAssemblyContaining<EnumContract>();
+
+        Check.That(returned).IsSameReferenceAs(options);
+        Check.That(options.Assemblies).ContainsExactly(typeof(EnumContract).Assembly);
+        Check.That(EnumMemberNameBindingRegistry.Register(options)).IsEmpty();
+    }
+
+    /// <summary>
     /// An enum that declares no contract cannot be adopted by naming it. Taking it over would change
     /// how an ordinary enum binds and serializes, which is the one thing this library promises not to
     /// do.

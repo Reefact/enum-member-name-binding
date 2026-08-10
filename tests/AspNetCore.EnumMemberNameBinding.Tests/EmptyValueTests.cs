@@ -71,6 +71,26 @@ public sealed class EmptyValueTests {
         Check.That(await ReadValue(response)).IsEqualTo("<null>");
     }
 
+    /// <summary>
+    /// The contract's own answer to a value that is present but blank, whitespace included: it names
+    /// no member, so nothing is parsed.
+    /// </summary>
+    /// <remarks>
+    /// Asserted on the contract rather than over a channel, because no channel can deliver this case.
+    /// ASP.NET Core settles an empty value in <c>SimpleTypeModelBinder</c>, before any
+    /// <see cref="System.ComponentModel.TypeConverter" /> is consulted — which is what the two tests
+    /// above characterize. The behaviour still has to be right for the day something else calls it.
+    /// </remarks>
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("   ")]
+    [InlineData("\t")]
+    public void a_blank_value_names_no_member(string value) {
+        Check.That(EnumContract.For(typeof(ProductStatus)).TryParse(value, out object? parsed)).IsFalse();
+        Check.That(parsed).IsNull();
+    }
+
     private static async Task<string> ReadValue(HttpResponseMessage response) {
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 

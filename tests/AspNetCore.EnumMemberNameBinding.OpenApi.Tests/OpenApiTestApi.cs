@@ -74,6 +74,13 @@ public sealed class OrdersController : ControllerBase {
 /// <summary>Boots the API with the OpenAPI companion enabled (or not, for characterization).</summary>
 public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime {
 
+    /// <summary>
+    /// The description <see cref="Tricky" /> already carries by the time this package sees it. The
+    /// trailing space is deliberate: what the two produce together has to read as one sentence
+    /// followed by another, however the first one was punctuated.
+    /// </summary>
+    public const string DescribedElsewhere = "Documented by another transformer. ";
+
     private WebApplication? _app;
 
     public HttpClient Client { get; private set; } = null!;
@@ -91,7 +98,17 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
                .AddEnumMemberNameBinding(options => options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>());
 
         if (withTransformer) {
-            builder.Services.AddOpenApi(options => options.AddEnumMemberNames());
+            builder.Services.AddOpenApi(options => {
+                // Registered first, so this package's transformer meets a schema whose description is
+                // already written — the case where it has to append rather than write. An application
+                // does this with its own transformer, or through the XML comments of the enum.
+                options.AddSchemaTransformer((schema, context, _) => {
+                    if (context.JsonTypeInfo.Type == typeof(Tricky)) { schema.Description = DescribedElsewhere; }
+
+                    return Task.CompletedTask;
+                });
+                options.AddEnumMemberNames();
+            });
         } else {
             builder.Services.AddOpenApi();
         }

@@ -22,6 +22,23 @@ public sealed class PublicApiContractTests {
 
     }
 
+    [Flags]
+    public enum Combinable {
+
+        [JsonStringEnumMemberName("read")]  Read  = 1,
+        [JsonStringEnumMemberName("write")] Write = 2
+
+    }
+
+    /// <summary>[Flags] without a contract: the attribute alone declares nothing.</summary>
+    [Flags]
+    public enum CombinableWithoutAContract {
+
+        None = 0,
+        One  = 1
+
+    }
+
     /// <summary>
     /// The returned list is cached and reused, including by the OpenAPI package, so a caller must not
     /// be able to write through it. Today a collection expression targeting <c>IReadOnlyList</c>
@@ -47,6 +64,38 @@ public sealed class PublicApiContractTests {
 
         Check.That(first).ContainsExactly("first", "second");
         Check.That(second).IsEqualTo(first);
+    }
+
+    /// <summary>
+    /// A nullable enum is unwrapped rather than refused. It is the shape an optional action parameter
+    /// arrives in, and the shape a document generator hands over for one.
+    /// </summary>
+    [Fact]
+    public void a_nullable_enum_answers_for_the_enum_it_wraps() {
+        Check.That(EnumMemberNames.GetPublicNames(typeof(Contractual?))!).ContainsExactly("first", "second");
+        Check.That(EnumMemberNames.IsFlagsContract(typeof(Combinable?))).IsTrue();
+    }
+
+    /// <summary>
+    /// A type that is not an enum is answered rather than refused. Both methods are called on every
+    /// type a document generator walks past, and most of them are not enums.
+    /// </summary>
+    [Fact]
+    public void a_type_that_is_not_an_enum_is_answered_with_nothing() {
+        Check.That(EnumMemberNames.GetPublicNames(typeof(string))).IsNull();
+        Check.That(EnumMemberNames.IsFlagsContract(typeof(string))).IsFalse();
+    }
+
+    /// <summary>
+    /// Both halves of "flags contract" are load-bearing, so both are asserted alone: an enum carrying
+    /// [Flags] and no contract is not one this package describes, and a contract without [Flags]
+    /// accepts no combination.
+    /// </summary>
+    [Fact]
+    public void a_flags_contract_is_both_of_those_things_at_once() {
+        Check.That(EnumMemberNames.IsFlagsContract(typeof(Combinable))).IsTrue();
+        Check.That(EnumMemberNames.IsFlagsContract(typeof(Contractual))).IsFalse();
+        Check.That(EnumMemberNames.IsFlagsContract(typeof(CombinableWithoutAContract))).IsFalse();
     }
 
     /// <summary>
