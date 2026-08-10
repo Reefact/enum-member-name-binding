@@ -53,21 +53,20 @@ public sealed class NullGuardTests {
 
         object?[] arguments = [.. member.GetParameters().Select(p => p.Position == parameter.Position ? null : ValueFor(p))];
 
-        Exception thrown = Assert.ThrowsAny<Exception>(() => Invoke(member, arguments));
+        Exception thrown = Check.ThatCode(() => Invoke(member, arguments)).ThrowsAny().Value;
 
         Exception actual = thrown is TargetInvocationException wrapper ? wrapper.InnerException! : thrown;
 
-        Assert.True(actual is ArgumentNullException,
-                    $"{identity} answered a null with {actual.GetType().Name} instead of ArgumentNullException. "
-                  + $"Add ArgumentNullException.ThrowIfNull({parameter.Name}) at the top of the member.");
+        Check.WithCustomMessage($"{identity} answered a null with {actual.GetType().Name} instead of ArgumentNullException. " + $"Add ArgumentNullException.ThrowIfNull({parameter.Name}) at the top of the member.")
+             .That(actual is ArgumentNullException).IsTrue();
 
-        Assert.Equal(parameter.Name, ((ArgumentNullException)actual).ParamName);
+        Check.That(((ArgumentNullException)actual).ParamName).IsEqualTo(parameter.Name);
     }
 
     [Fact]
     public void the_boundary_is_not_empty() {
-        Assert.True(BoundaryParameters().Count >= 12,
-                    $"Only {BoundaryParameters().Count} boundary parameters were discovered; the reflection filter is probably wrong.");
+        Check.WithCustomMessage($"Only {BoundaryParameters().Count} boundary parameters were discovered; the reflection filter is probably wrong.")
+             .That(BoundaryParameters().Count >= 12).IsTrue();
     }
 
     private static object? ValueFor(ParameterInfo parameter) {

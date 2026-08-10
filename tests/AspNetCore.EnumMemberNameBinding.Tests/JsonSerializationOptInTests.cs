@@ -21,8 +21,8 @@ public sealed class JsonSerializationOptInTests {
     public void the_converters_are_installed_by_default() {
         using ServiceProvider provider = Register(options => options.AddEnum<ProductStatus>());
 
-        Assert.NotEmpty(MvcConverters(provider));
-        Assert.NotEmpty(HttpConverters(provider));
+        Check.That(MvcConverters(provider)).Not.IsEmpty();
+        Check.That(HttpConverters(provider)).Not.IsEmpty();
     }
 
     [Fact]
@@ -32,8 +32,8 @@ public sealed class JsonSerializationOptInTests {
             options.ConfigureJsonSerialization = false;
         });
 
-        Assert.Empty(MvcConverters(provider));
-        Assert.Empty(HttpConverters(provider));
+        Check.That(MvcConverters(provider)).IsEmpty();
+        Check.That(HttpConverters(provider)).IsEmpty();
     }
 
     /// <summary>
@@ -44,8 +44,8 @@ public sealed class JsonSerializationOptInTests {
     public void nothing_is_configured_when_no_contract_enum_is_found() {
         using ServiceProvider provider = Register(options => options.Assemblies.Add(typeof(EnumContract).Assembly));
 
-        Assert.Empty(MvcConverters(provider));
-        Assert.Empty(HttpConverters(provider));
+        Check.That(MvcConverters(provider)).IsEmpty();
+        Check.That(HttpConverters(provider)).IsEmpty();
     }
 
     private static ServiceProvider Register(Action<EnumMemberNameBindingOptions> configure) {

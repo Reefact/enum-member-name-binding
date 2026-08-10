@@ -12,7 +12,7 @@ public sealed class EnumContractAnalyzerTests {
             public enum Priority { Low, Normal, High }
             """);
 
-        Assert.Empty(ids);
+        Check.That(ids).IsEmpty();
     }
 
     [Fact]
@@ -24,7 +24,7 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Empty(ids);
+        Check.That(ids).IsEmpty();
     }
 
     [Fact]
@@ -37,11 +37,11 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Equal(["EMN0003", "EMN0003"], diagnostics.Select(d => d.Id));
-        Assert.All(diagnostics, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
-        Assert.Contains("Standard", diagnostics[0].GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("public API contract", diagnostics[0].GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("Economy", diagnostics[1].GetMessage(), StringComparison.Ordinal);
+        Check.That(diagnostics.Select(d => d.Id)).ContainsExactly("EMN0003", "EMN0003");
+        Check.That(diagnostics).ContainsOnlyElementsThatMatch(d => d.Severity == DiagnosticSeverity.Error);
+        Check.That(diagnostics[0].GetMessage()).Contains("Standard");
+        Check.That(diagnostics[0].GetMessage()).Contains("public API contract");
+        Check.That(diagnostics[1].GetMessage()).Contains("Economy");
     }
 
     [Fact]
@@ -53,10 +53,11 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Diagnostic diagnostic = Assert.Single(diagnostics);
-        Assert.Equal("EMN0001", diagnostic.Id);
-        Assert.Equal(DiagnosticSeverity.Error, diagnostic.Severity);
-        Assert.Contains("'same'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Check.That(diagnostics).HasOneElementOnly();
+        Diagnostic diagnostic = diagnostics.Single();
+        Check.That(diagnostic.Id).IsEqualTo("EMN0001");
+        Check.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Error);
+        Check.That(diagnostic.GetMessage()).Contains("'same'");
     }
 
     [Theory]
@@ -70,9 +71,10 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Diagnostic diagnostic = Assert.Single(diagnostics);
-        Assert.Equal("EMN0002", diagnostic.Id);
-        Assert.Contains(expected, diagnostic.GetMessage(), StringComparison.Ordinal);
+        Check.That(diagnostics).HasOneElementOnly();
+        Diagnostic diagnostic = diagnostics.Single();
+        Check.That(diagnostic.Id).IsEqualTo("EMN0002");
+        Check.That(diagnostic.GetMessage()).Contains(expected);
     }
 
     [Fact]
@@ -84,8 +86,9 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Diagnostic diagnostic = Assert.Single(diagnostics);
-        Assert.Equal("EMN0004", diagnostic.Id);
+        Check.That(diagnostics).HasOneElementOnly();
+        Diagnostic diagnostic = diagnostics.Single();
+        Check.That(diagnostic.Id).IsEqualTo("EMN0004");
     }
 
     [Fact]
@@ -96,7 +99,7 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Empty(ids);
+        Check.That(ids).IsEmpty();
     }
 
     /// <summary>
@@ -115,7 +118,7 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Contains(diagnostics, d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Error);
+        Check.That(diagnostics).HasElementThatMatches(d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Error);
     }
 
     [Fact]
@@ -127,7 +130,7 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Empty(ids);
+        Check.That(ids).IsEmpty();
     }
 
     [Fact]
@@ -139,12 +142,12 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Contains(diagnostics, d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Error);
+        Check.That(diagnostics).HasElementThatMatches(d => d.Id == "EMN0005" && d.Severity == DiagnosticSeverity.Error);
 
         string message = diagnostics.First(d => d.Id == "EMN0005").GetMessage();
-        Assert.Contains("'Red'", message, StringComparison.Ordinal);
-        Assert.Contains("'Blue'", message, StringComparison.Ordinal);
-        Assert.Contains("casing", message, StringComparison.Ordinal);
+        Check.That(message).Contains("'Red'");
+        Check.That(message).Contains("'Blue'");
+        Check.That(message).Contains("casing");
     }
 
     /// <summary>
@@ -160,8 +163,8 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Equal(["EMN0003", "EMN0005"], diagnostics.Select(d => d.Id).Order());
-        Assert.All(diagnostics, d => Assert.Equal(DiagnosticSeverity.Error, d.Severity));
+        Check.That(diagnostics.Select(d => d.Id).Order()).ContainsExactly("EMN0003", "EMN0005");
+        Check.That(diagnostics).ContainsOnlyElementsThatMatch(d => d.Severity == DiagnosticSeverity.Error);
     }
 
     /// <summary>
@@ -182,11 +185,12 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Diagnostic diagnostic = Assert.Single(diagnostics);
-        Assert.Equal("EMN0006", diagnostic.Id);
-        Assert.Equal(DiagnosticSeverity.Warning, diagnostic.Severity);
-        Assert.Contains(what, diagnostic.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains(channel, diagnostic.GetMessage(), StringComparison.Ordinal);
+        Check.That(diagnostics).HasOneElementOnly();
+        Diagnostic diagnostic = diagnostics.Single();
+        Check.That(diagnostic.Id).IsEqualTo("EMN0006");
+        Check.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        Check.That(diagnostic.GetMessage()).Contains(what);
+        Check.That(diagnostic.GetMessage()).Contains(channel);
     }
 
     /// <summary>Every one of these was measured to survive all five channels.</summary>
@@ -212,7 +216,7 @@ public sealed class EnumContractAnalyzerTests {
             }
             """);
 
-        Assert.Empty(ids);
+        Check.That(ids).IsEmpty();
     }
 
     [Fact]
@@ -226,7 +230,7 @@ public sealed class EnumContractAnalyzerTests {
 
         string flagged = diagnostics[0].Location.SourceTree!.GetText(TestContext.Current.CancellationToken).ToString(diagnostics[0].Location.SourceSpan);
 
-        Assert.Equal("\"same\"", flagged);
+        Check.That(flagged).IsEqualTo("\"same\"");
     }
 
 }

@@ -87,10 +87,11 @@ public sealed partial class DocumentationLinksTests {
             string   relative = Uri.UnescapeDataString(parts[0]);
             string   resolved = Path.GetFullPath(Path.Combine(RepositoryRoot.FullName, Path.GetDirectoryName(page) ?? string.Empty, relative));
 
-            Assert.True(File.Exists(resolved) || Directory.Exists(resolved), $"{page} links to '{target}', which does not exist.");
+            Check.WithCustomMessage($"{page} links to '{target}', which does not exist.")
+                 .That(File.Exists(resolved) || Directory.Exists(resolved)).IsTrue();
 
             if (parts.Length == 2 && File.Exists(resolved)) {
-                Assert.Contains(Uri.UnescapeDataString(parts[1]), AnchorsOf(resolved), StringComparer.Ordinal);
+                Check.That(AnchorsOf(resolved)).Contains(Uri.UnescapeDataString(parts[1]));
             }
         }
     }
@@ -115,8 +116,10 @@ public sealed partial class DocumentationLinksTests {
     [Theory]
     [MemberData(nameof(TranslationPairs))]
     public void a_page_exists_in_both_languages(string english, string french) {
-        Assert.True(File.Exists(Path.Combine(RepositoryRoot.FullName, english)), $"{french} has no English counterpart at {english}.");
-        Assert.True(File.Exists(Path.Combine(RepositoryRoot.FullName, french)), $"{english} has no French counterpart at {french}.");
+        Check.WithCustomMessage($"{french} has no English counterpart at {english}.")
+             .That(File.Exists(Path.Combine(RepositoryRoot.FullName, english))).IsTrue();
+        Check.WithCustomMessage($"{english} has no French counterpart at {french}.")
+             .That(File.Exists(Path.Combine(RepositoryRoot.FullName, french))).IsTrue();
     }
 
     /// <summary>The reader must be able to switch language from wherever they landed.</summary>
@@ -136,27 +139,27 @@ public sealed partial class DocumentationLinksTests {
     [Theory]
     [MemberData(nameof(TranslationPairs))]
     public void a_translation_keeps_the_same_structure(string english, string french) {
-        Assert.Equal(FenceTagsOf(english), FenceTagsOf(french));
+        Check.That(FenceTagsOf(french)).IsEqualTo(FenceTagsOf(english));
 
         foreach ((string what, Regex pattern) in Structure) {
-            Assert.True(Count(english, pattern) == Count(french, pattern),
-                        $"{english} has {Count(english, pattern)} {what} and {french} has {Count(french, pattern)}.");
+            Check.WithCustomMessage($"{english} has {Count(english, pattern)} {what} and {french} has {Count(french, pattern)}.")
+                 .That(Count(english, pattern) == Count(french, pattern)).IsTrue();
         }
     }
 
     [Fact]
     public void every_page_under_docs_declares_its_language() {
         foreach (string page in MarkdownPages().Where(page => page.StartsWith("docs/", StringComparison.Ordinal))) {
-            Assert.True(page.EndsWith(".en.md", StringComparison.Ordinal) || page.EndsWith(".fr.md", StringComparison.Ordinal),
-                        $"{page} carries no language suffix; pages under docs are named Xxx.en.md and Xxx.fr.md.");
+            Check.WithCustomMessage($"{page} carries no language suffix; pages under docs are named Xxx.en.md and Xxx.fr.md.")
+                 .That(page.EndsWith(".en.md", StringComparison.Ordinal) || page.EndsWith(".fr.md", StringComparison.Ordinal)).IsTrue();
         }
     }
 
     private static void AssertSwitchesTo(string page, string counterpart) {
         string header = string.Join('\n', File.ReadLines(Path.Combine(RepositoryRoot.FullName, page)).Take(6));
 
-        Assert.True(header.Contains(counterpart, StringComparison.Ordinal),
-                    $"{page} does not offer a link to {counterpart} in its language header.");
+        Check.WithCustomMessage($"{page} does not offer a link to {counterpart} in its language header.")
+             .That(header.Contains(counterpart, StringComparison.Ordinal)).IsTrue();
     }
 
     [GeneratedRegex(@"^#{1,6} ", RegexOptions.Multiline)]

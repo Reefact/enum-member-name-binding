@@ -27,8 +27,8 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
             if (pattern[index] != '\\') { continue; }
 
             char escaped = pattern[index + 1];
-            Assert.True(EscapableInEcma262.Contains(escaped, StringComparison.Ordinal),
-                        $"'\\{escaped}' is not a valid identity escape in ECMA-262; pattern was: {pattern}");
+            Check.WithCustomMessage($"'\\{escaped}' is not a valid identity escape in ECMA-262; pattern was: {pattern}")
+                 .That(EscapableInEcma262.Contains(escaped, StringComparison.Ordinal)).IsTrue();
             index++;
         }
     }
@@ -39,7 +39,7 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
 
         Exception? failure = Record.Exception(() => Regex.IsMatch("a+b", pattern));
 
-        Assert.Null(failure);
+        Check.That(failure).IsNull();
     }
 
     [Theory]
@@ -56,7 +56,7 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
     public void a_name_full_of_regex_syntax_is_matched_literally(string value) {
         string pattern = api.Schema(nameof(Tricky)).GetProperty("pattern").GetString()!;
 
-        Assert.Matches(pattern, value);
+        Check.That(value).Matches(pattern);
     }
 
     /// <summary>If the special characters were not escaped, these would match.</summary>
@@ -69,7 +69,7 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
     public void an_input_that_only_matches_the_unescaped_form_is_rejected(string value) {
         string pattern = api.Schema(nameof(Tricky)).GetProperty("pattern").GetString()!;
 
-        Assert.DoesNotMatch(pattern, value);
+        Check.That(value).Not.Matches(pattern);
     }
 
     [Theory]
@@ -81,11 +81,11 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
     [InlineData("a+b, read write")]
     public async Task everything_the_pattern_advertises_is_accepted_by_the_server(string value) {
         string pattern = api.Schema(nameof(Tricky)).GetProperty("pattern").GetString()!;
-        Assert.Matches(pattern, value);
+        Check.That(value).Matches(pattern);
 
         using HttpResponseMessage response = await api.Client.GetAsync("/tricky?value=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Theory]
@@ -94,11 +94,11 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
     [InlineData("A+B")]
     public async Task everything_the_pattern_excludes_is_refused_by_the_server(string value) {
         string pattern = api.Schema(nameof(Tricky)).GetProperty("pattern").GetString()!;
-        Assert.DoesNotMatch(pattern, value);
+        Check.That(value).Not.Matches(pattern);
 
         using HttpResponseMessage response = await api.Client.GetAsync("/tricky?value=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -107,8 +107,7 @@ public sealed class PatternInteroperabilityTests(OpenApiTestApi api) {
 
         using JsonDocument reparsed = JsonDocument.Parse(document);
 
-        Assert.Equal("string", reparsed.RootElement.GetProperty("components").GetProperty("schemas")
-                                        .GetProperty(nameof(Tricky)).GetProperty("type").GetString());
+        Check.That(reparsed.RootElement.GetProperty("components").GetProperty("schemas").GetProperty(nameof(Tricky)).GetProperty("type").GetString()).IsEqualTo("string");
     }
 
 }

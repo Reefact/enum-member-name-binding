@@ -32,12 +32,12 @@ public sealed class PublicApiContractTests {
     public void the_public_names_cannot_be_written_through() {
         IReadOnlyList<string> names = EnumMemberNames.GetPublicNames(typeof(Contractual))!;
 
-        Assert.IsType<ImmutableArray<string>>(names);
-        Assert.Throws<InvalidCastException>(() => (string[])names);
+        Check.That(names).IsInstanceOf<ImmutableArray<string>>();
+        Check.ThatCode(() => (string[])names).Throws<InvalidCastException>();
 
         // ImmutableArray does implement IList for compatibility, but every mutation refuses.
-        Assert.Throws<NotSupportedException>(() => ((IList<string>)names)[0] = "corrupted");
-        Assert.Equal("first", EnumMemberNames.GetPublicNames(typeof(Contractual))![0]);
+        Check.ThatCode(() => ((IList<string>)names)[0] = "corrupted").Throws<NotSupportedException>();
+        Check.That(EnumMemberNames.GetPublicNames(typeof(Contractual))![0]).IsEqualTo("first");
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public sealed class PublicApiContractTests {
         IReadOnlyList<string> first = EnumMemberNames.GetPublicNames(typeof(Contractual))!;
         IReadOnlyList<string> second = EnumMemberNames.GetPublicNames(typeof(Contractual))!;
 
-        Assert.Equal(["first", "second"], first);
-        Assert.Equal(first, second);
+        Check.That(first).ContainsExactly("first", "second");
+        Check.That(second).IsEqualTo(first);
     }
 
     /// <summary>
@@ -59,10 +59,10 @@ public sealed class PublicApiContractTests {
         EnumMemberNameBindingOptions options = new();
         options.AddEnum<Untouched>();
 
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        EnumContractException exception = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>().Value;
 
-        Assert.Equal(typeof(Untouched), exception.EnumType);
-        Assert.Contains("no contract to apply", exception.Message, StringComparison.Ordinal);
+        Check.That(exception.EnumType).IsEqualTo(typeof(Untouched));
+        Check.That(exception.Message).Contains("no contract to apply");
     }
 
     /// <summary>
@@ -74,7 +74,7 @@ public sealed class PublicApiContractTests {
         EnumMemberNameBindingOptions options = new() { AllowPartialContracts = true };
         options.AddEnum<Untouched>();
 
-        Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>();
     }
 
     /// <summary>
@@ -83,9 +83,9 @@ public sealed class PublicApiContractTests {
     /// </summary>
     [Fact]
     public void an_enum_without_a_contract_is_not_a_contract() {
-        Assert.False(EnumContract.For(typeof(Untouched)).IsContract);
-        Assert.True(EnumContract.For(typeof(Contractual)).IsContract);
-        Assert.Null(EnumMemberNames.GetPublicNames(typeof(Untouched)));
+        Check.That(EnumContract.For(typeof(Untouched)).IsContract).IsFalse();
+        Check.That(EnumContract.For(typeof(Contractual)).IsContract).IsTrue();
+        Check.That(EnumMemberNames.GetPublicNames(typeof(Untouched))).IsNull();
     }
 
 }

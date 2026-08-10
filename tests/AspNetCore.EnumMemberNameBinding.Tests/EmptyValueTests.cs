@@ -19,7 +19,7 @@ public sealed class EmptyValueTests {
     public async Task an_empty_query_value_is_rejected_for_a_required_enum() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/status/query?value=", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     /// <summary>
@@ -31,9 +31,9 @@ public sealed class EmptyValueTests {
     public async Task an_empty_query_value_binds_to_null_for_a_nullable_enum() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/status/query-nullable?value=", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal("<null>", document.RootElement.GetProperty("value").GetString());
+        Check.That(document.RootElement.GetProperty("value").GetString()).IsEqualTo("<null>");
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class EmptyValueTests {
         request.Headers.TryAddWithoutValidation("X-Status", string.Empty);
         using HttpResponseMessage response = await _api.Client.SendAsync(request, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     /// <summary>
@@ -56,19 +56,19 @@ public sealed class EmptyValueTests {
         using HttpResponseMessage contract = await _api.Client.GetAsync("/status/query", TestContext.Current.CancellationToken);
         using HttpResponseMessage control = await _api.Client.GetAsync("/plain/query", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, control.StatusCode);
-        Assert.Equal(nameof(PlainPriority.Low), await ReadValue(control));
+        Check.That(control.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadValue(control)).IsEqualTo(nameof(PlainPriority.Low));
 
-        Assert.Equal(HttpStatusCode.OK, contract.StatusCode);
-        Assert.Equal(nameof(ProductStatus.Available), await ReadValue(contract));
+        Check.That(contract.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadValue(contract)).IsEqualTo(nameof(ProductStatus.Available));
     }
 
     [Fact]
     public async Task an_absent_value_is_not_an_empty_value() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/status/query-nullable", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("<null>", await ReadValue(response));
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await ReadValue(response)).IsEqualTo("<null>");
     }
 
     private static async Task<string> ReadValue(HttpResponseMessage response) {

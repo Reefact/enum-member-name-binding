@@ -19,14 +19,15 @@ public sealed partial class ReadmeIsAccurateTests(OpenApiTestApi api) {
         string source   = File.ReadAllText(Path.Combine(FindRepositoryRoot().FullName, "docs", page));
 
         Match documented = DocumentedPattern().Match(source);
-        Assert.True(documented.Success, $"docs/{page} no longer shows a pattern; either restore it or drop this test.");
+        Check.WithCustomMessage($"docs/{page} no longer shows a pattern; either restore it or drop this test.")
+             .That(documented.Success).IsTrue();
 
         // The page carries the pattern inside a JSON snippet in a markdown table, so backslashes
         // are doubled and pipes are escaped for the table.
         string unescaped = documented.Groups["pattern"].Value.Replace(@"\\", @"\", StringComparison.Ordinal)
                                                              .Replace(@"\|", "|", StringComparison.Ordinal);
 
-        Assert.Equal(produced, unescaped);
+        Check.That(unescaped).IsEqualTo(produced);
     }
 
     [GeneratedRegex(@"""pattern"":""(?<pattern>[^""]+)""")]

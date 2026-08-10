@@ -154,6 +154,14 @@ connue. Deux méritent d'être connues avant qu'on y recoure : une suppression p
 exclusion dans `.editorconfig` est une décision à soumettre d'abord, car elle fait aussi taire la
 règle partout où lui obéir aurait été juste.
 
+## Les décisions qui méritent une trace
+
+Un choix qui survit à la pull request qui l'a pris — une bibliothèque, une convention, un compromis
+assumé — s'écrit sous [`docs/adr`](./adr), un fichier par décision, dans les deux langues comme
+toute autre page. Ce qu'on y consigne, c'est le raisonnement : les solutions qui étaient réellement
+en lice à ce moment-là, et ce que la décision coûte, pour qu'un lecteur en désaccord voie ce qu'il
+aurait à renverser. La première est [NFluent pour les assertions de test](./adr/0001-nfluent-for-test-assertions.fr.md).
+
 ## Signaler une vulnérabilité
 
 Pas ici. Une vulnérabilité présumée passe par un avis de sécurité privé plutôt que par une issue,

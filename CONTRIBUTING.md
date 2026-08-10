@@ -147,6 +147,14 @@ knowing before you reach for them: a suppression always carries a `Justification
 rule's premise does not hold at that site, and an `.editorconfig` exclusion is a decision to raise
 first, because it also silences the rule everywhere obeying it would have been right.
 
+## Decisions worth a record
+
+A choice that outlives the pull request that made it — a library, a convention, a trade taken with
+eyes open — is written down under [`docs/adr`](docs/adr), one file per decision, in both languages
+like every other page. What the record is for is the reasoning: the alternatives that were real at
+the time, and what the decision costs, so that a reader who disagrees can see what they would be
+overturning. The first one is [NFluent for test assertions](docs/adr/0001-nfluent-for-test-assertions.en.md).
+
 ## Reporting a vulnerability
 
 Not here. A suspected vulnerability goes through a private advisory rather than a public issue,

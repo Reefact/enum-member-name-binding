@@ -37,52 +37,52 @@ public sealed class ContractValidationTests {
 
     [Fact]
     public void two_members_cannot_declare_the_same_public_name() {
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumContract.For(typeof(DuplicateNames)));
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(DuplicateNames))).Throws<EnumContractException>().Value;
 
-        Assert.Equal(typeof(DuplicateNames), exception.EnumType);
-        Assert.Contains(exception.Problems, p => p.Contains("'same'", StringComparison.Ordinal));
+        Check.That(exception.EnumType).IsEqualTo(typeof(DuplicateNames));
+        Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("'same'", StringComparison.Ordinal));
     }
 
     [Fact]
     public void a_public_name_cannot_have_surrounding_whitespace() {
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumContract.For(typeof(PaddedName)));
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(PaddedName))).Throws<EnumContractException>().Value;
 
-        Assert.Contains(exception.Problems, p => p.Contains("whitespace", StringComparison.Ordinal));
+        Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("whitespace", StringComparison.Ordinal));
     }
 
     [Fact]
     public void a_flags_public_name_cannot_contain_a_comma() {
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumContract.For(typeof(CommaInFlagsName)));
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(CommaInFlagsName))).Throws<EnumContractException>().Value;
 
-        Assert.Contains(exception.Problems, p => p.Contains("comma", StringComparison.Ordinal));
+        Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("comma", StringComparison.Ordinal));
     }
 
     [Fact]
     public void the_error_message_names_the_type_and_every_problem() {
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumContract.For(typeof(DuplicateNames)));
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(DuplicateNames))).Throws<EnumContractException>().Value;
 
-        Assert.Contains(typeof(DuplicateNames).FullName!, exception.Message, StringComparison.Ordinal);
-        Assert.Contains("Second", exception.Message, StringComparison.Ordinal);
+        Check.That(exception.Message).Contains(typeof(DuplicateNames).FullName!);
+        Check.That(exception.Message).Contains("Second");
     }
 
     [Fact]
     public void distinct_names_sharing_one_numeric_value_are_both_accepted() {
         EnumContract contract = EnumContract.For(typeof(NumericAlias));
 
-        Assert.True(contract.TryParse("first", out object? first));
-        Assert.True(contract.TryParse("uno", out object? uno));
-        Assert.Equal(first, uno);
+        Check.That(contract.TryParse("first", out object? first)).IsTrue();
+        Check.That(contract.TryParse("uno", out object? uno)).IsTrue();
+        Check.That(uno).IsEqualTo(first);
     }
 
     [Fact]
     public void a_plain_enum_is_not_a_contract() {
-        Assert.False(EnumContract.For(typeof(PlainPriority)).IsContract);
-        Assert.True(EnumContract.For(typeof(ProductStatus)).IsContract);
+        Check.That(EnumContract.For(typeof(PlainPriority)).IsContract).IsFalse();
+        Check.That(EnumContract.For(typeof(ProductStatus)).IsContract).IsTrue();
     }
 
     [Fact]
     public void the_allowed_values_are_listed_in_declaration_order() {
-        Assert.Equal("available, out_of_stock, discontinued", EnumContract.For(typeof(ProductStatus)).AllowedValues);
+        Check.That(EnumContract.For(typeof(ProductStatus)).AllowedValues).IsEqualTo("available, out_of_stock, discontinued");
     }
 
     /// <summary>
@@ -104,10 +104,10 @@ public sealed class ContractValidationTests {
         EnumMemberNameBindingOptions options = new();
         options.EnumTypes.Add(typeof(string));
 
-        ArgumentException exception = Assert.Throws<ArgumentException>(() => EnumMemberNameBindingRegistry.Register(options));
+        ArgumentException exception = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<ArgumentException>().Value;
 
-        Assert.Equal("options", exception.ParamName);
-        Assert.Contains("is not an enum", exception.Message, StringComparison.Ordinal);
+        Check.That(exception.ParamName).IsEqualTo("options");
+        Check.That(exception.Message).Contains("is not an enum");
     }
 
     [Fact]
@@ -115,12 +115,12 @@ public sealed class ContractValidationTests {
         EnumMemberNameBindingOptions options = new();
         options.AddEnum<PartiallyAnnotated>();
 
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        EnumContractException exception = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>().Value;
 
-        Assert.Equal(typeof(PartiallyAnnotated), exception.EnumType);
-        Assert.Contains(exception.Problems, p => p.Contains("'Two'", StringComparison.Ordinal));
-        Assert.Contains("public contract", exception.Message, StringComparison.Ordinal);
-        Assert.Contains(nameof(EnumMemberNameBindingOptions.AllowPartialContracts), exception.Message, StringComparison.Ordinal);
+        Check.That(exception.EnumType).IsEqualTo(typeof(PartiallyAnnotated));
+        Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("'Two'", StringComparison.Ordinal));
+        Check.That(exception.Message).Contains("public contract");
+        Check.That(exception.Message).Contains(nameof(EnumMemberNameBindingOptions.AllowPartialContracts));
     }
 
     [Fact]
@@ -130,14 +130,14 @@ public sealed class ContractValidationTests {
 
         IReadOnlyList<Type> registered = EnumMemberNameBindingRegistry.Register(options);
 
-        Assert.Contains(typeof(PartiallyAnnotated), registered);
+        Check.That(registered).Contains(typeof(PartiallyAnnotated));
     }
 
     [Fact]
     public void a_fully_annotated_contract_is_never_partial() {
-        Assert.Empty(EnumContract.For(typeof(ProductStatus)).UnannotatedMembers);
+        Check.That(EnumContract.For(typeof(ProductStatus)).UnannotatedMembers).IsEmpty();
         // AsEnumerable, because ImmutableArray<T>.Equals compares the underlying array by reference.
-        Assert.Equal(["Two"], EnumContract.For(typeof(PartiallyAnnotated)).UnannotatedMembers.AsEnumerable());
+        Check.That(EnumContract.For(typeof(PartiallyAnnotated)).UnannotatedMembers.AsEnumerable()).ContainsExactly("Two");
     }
 
 }

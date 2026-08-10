@@ -46,23 +46,24 @@ public sealed class ShadowedMemberTests {
     [Theory]
     [MemberData(nameof(Shadowing))]
     public void a_shadowed_member_is_refused_whatever_the_casing(Type enumType) {
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumContract.For(enumType));
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(enumType)).Throws<EnumContractException>().Value;
 
-        Assert.Equal(enumType, exception.EnumType);
-        string problem = Assert.Single(exception.Problems);
-        Assert.Contains("'Red'", problem, StringComparison.Ordinal);
-        Assert.Contains("'Blue'", problem, StringComparison.Ordinal);
-        Assert.Contains("casing", problem, StringComparison.Ordinal);
+        Check.That(exception.EnumType).IsEqualTo(enumType);
+        Check.That(exception.Problems).HasOneElementOnly();
+        string problem = exception.Problems.Single();
+        Check.That(problem).Contains("'Red'");
+        Check.That(problem).Contains("'Blue'");
+        Check.That(problem).Contains("casing");
     }
 
     [Fact]
     public void a_public_name_that_collides_with_nothing_is_accepted() {
         EnumContract contract = EnumContract.For(typeof(NoCollision));
 
-        Assert.True(contract.TryParse("crimson", out object? red));
-        Assert.Equal(NoCollision.Red, red);
-        Assert.True(contract.TryParse("Blue", out object? blue));
-        Assert.Equal(NoCollision.Blue, blue);
+        Check.That(contract.TryParse("crimson", out object? red)).IsTrue();
+        Check.That(red).IsEqualTo(NoCollision.Red);
+        Check.That(contract.TryParse("Blue", out object? blue)).IsTrue();
+        Check.That(blue).IsEqualTo(NoCollision.Blue);
     }
 
     [Theory]
@@ -70,10 +71,10 @@ public sealed class ShadowedMemberTests {
     public void the_application_refuses_to_start(Type enumType) {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
-        EnumContractException exception = Assert.Throws<EnumContractException>(
-            () => builder.Services.AddControllers().AddEnumMemberNameBinding(options => options.EnumTypes.Add(enumType)));
+        EnumContractException exception = Check.ThatCode(() => builder.Services.AddControllers().AddEnumMemberNameBinding(options => options.EnumTypes.Add(enumType)))
+                                               .Throws<EnumContractException>().Value;
 
-        Assert.Equal(enumType, exception.EnumType);
+        Check.That(exception.EnumType).IsEqualTo(enumType);
     }
 
     /// <summary>
@@ -84,11 +85,8 @@ public sealed class ShadowedMemberTests {
     public void allowing_partial_contracts_does_not_make_a_shadowed_member_acceptable() {
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
 
-        Assert.Throws<EnumContractException>(
-            () => builder.Services.AddControllers().AddEnumMemberNameBinding(options => {
-                options.EnumTypes.Add(typeof(LowerCasing));
-                options.AllowPartialContracts = true;
-            }));
+        Check.ThatCode(() => builder.Services.AddControllers().AddEnumMemberNameBinding(options => { options.EnumTypes.Add(typeof(LowerCasing)); options.AllowPartialContracts = true; }))
+             .Throws<EnumContractException>();
     }
 
 }

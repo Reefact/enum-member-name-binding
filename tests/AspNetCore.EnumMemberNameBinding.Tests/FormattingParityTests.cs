@@ -114,9 +114,8 @@ public sealed class FormattingParityTests {
             }
         }
 
-        Assert.True(divergences.Count == 0,
-                    $"{enumType.Name} diverges on {divergences.Count} value(s):{Environment.NewLine}"
-                  + string.Join(Environment.NewLine, divergences));
+        Check.WithCustomMessage($"{enumType.Name} diverges on {divergences.Count} value(s):{Environment.NewLine}" + string.Join(Environment.NewLine, divergences))
+             .That(divergences.Count == 0).IsTrue();
     }
 
     /// <summary>Whatever is written must be readable again, and yield the value it came from.</summary>
@@ -137,8 +136,9 @@ public sealed class FormattingParityTests {
             string? written = contract.Format(value);
             if (written is null) { continue; }
 
-            Assert.True(contract.TryParse(written, out object? read), $"'{written}' was written but cannot be read back.");
-            Assert.Equal(value, read);
+            Check.WithCustomMessage($"'{written}' was written but cannot be read back.")
+                 .That(contract.TryParse(written, out object? read)).IsTrue();
+            Check.That(read).IsEqualTo(value);
         }
     }
 
@@ -167,7 +167,8 @@ public sealed class FormattingParityTests {
             foreach (object declared in Enum.GetValues(enumType)) { union |= ToUInt64(declared); }
 
             ulong[] bits = [.. Enumerable.Range(0, 64).Select(offset => 1UL << offset).Where(bit => (union & bit) != 0)];
-            Assert.True(bits.Length <= 16, $"{enumType.Name} declares {bits.Length} distinct bits; the subset enumeration would explode.");
+            Check.WithCustomMessage($"{enumType.Name} declares {bits.Length} distinct bits; the subset enumeration would explode.")
+                 .That(bits.Length <= 16).IsTrue();
 
             for (int mask = 0; mask < 1 << bits.Length; mask++) {
                 ulong combination = 0;

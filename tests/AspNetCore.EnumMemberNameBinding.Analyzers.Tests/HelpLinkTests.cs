@@ -29,11 +29,11 @@ public sealed class HelpLinkTests {
     public void the_help_link_points_at_a_page_that_exists(string id) {
         DiagnosticDescriptor descriptor = new EnumContractAnalyzer().SupportedDiagnostics.Single(d => d.Id == id);
 
-        Assert.False(string.IsNullOrWhiteSpace(descriptor.HelpLinkUri), $"{id} advertises no help link.");
-        Assert.EndsWith($"/docs/rules/{id}.en.md", descriptor.HelpLinkUri, StringComparison.Ordinal);
+        Check.WithCustomMessage($"{id} advertises no help link.").That(string.IsNullOrWhiteSpace(descriptor.HelpLinkUri)).IsFalse();
+        Check.That(descriptor.HelpLinkUri).EndsWith($"/docs/rules/{id}.en.md");
 
         string page = Path.Combine(RepositoryRoot.FullName, "docs", "rules", id + ".en.md");
-        Assert.True(File.Exists(page), $"{id} links to {descriptor.HelpLinkUri}, but {page} does not exist.");
+        Check.WithCustomMessage($"{id} links to {descriptor.HelpLinkUri}, but {page} does not exist.").That(File.Exists(page)).IsTrue();
     }
 
     [Theory]
@@ -45,7 +45,7 @@ public sealed class HelpLinkTests {
                                             .Order()];
         string[] declared = [.. new EnumContractAnalyzer().SupportedDiagnostics.Select(d => d.Id).Order()];
 
-        Assert.Equal(declared, documented);
+        Check.That(documented).IsEqualTo(declared);
     }
 
     /// <summary>A rule page in one language and not the other is a half-finished translation.</summary>
@@ -53,8 +53,8 @@ public sealed class HelpLinkTests {
     public void no_rule_page_exists_in_only_one_language() {
         foreach (string path in Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "rules"), "*.md")) {
             string name = Path.GetFileName(path);
-            Assert.True(Languages.Any(language => name.EndsWith($".{language}.md", StringComparison.Ordinal)),
-                        $"{name} carries no language suffix; rule pages are named EMNxxxx.en.md and EMNxxxx.fr.md.");
+            Check.WithCustomMessage($"{name} carries no language suffix; rule pages are named EMNxxxx.en.md and EMNxxxx.fr.md.")
+                 .That(Languages.Any(language => name.EndsWith($".{language}.md", StringComparison.Ordinal))).IsTrue();
         }
     }
 

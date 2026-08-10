@@ -79,7 +79,7 @@ public sealed class ConcurrentRegistrationTests {
             observed[index] = TypeDescriptor.GetConverter(enumType).GetType();
         });
 
-        Assert.All(observed, converter => Assert.Equal(typeof(EnumMemberNameConverter), converter));
+        Check.That(observed).ContainsOnlyElementsThatMatch(converter => converter == typeof(EnumMemberNameConverter));
     }
 
     [Theory]
@@ -94,9 +94,9 @@ public sealed class ConcurrentRegistrationTests {
 
         TypeConverter converter = TypeDescriptor.GetConverter(enumType);
 
-        Assert.IsType<EnumMemberNameConverter>(converter);
-        Assert.Equal(Enum.Parse(enumType, "B"), converter.ConvertFromString("b"));
-        Assert.Throws<FormatException>(() => converter.ConvertFromString("B"));
+        Check.That(converter).IsInstanceOf<EnumMemberNameConverter>();
+        Check.That(converter.ConvertFromString("b")).IsEqualTo(Enum.Parse(enumType, "B"));
+        Check.ThatCode(() => converter.ConvertFromString("B")).Throws<FormatException>();
     }
 
     [Fact]
@@ -107,8 +107,8 @@ public sealed class ConcurrentRegistrationTests {
 
         // GetOrAdd may build the value more than once under contention; every result must still be
         // equivalent, and every later caller must observe the one that won.
-        Assert.All(resolved, contract => Assert.Equal("available, out_of_stock, discontinued", contract.AllowedValues));
-        Assert.Same(EnumContract.For(typeof(ProductStatus)), EnumContract.For(typeof(ProductStatus)));
+        Check.That(resolved).ContainsOnlyElementsThatMatch(contract => contract.AllowedValues == "available, out_of_stock, discontinued");
+        Check.That(EnumContract.For(typeof(ProductStatus))).IsSameReferenceAs(EnumContract.For(typeof(ProductStatus)));
     }
 
 }

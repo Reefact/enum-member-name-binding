@@ -24,9 +24,12 @@ public sealed class DiagnosticTextTests {
     public void a_descriptor_carries_a_title_a_message_and_a_description(string id) {
         DiagnosticDescriptor descriptor = new EnumContractAnalyzer().SupportedDiagnostics.Single(d => d.Id == id);
 
-        Assert.False(string.IsNullOrWhiteSpace(descriptor.Title.ToString()), $"{id} has no title; the resource key is probably misspelt.");
-        Assert.False(string.IsNullOrWhiteSpace(descriptor.MessageFormat.ToString()), $"{id} has no message format; the resource key is probably misspelt.");
-        Assert.False(string.IsNullOrWhiteSpace(descriptor.Description.ToString()), $"{id} has no description; the resource key is probably misspelt.");
+        Check.WithCustomMessage($"{id} has no title; the resource key is probably misspelt.")
+             .That(string.IsNullOrWhiteSpace(descriptor.Title.ToString())).IsFalse();
+        Check.WithCustomMessage($"{id} has no message format; the resource key is probably misspelt.")
+             .That(string.IsNullOrWhiteSpace(descriptor.MessageFormat.ToString())).IsFalse();
+        Check.WithCustomMessage($"{id} has no description; the resource key is probably misspelt.")
+             .That(string.IsNullOrWhiteSpace(descriptor.Description.ToString())).IsFalse();
     }
 
     /// <summary>
@@ -38,7 +41,7 @@ public sealed class DiagnosticTextTests {
     public void a_message_format_still_carries_its_placeholders(string id) {
         DiagnosticDescriptor descriptor = new EnumContractAnalyzer().SupportedDiagnostics.Single(d => d.Id == id);
 
-        Assert.Contains("{0}", descriptor.MessageFormat.ToString(), StringComparison.Ordinal);
+        Check.That(descriptor.MessageFormat.ToString()).Contains("{0}");
     }
 
 }
