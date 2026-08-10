@@ -63,6 +63,14 @@ document à lui-même : chaque valeur que le document annonce est envoyée au se
 et doit être acceptée, et chaque valeur qu'il exclut doit être rejetée. Le motif `[Flags]` documenté
 est compilé et rejoué de la même façon.
 
+Une asymétrie assumée. Le schéma d'une énumération sans `[Flags]` reste une liste `enum` fermée : il
+n'annonce donc pas les combinaisons séparées par des virgules que le serveur accepte aussi —
+[`available,out_of_stock`](contract-rules.fr.md#une-virgule-sépare-les-valeurs-sur-toutes-les-énumérations)
+se lie et ne figure pas dans la liste. C'est le sens dans lequel il vaut mieux se tromper : la liste
+est le vocabulaire à partir duquel un client se génère, et une combinaison est une forme héritée
+d'`Enum.Parse` plutôt qu'une offre de l'API. L'annoncer comme un motif, ce qu'imposent les `[Flags]`,
+pousserait chaque client généré vers un champ texte libre là où l'endpoint veut une énumération.
+
 ## Plancher de version
 
 Le compagnon relève le plancher de `Microsoft.OpenApi` à 2.11.0. `Microsoft.AspNetCore.OpenApi` 10.0.x

@@ -60,6 +60,14 @@ itself: every value the document advertises is sent to the running server and mu
 every value it excludes must be rejected. The documented `[Flags]` pattern is compiled and replayed
 the same way.
 
+One deliberate asymmetry. A non-`[Flags]` schema stays a closed `enum` list, so it does not advertise
+the comma-separated combinations the server also accepts —
+[`available,out_of_stock`](contract-rules.en.md#a-comma-separates-values-on-every-enum) binds and is
+not in the list. That is the direction worth being wrong in: the list is the vocabulary a client
+should generate from, and a combination is a legacy shape of `Enum.Parse` rather than something an
+API means to offer. Advertising it as a pattern, as `[Flags]` requires, would push every generated
+client towards a free-text field where an enumeration is what the endpoint is for.
+
 ## Version floor
 
 The companion raises the floor of `Microsoft.OpenApi` to 2.11.0. `Microsoft.AspNetCore.OpenApi`
