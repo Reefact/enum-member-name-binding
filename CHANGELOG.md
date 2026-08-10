@@ -66,7 +66,7 @@ first one to make the trip is one that costs nothing to burn.
   it. The measurement itself is pinned by tests.
 - Roslyn analyzers, shipped inside the package under `analyzers/dotnet/cs`, so a contract mistake is
   a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
-  public name, `EMN0003` incomplete contract, `EMN0004` comma in a `[Flags]` name, `EMN0005` a public
+  public name, `EMN0003` incomplete contract, `EMN0004` comma in a public name, `EMN0005` a public
   name shadowing another member's C# name — which leaves that member answering to every casing of its
   name except its own. Those five are errors; `EMN0006` above is the one warning, because a
   portability limit depends on the channels an API actually binds from, whereas the other five report

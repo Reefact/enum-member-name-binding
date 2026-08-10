@@ -110,18 +110,52 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
         }
     }
 
+    /// <summary>
+    /// A single token naming no member is refused, and the document does not advertise it either.
+    /// </summary>
+    /// <remarks>
+    /// Named for what it holds rather than for the converse of the test above, which would not be
+    /// true. A non-<c>[Flags]</c> schema stays a closed list, so it deliberately under-promises: the
+    /// server also accepts the comma-separated combinations whose result is a declared member, and
+    /// the list cannot express them. The test below pins that asymmetry; the reasoning is in
+    /// <c>docs/for-users/openapi.en.md</c>.
+    /// </remarks>
     [Theory]
     [InlineData("Pending")]
     [InlineData("PENDING")]
     [InlineData("0")]
     [InlineData("bogus")]
-    public async Task a_value_the_document_does_not_advertise_is_rejected(string value) {
+    public async Task a_value_naming_no_member_is_rejected_and_never_advertised(string value) {
         string[] advertised = [.. api.Schema(nameof(OrderState)).GetProperty("enum").EnumerateArray().Select(v => v.GetString()!)];
         Check.That(advertised).Not.Contains(value);
 
         using HttpResponseMessage response = await api.Client.GetAsync("/orders?state=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
 
         Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>
+    /// The under-promise, held as a measurement rather than as a paragraph of documentation.
+    /// </summary>
+    /// <remarks>
+    /// A comma separates values on every enum, so <c>"pending,shipped"</c> is <c>0 | 1</c>, which is a
+    /// declared member and therefore binds. The closed list names only the members themselves. This
+    /// direction is the safe one — a client that sends only what the document advertises is never
+    /// refused — and it is why the schema is not a pattern: on an ordinary enum a pattern would
+    /// advertise the combinations that resolve to no member at all, which the server answers 400.
+    /// </remarks>
+    [Theory]
+    [InlineData("pending,shipped")]
+    [InlineData("pending, shipped")]
+    [InlineData("shipped,shipped")]
+    public async Task a_combination_resolving_to_a_declared_member_binds_though_it_is_not_advertised(string value) {
+        string[] advertised = [.. api.Schema(nameof(OrderState)).GetProperty("enum").EnumerateArray().Select(v => v.GetString()!)];
+        Check.That(advertised).Not.Contains(value);
+
+        using HttpResponseMessage response = await api.Client.GetAsync("/orders?state=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
+
+        Check.WithCustomMessage($"'{value}' was refused, so the document no longer under-promises — it disagrees.")
+             .That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     [Theory]
