@@ -134,10 +134,14 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         string? name  = member.PublicName;
         string  field = member.Field.Name;
 
-        if (string.IsNullOrEmpty(name)) { return At(InvalidPublicName, location, field, name, "is empty"); }
-        if (IsPadded(name!)) { return At(InvalidPublicName, location, field, name, "has leading or trailing whitespace"); }
-        if (name!.IndexOf(',') >= 0) { return At(CommaInName, location, field, name); }
-        if (declared.TryGetValue(name!, out Member owner)) { return At(DuplicatePublicName, location, owner.Field.Name, field, name); }
+        // Spelled out rather than string.IsNullOrEmpty, whose netstandard2.0 declaration predates
+        // [NotNullWhen(false)]: the call would leave name possibly-null, and each guard below it
+        // would need a null-forgiving operator to compile. EnumContract, on net10.0, has the
+        // annotation and calls it directly.
+        if (name is null || name.Length == 0) { return At(InvalidPublicName, location, field, name, "is empty"); }
+        if (IsPadded(name)) { return At(InvalidPublicName, location, field, name, "has leading or trailing whitespace"); }
+        if (name.IndexOf(',') >= 0) { return At(CommaInName, location, field, name); }
+        if (declared.TryGetValue(name, out Member owner)) { return At(DuplicatePublicName, location, owner.Field.Name, field, name); }
 
         return null;
     }
