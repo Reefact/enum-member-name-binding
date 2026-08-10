@@ -117,6 +117,14 @@ git switch -c jane/flags-enum-pattern main
 `main` n'accepte ni push direct, ni push forcé, ni commit de merge. Elle n'avance que par pull
 request, en squash ou en rebase, pour que son historique reste linéaire.
 
+Le commit de merge est la moitié sur laquelle un contributeur peut trébucher : la CI le refuse donc,
+plutôt que de le laisser découvrir au bouton de merge — où GitHub le signale comme un rebase
+impossible, après la relecture plutôt qu'avant. Récupérez `main` en rebasant dessus :
+
+```sh
+git fetch origin main && git rebase origin/main
+```
+
 ## Messages de commit
 
 [Conventional Commits](https://www.conventionalcommits.org/fr/v1.0.0/), imposé par
