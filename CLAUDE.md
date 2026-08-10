@@ -59,6 +59,28 @@ too wide to fit is usually one whose condition wants a name.
 runs it. It has no exception mechanism on purpose: everything it reports already fits, so the only
 answer is to rewrite it — and everything too wide it never reports at all.
 
+## An `if` wrapping the rest of a method becomes a guard
+
+Invert it, so the case with nothing to do leaves at the top and the work sits at the method's own
+indent.
+
+```csharp
+if (!options.ConfigureJsonSerialization) { return builder; }
+if (contractEnums.Count == 0) { return builder; }
+
+builder.AddJsonOptions(…);
+```
+
+Two guards rather than one negated conjunction: `!a || b == 0` is harder to read than either half
+on its own.
+
+What keeps this a judgement and not a rule is the tail. Inverting duplicates whatever followed the
+block, which is free when that is `return;` or `return builder;` and not free when it is a real
+call — `return base.ConvertTo(context, culture, value, destinationType);` written twice is two
+things to keep in sync, and costs more than the indent it saves. Those stay as they are.
+
+No check enforces this, deliberately: a checker would invert the second kind too.
+
 ## Verify, do not assume
 
 Three integrations in this repository have reported success while doing nothing: `dotnet test`

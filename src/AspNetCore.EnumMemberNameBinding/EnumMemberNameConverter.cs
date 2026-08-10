@@ -58,13 +58,10 @@ internal sealed class EnumMemberNameConverter : EnumConverter {
     public override object? ConvertFrom(ITypeDescriptorContext? context, CultureInfo? culture, object value) {
         ArgumentNullException.ThrowIfNull(value);
 
-        if (value is string text) {
-            if (_contract.TryParse(text, out object? result)) { return result; }
+        if (value is not string text) { return base.ConvertFrom(context, culture, value); }
+        if (_contract.TryParse(text, out object? result)) { return result; }
 
-            throw new FormatException(NotAValidValue(text));
-        }
-
-        return base.ConvertFrom(context, culture, value);
+        throw new FormatException(NotAValidValue(text));
     }
 
     private string NotAValidValue(string text) {

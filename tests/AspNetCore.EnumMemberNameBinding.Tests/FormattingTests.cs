@@ -129,6 +129,23 @@ public sealed class FormattingTests {
     }
 
     /// <summary>
+    /// A value that is not a string is the base converter's business, and this one hands it over
+    /// rather than inventing an answer. Asserted through a conversion only the base performs — an
+    /// <see cref="Enum" /> array, which it combines — so it proves the hand-over happened rather
+    /// than that something merely refused.
+    /// </summary>
+    [Fact]
+    public void the_type_converter_defers_a_value_that_is_not_a_string() {
+        TypeConverter converter = new EnumMemberNameConverter(typeof(ProductStatus));
+
+        object? combined = converter.ConvertFrom(null, CultureInfo.InvariantCulture,
+                                                 new Enum[] { ProductStatus.Available, ProductStatus.OutOfStock });
+
+        Assert.Equal(ProductStatus.Available | ProductStatus.OutOfStock, combined);
+        Assert.Throws<NotSupportedException>(() => converter.ConvertFrom(null, CultureInfo.InvariantCulture, 1));
+    }
+
+    /// <summary>
     /// Characterizes a real gap: ASP.NET Core formats route values without consulting
     /// <c>TypeDescriptor</c>, so a link built from the enum value carries the C# name and this very
     /// API answers 400 to it. It cannot be corrected from a TypeConverter, hence

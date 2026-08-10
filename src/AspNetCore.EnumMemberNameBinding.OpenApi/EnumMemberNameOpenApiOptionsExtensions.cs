@@ -4,7 +4,13 @@ using AspNetCore.EnumMemberNameBinding.OpenApi;
 
 using Microsoft.AspNetCore.OpenApi;
 
+// IDE0130 is right everywhere else and wrong here: the namespace is chosen, for the reason on the
+// class below, and it will never match the folder. A pragma rather than [SuppressMessage] because
+// the finding is reported on the namespace declaration, which no attribute reaches — measured, not
+// assumed: the attribute leaves it standing.
+#pragma warning disable IDE0130
 namespace Microsoft.Extensions.DependencyInjection;
+#pragma warning restore IDE0130
 
 /// <summary>
 /// Registration of enum member name correction on <see cref="OpenApiOptions" />.

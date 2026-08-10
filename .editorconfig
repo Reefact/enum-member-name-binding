@@ -37,6 +37,20 @@ csharp_preserve_single_line_blocks = true
 dotnet_diagnostic.CA1062.severity = warning
 dotnet_code_quality.CA1062.api_surface = public, internal
 
+# IDE0130 does nothing without this option, whatever its severity says — so leaving the option out
+# was not "the rule does not apply here", it was the rule never running. Written down, the build now
+# agrees with the editor, which has always shown it: two registration entry points are deliberately
+# in Microsoft.Extensions.DependencyInjection and carry a pragma saying so.
+dotnet_style_namespace_match_folder = true
+dotnet_diagnostic.IDE0130.severity = warning
+
+# IDE0005 needs GenerateDocumentationFile, which all three src projects set and no test project
+# does — enabling it solution-wide makes the compiler refuse to build rather than report anything.
+# Scoped here it costs nothing and catches a using that outlived what needed it, including two the
+# implicit usings had already made redundant.
+[src/**.cs]
+dotnet_diagnostic.IDE0005.severity = warning
+
 # IDE0028 asks for `[]`, which trips CA1825 on the 10.0.100 analyzers — the SDK floor declared in
 # global.json and one of the two CI legs, where a warning is an error. Nine sites, every one of them
 # a xUnit TheoryData, so this is one class of code rather than a handful of exceptions.
