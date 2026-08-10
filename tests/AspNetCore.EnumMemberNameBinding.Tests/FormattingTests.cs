@@ -1,5 +1,3 @@
-using System.ComponentModel;
-using System.Globalization;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -120,49 +118,28 @@ public sealed class FormattingTests {
         Check.That(EnumContract.For(typeof(WithZero)).Format(value)).IsEqualTo(expected);
     }
 
+    /// <summary>
+    /// What the binder puts on the wire and what it takes back off it are the same vocabulary. Read
+    /// off the contract rather than over HTTP, because writing a name is not something any channel
+    /// does on the way out — a response body is System.Text.Json's business and a link is the
+    /// caller's, through <see cref="EnumMemberNames.GetPublicName" />.
+    /// </summary>
     [Fact]
-    public void the_type_converter_writes_the_public_name() {
-        TypeConverter converter = new EnumMemberNameConverter(typeof(ProductStatus));
+    public void a_declared_name_is_written_and_read_back_by_the_same_contract() {
+        EnumContract contract = EnumContract.For(typeof(ProductStatus));
 
-        Check.That(converter.ConvertToString(ProductStatus.OutOfStock)).IsEqualTo("out_of_stock");
-        Check.That(converter.ConvertFrom(null, CultureInfo.InvariantCulture, "out_of_stock")).IsEqualTo(ProductStatus.OutOfStock);
+        Check.That(contract.Format(ProductStatus.OutOfStock)).IsEqualTo("out_of_stock");
+        Check.That(contract.TryParse("out_of_stock", out object? parsed)).IsTrue();
+        Check.That(parsed).IsEqualTo(ProductStatus.OutOfStock);
     }
 
     /// <summary>
-    /// A value that is not a string is the base converter's business, and this one hands it over
-    /// rather than inventing an answer. Asserted through a conversion only the base performs — an
-    /// <see cref="Enum" /> array, which it combines — so it proves the hand-over happened rather
-    /// than that something merely refused.
+    /// A value the contract cannot name is answered with <see langword="null" /> rather than with the
+    /// number, so a caller can tell "no public name" from a public name that happens to be numeric.
     /// </summary>
     [Fact]
-    public void the_type_converter_defers_a_value_that_is_not_a_string() {
-        TypeConverter converter = new EnumMemberNameConverter(typeof(ProductStatus));
-
-        object? combined = converter.ConvertFrom(null, CultureInfo.InvariantCulture,
-                                                 new Enum[] { ProductStatus.Available, ProductStatus.OutOfStock });
-
-        Check.That(combined).IsEqualTo(ProductStatus.Available | ProductStatus.OutOfStock);
-        Check.ThatCode(() => converter.ConvertFrom(null, CultureInfo.InvariantCulture, 1)).Throws<NotSupportedException>();
-    }
-
-    /// <summary>
-    /// The three ways this converter has nothing to write, each handed to the base converter rather
-    /// than answered for: a destination that is not a string, no value at all, and a value the
-    /// contract cannot name. Asserted through answers only the base produces — it decomposes a
-    /// <c>[Flags]</c> value into an <see cref="Enum" /> array, writes nothing as the empty string,
-    /// and falls back to the number — so each proves the hand-over happened rather than that
-    /// something merely refused.
-    /// </summary>
-    [Fact]
-    public void the_type_converter_defers_what_it_has_no_name_for() {
-        TypeConverter converter = new EnumMemberNameConverter(typeof(Permissions));
-
-        object? decomposed = converter.ConvertTo(null, CultureInfo.InvariantCulture,
-                                                 Permissions.Read | Permissions.Write, typeof(Enum[]));
-
-        Check.That((Enum[])decomposed!).IsEqualTo(new Enum[] { Permissions.Read, Permissions.Write });
-        Check.That(converter.ConvertTo(null, CultureInfo.InvariantCulture, null, typeof(string))).IsEqualTo(string.Empty);
-        Check.That(converter.ConvertTo(null, CultureInfo.InvariantCulture, (Permissions)64, typeof(string))).IsEqualTo("64");
+    public void a_flags_value_carrying_an_undeclared_bit_is_not_named() {
+        Check.That(EnumContract.For(typeof(Permissions)).Format((Permissions)64)).IsNull();
     }
 
     /// <summary>

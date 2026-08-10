@@ -45,6 +45,14 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="AspNetCore.EnumMemberNameBinding.Tests" />
+    <!--
+      The companion package asks this one which enums the application registered, so that a document
+      never advertises names the binder does not accept. Internal rather than public because the
+      answer is a fact about one application's wiring, not a service a consumer configures — and the
+      public surface of both packages is committed as a baseline that 1.0.0 will carry.
+    -->
+    <InternalsVisibleTo Include="AspNetCore.EnumMemberNameBinding.OpenApi" />
+    <InternalsVisibleTo Include="AspNetCore.EnumMemberNameBinding.OpenApi.Tests" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Reflection;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
@@ -13,17 +12,22 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 public sealed class NullGuardTests {
 
     private static readonly Dictionary<Type, Func<object>> Instances = new() {
-        [typeof(EnumContract)]             = () => EnumContract.For(typeof(ProductStatus)),
-        [typeof(EnumMemberNameConverter)]  = () => new EnumMemberNameConverter(typeof(ProductStatus)),
+        [typeof(EnumContract)]                        = () => EnumContract.For(typeof(ProductStatus)),
+        [typeof(EnumMemberNameModelBinder)]           = () => new EnumMemberNameModelBinder(EnumContract.For(typeof(ProductStatus))),
+        [typeof(EnumMemberNameModelBinderProvider)]   = () => new EnumMemberNameModelBinderProvider(new EnumMemberNameBindingRegistrations()),
+        [typeof(EnumMemberNameBindingRegistrations)]  = () => new EnumMemberNameBindingRegistrations(),
     };
 
     private static readonly Dictionary<Type, object> Values = new() {
-        [typeof(Type)]                          = typeof(ProductStatus),
-        [typeof(string)]                        = "available",
-        [typeof(object)]                        = ProductStatus.Available,
-        [typeof(IReadOnlyList<string>)]          = new[] { "a problem" },
-        [typeof(EnumMemberNameBindingOptions)]  = new EnumMemberNameBindingOptions(),
-        [typeof(Enum)]                          = ProductStatus.Available,
+        [typeof(Type)]                                = typeof(ProductStatus),
+        [typeof(string)]                              = "available",
+        [typeof(object)]                              = ProductStatus.Available,
+        [typeof(IReadOnlyList<string>)]                = new[] { "a problem" },
+        [typeof(IEnumerable<Type>)]                    = new[] { typeof(ProductStatus) },
+        [typeof(EnumMemberNameBindingOptions)]        = new EnumMemberNameBindingOptions(),
+        [typeof(EnumMemberNameBindingRegistrations)]  = new EnumMemberNameBindingRegistrations(),
+        [typeof(EnumContract)]                        = EnumContract.For(typeof(ProductStatus)),
+        [typeof(Enum)]                                = ProductStatus.Available,
     };
 
     private static readonly Dictionary<string, string> Unexercisable = new(StringComparer.Ordinal) {

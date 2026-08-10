@@ -71,6 +71,14 @@ public sealed class BindingController : ControllerBase {
     [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public IActionResult StatusFromBody([FromBody] Payload payload) => Ok(new Bound(payload.Value.ToString()));
 
+    [HttpGet("/status/model")]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
+    public IActionResult StatusFromModel([FromQuery] StatusModel model) => Ok(new Bound(model.Value.ToString()));
+
+    [HttpGet("/status/array")]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
+    public IActionResult StatusArray([FromQuery] ProductStatus[] value) => Ok(new Bound(string.Join("|", value.Select(v => v.ToString()))));
+
     [HttpGet("/partial/query")]
     public IActionResult PartialFromQuery([FromQuery] PartiallyAnnotated value) => Ok(new Bound(value.ToString()));
 
@@ -105,6 +113,13 @@ public sealed class BindingController : ControllerBase {
     public sealed record Bound(string Value);
 
     public sealed class Payload {
+
+        public ProductStatus Value { get; set; }
+
+    }
+
+    /// <summary>A contract enum reached as a property rather than as the parameter itself.</summary>
+    public sealed class StatusModel {
 
         public ProductStatus Value { get; set; }
 
