@@ -267,6 +267,14 @@ brûler sans rien perdre.
   binder d'ASP.NET Core refuse sur une énumération sans `[Flags]` — y compris sur une énumération que
   ce paquet ne touche jamais, ce qui rend sa fermeture contraire au sens voulu. Caractérisée, témoin
   compris.
+- **Un paramètre d'énumération sous contrat n'écrit aucun des enregistrements propres au binder.**
+  Le `SimpleTypeModelBinder` d'ASP.NET Core reçoit un `ILoggerFactory` et journalise sa tentative et
+  son résultat ; le binder installé ici ne prend aucun logger, si bien qu'un tel paramètre est muet en
+  `Debug` là où tous les autres ne le sont pas. Seuls ces enregistrements manquent — le trace de
+  `ParameterBinder` qui les entoure appartient à ASP.NET Core et reste intact, un journal montre donc
+  toujours que le paramètre a été lié puis validé. Ils passent par `MvcCoreLoggerExtensions`, qui est
+  `internal` : les reproduire reviendrait à un sosie sous la catégorie et les identifiants
+  d'événement de ce paquet, une parité d'apparence et aucune en fait. Les deux moitiés sont mesurées.
 - **Incompatible avec le trimming et Native AOT.** Résoudre un contrat et scanner un assembly
   reposent sur la réflexion. Le point d'entrée public est annoté en conséquence, plutôt que de
   supprimer silencieusement les avertissements.
