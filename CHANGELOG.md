@@ -11,8 +11,6 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
-## [1.0.0-preview.1] - 2026-08-09
-
 The public surface is the one 1.0.0 will carry: it was read symbol by symbol and committed as a
 baseline, so this pre-release is not a draft of the API. What it exercises is the publication
 itself — trusted publishing, the build-provenance attestation, and how the packages actually look
