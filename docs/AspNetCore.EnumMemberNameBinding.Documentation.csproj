@@ -1,0 +1,73 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The documentation, as a project an IDE can open.
+
+    It carries no code and produces nothing. Its only purpose is to make the pages under docs/
+    appear in the Solution Explorer, so documentation is edited from the same window as the code
+    rather than remembered as a directory somebody has to go looking for.
+
+    WHY THE PROJECT FILE SITS AT THE ROOT OF docs/.
+    A project shows the files under its own directory. Putting the .csproj here makes the project
+    directory and the documentation directory the same directory, so the glob below reaches every
+    page — including the pages nobody has written yet. A rule page added tomorrow, in a folder
+    created tomorrow, appears with no edit to this file and no edit to the solution. The
+    alternative — a solution folder listing pages one by one — decorrelates the tree from the file
+    system and goes stale on the first page somebody forgets to register.
+
+    WHY IT IS AN ORDINARY SDK PROJECT.
+    A no-code project needs something both an IDE and MSBuild understand. Microsoft.Build.NoTargets
+    would say "builds nothing" exactly, but it is a new SDK dependency for a cosmetic project. An
+    ordinary SDK project costs nothing here because it is never built: the solution excludes it from
+    every configuration (see EnumMemberNameBinding.slnx), so `dotnet build`, `dotnet pack` and
+    "Build Solution" all skip it, and no bin/ or obj/ is ever produced beside the pages.
+
+    That exclusion is written in the .slnx as an explicit element. In the older .sln format it would
+    have been the *absence* of a `.Build.0` line — which is how first-class-errors, the repository
+    this project is modelled on, ends up excluding its own documentation project under Any CPU while
+    still building it under x64 and x86.
+  -->
+
+  <PropertyGroup>
+    <!-- No .cs is compiled, and the default None glob is replaced by the one below. Everything else
+         is inherited: Directory.Build.props already targets net10.0 and already sets IsPackable to
+         false, so nothing here has to restate them. -->
+    <EnableDefaultItems>false</EnableDefaultItems>
+
+    <!-- The analyzers Directory.Build.props brings to every project have nothing to look at here.
+         Only reached if somebody builds this project directly, which is the one case worth keeping
+         quiet: a documentation build paying for a code analysis of no code. -->
+    <RunAnalyzers>false</RunAnalyzers>
+    <IsPublishable>false</IsPublishable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Everything under docs/, now and in the future — not just *.md, so a diagram dropped beside a
+      rule page is visible too. Written as one glob on purpose: the moment this becomes a list of
+      files, the list is what goes out of date.
+    -->
+    <None Include="**\*" Exclude="bin\**;obj\**;*.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      The pages that cannot live under docs/, linked in so the project holds the whole corpus that
+      DocumentationLinksTests holds to the translation contract. GitHub renders the repository's
+      front page, its changelog, its contributing guidelines and its security policy from fixed
+      paths at the root, and renders a directory's README.md and nothing else — so these five stay
+      where they are and appear here as links. Their French counterparts need no entry: four of them
+      already sit under docs/, where the glob above finds them.
+    -->
+    <None Include="..\README.md" Link="README.md" />
+    <None Include="..\CHANGELOG.md" Link="CHANGELOG.md" />
+    <None Include="..\CONTRIBUTING.md" Link="CONTRIBUTING.md" />
+    <None Include="..\SECURITY.md" Link="SECURITY.md" />
+    <!-- Linked under their real path rather than flattened: this pair documents a test harness, and
+         a reader who opens it should see where it actually lives. -->
+    <None Include="..\tests\PackageSmokeTest\README.md" Link="tests\PackageSmokeTest\README.md" />
+    <None Include="..\tests\PackageSmokeTest\README.fr.md" Link="tests\PackageSmokeTest\README.fr.md" />
+  </ItemGroup>
+
+</Project>
