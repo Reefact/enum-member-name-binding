@@ -166,8 +166,10 @@ relatif.
 
 ## Les exemples de la documentation sont compilés
 
-Chaque bloc C# sous `docs/` et dans le README est compilé contre les paquets publiés, puis les
-analyseurs livrés par cette bibliothèque sont passés sur le résultat. Un exemple qui ne compile
+Chaque bloc C# sous `docs/for-users` et dans les deux pages d'accueil est compilé contre les paquets
+publiés, puis les analyseurs livrés par cette bibliothèque sont passés sur le résultat. Les pages de
+mainteneur en sont exclues, et comme un corps entier plutôt qu'une par une : un enregistrement de
+décision cite du C# pour porter un argument, pas pour être collé. Un exemple qui ne compile
 plus, ou qui enseigne du code qu'`EMN0005` refuserait, casse le build comme n'importe quel autre
 test — la documentation est la seule chose que rien n'exécute, donc rien d'autre ne le verrait.
 

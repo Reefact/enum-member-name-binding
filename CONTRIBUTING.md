@@ -158,8 +158,10 @@ relatively.
 
 ## Samples in the documentation are compiled
 
-Every C# block under `docs/` and in the README is compiled against the shipped packages, and the
-analyzers this library ships are then run over the result. A sample that no longer binds, or that
+Every C# block under `docs/for-users` and in the two front pages is compiled against the shipped
+packages, and the analyzers this library ships are then run over the result. The maintainer pages are
+out of it, and as a body rather than one by one: a decision record quotes C# to carry an argument,
+not to be pasted. A sample that no longer binds, or that
 teaches code `EMN0005` would reject, fails the build like any other test — documentation is the one
 thing nothing executes, so nothing else would ever notice.
 
