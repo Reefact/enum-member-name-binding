@@ -79,6 +79,35 @@ ASP.NET Core a clos la demande correspondante en *not planned*
 annoncer les noms C# pour les paramètres hors corps — cet écart devrait donc se creuser, pas se
 réduire. Voir [OpenAPI](openapi.fr.md).
 
+## Le binder n'écrit aucun des enregistrements de model binding d'ASP.NET Core
+
+`SimpleTypeModelBinder` reçoit un `ILoggerFactory` et journalise sa propre tentative et son résultat.
+Le binder installé par ce paquet ne prend aucun logger : en `Debug`, un paramètre d'énumération sous
+contrat est donc muet là où tous les autres paramètres ne le sont pas :
+
+```text
+# une énumération ordinaire, liée par ASP.NET Core
+…ModelBinding.ParameterBinder                :: Attempting to bind parameter 'value' …
+…ModelBinding.Binders.SimpleTypeModelBinder  :: Attempting to bind parameter 'value' …
+…ModelBinding.Binders.SimpleTypeModelBinder  :: Done attempting to bind parameter 'value'.
+…ModelBinding.ParameterBinder                :: Done attempting to bind parameter 'value'.
+
+# une énumération sous contrat, liée par ce paquet — les deux lignes du milieu manquent
+…ModelBinding.ParameterBinder                :: Attempting to bind parameter 'value' …
+…ModelBinding.ParameterBinder                :: Done attempting to bind parameter 'value'.
+```
+
+Seuls les enregistrements du binder lui-même manquent. Le trace de `ParameterBinder` qui l'entoure
+appartient à ASP.NET Core et reste intact : un journal montre donc toujours que le paramètre a été lié
+puis validé — et un échec reste intact lui aussi, atteignant `ModelState` et la réponse exactement
+comme n'importe quel autre.
+
+Une limite, et non une décision remise à plus tard : ces enregistrements passent par
+`MvcCoreLoggerExtensions`, qui est `internal` à `Microsoft.AspNetCore.Mvc.Core`. Ce qu'on pourrait
+écrire à la place serait un sosie sous la catégorie et les identifiants d'événement de ce paquet —
+qu'un filtre de journalisation visant ceux d'ASP.NET Core ne ramasserait pas. Une parité d'apparence,
+et aucune en fait.
+
 ## Incompatible avec le trimming et Native AOT
 
 Résoudre un contrat et scanner un assembly reposent sur la réflexion. Chaque point d'entrée est annoté

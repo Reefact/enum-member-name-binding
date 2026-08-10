@@ -244,6 +244,14 @@ first one to make the trip is one that costs nothing to burn.
   `"out_of_stock,discontinued"` is `(ProductStatus)3`, which `System.Text.Json` accepts and
   ASP.NET Core's own binder refuses on a non-`[Flags]` enum — including on an enum this package never
   touches, which is why closing it would be the wrong direction. Characterized, control included.
+- **A contract enum parameter writes none of the binder's own log records.** ASP.NET Core's
+  `SimpleTypeModelBinder` is handed an `ILoggerFactory` and logs its attempt and its result; the
+  binder installed here takes no logger, so such a parameter is quiet at `Debug` where every other
+  one is not. Only those records are missing — the `ParameterBinder` trace around them belongs to
+  ASP.NET Core and is untouched, so a log still shows the parameter was bound and validated. They are
+  written through `MvcCoreLoggerExtensions`, which is `internal`, so reproducing them would mean a
+  lookalike under this package's own category and event ids: parity in appearance and none in fact.
+  Both halves are measured.
 - **Not compatible with trimming or Native AOT.** Resolving a contract and the assembly scan rely on
   reflection. The public entry point is annotated accordingly rather than silently suppressing the
   warnings.

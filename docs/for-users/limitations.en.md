@@ -77,6 +77,33 @@ ASP.NET Core has closed the corresponding issue as *not planned*
 start advertising C# names for non-body parameters — so this divergence is expected to widen, not
 shrink. See [OpenAPI](openapi.en.md).
 
+## The binder writes none of ASP.NET Core's model-binding records
+
+`SimpleTypeModelBinder` is handed an `ILoggerFactory` and logs its own attempt and result. The binder
+this package installs takes no logger, so at `Debug` a contract enum parameter is quiet where every
+other parameter is not:
+
+```text
+# a plain enum, bound by ASP.NET Core
+…ModelBinding.ParameterBinder                :: Attempting to bind parameter 'value' …
+…ModelBinding.Binders.SimpleTypeModelBinder  :: Attempting to bind parameter 'value' …
+…ModelBinding.Binders.SimpleTypeModelBinder  :: Done attempting to bind parameter 'value'.
+…ModelBinding.ParameterBinder                :: Done attempting to bind parameter 'value'.
+
+# a contract enum, bound by this package — the two middle records are absent
+…ModelBinding.ParameterBinder                :: Attempting to bind parameter 'value' …
+…ModelBinding.ParameterBinder                :: Done attempting to bind parameter 'value'.
+```
+
+Only the binder's own records are missing. The `ParameterBinder` trace around it belongs to ASP.NET
+Core and is untouched, so a log still shows that the parameter was bound and validated — and a
+failure is untouched too, reaching `ModelState` and the response exactly as any other one does.
+
+A limit rather than a decision deferred: those records are written through `MvcCoreLoggerExtensions`,
+which is `internal` to `Microsoft.AspNetCore.Mvc.Core`. What could be written instead is a lookalike
+under this package's own category and event ids, which a log filter aimed at ASP.NET Core's would not
+pick up — parity in appearance and none in fact.
+
 ## Not compatible with trimming or Native AOT
 
 Resolving a contract and scanning an assembly rely on reflection. Every entry point is annotated rather than
