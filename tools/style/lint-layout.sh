@@ -33,7 +33,9 @@
 #   tools/style/lint-layout.sh [--fix] [path ...]
 #
 # With no path, every tracked C# file outside obj/ and bin/. Exits 1 when something is reported,
-# which is what makes it usable from CI. `--fix` rewrites the files instead of reporting. Exit 2 is
+# which is what makes it usable from CI. `--fix` rewrites what it can, then reports what it could
+# not and exits 1 for it as well — the file it leaves behind is one the check run and the hook both
+# refuse, so answering 0 would send a developer to commit a tree CI is about to reject. Exit 2 is
 # a third answer, and separate on purpose: it says the checker is broken rather than the tree, which
 # a CI log reading exit 1 would take for an ordinary dirty tree.
 
@@ -86,6 +88,9 @@ fi
 # that ends in `)]`. This record carries a fourth field, the last line of the site, because unlike
 # the other three the span is not fixed. `unclosed` is the same site with no closing bracket found:
 # reported and left alone, since a file that unbalanced is not one a line-joiner should be editing.
+# A wrapped suppression whose `)]` arrives with a member after it is neither of those two and
+# produces no record at all: joining up to that line would fold the member onto the attribute, so
+# closesLine tells the two apart and this one is passed over in silence.
 scan() {
     local file="$1"
 
@@ -101,7 +106,20 @@ scan() {
             return line ~ /^[ \t]*\[[ \t]*((assembly|module)[ \t]*:[ \t]*)?(global[ \t]*::[ \t]*)?([A-Za-z_][A-Za-z0-9_]*[ \t]*\.[ \t]*)*(Unconditional)?SuppressMessage(Attribute)?[ \t]*\(/
         }
 
+        # Anywhere on the line rather than at its end, because what this answers is whether the
+        # brackets of the attribute close here — not whether the line stops there. Anchored, it read a
+        # suppression already written on one line but carrying a trailing comment as a wrapped one,
+        # and --fix then joined it to everything up to the next `)]`: two members deleted, folded
+        # behind the `//` where they no longer compile, and "Rewrote 1 site(s)." with exit 0.
         function closesAttribute(line) {
+            return line ~ /\)\]/
+        }
+
+        # And whether it closes with nothing after it, which is what makes a wrapped site one this
+        # can rewrite: joining up to a line that carries a member as well would fold that member
+        # onto the attribute. The mirror of `[Fact, SuppressMessage(` — where the line the attribute
+        # opens on carries something else — and unreadable for the same reason.
+        function closesLine(line) {
             return line ~ /\)\][ \t]*$/
         }
 
@@ -130,10 +148,15 @@ scan() {
                         sub(/[ \t]*$/, "", continuation)
 
                         collapsed = collapsed " " continuation
-                        if (closesAttribute(lines[j])) { closed = 1; break }
+                        if (closesAttribute(lines[j])) { closed = closesLine(lines[j]) ? 1 : 2; break }
                     }
 
-                    if (!closed) { print i "\tunclosed\t"; continue }
+                    if (closed == 0) { print i "\tunclosed\t"; continue }
+
+                    # Closes on a line that carries code as well. Skipped so nothing below looks
+                    # inside it, and reported by nothing: there is no rewrite to name, and saying so
+                    # would be a complaint with no answer to it.
+                    if (closed == 2) { i = j; continue }
 
                     print i "\tsuppression\t" collapsed "\t" j
                     i = j
@@ -262,6 +285,7 @@ apply() {
 }
 
 reported=0
+declined=0
 
 for file in "${paths[@]}"; do
     [[ -f "$file" ]] || continue
@@ -304,17 +328,45 @@ for file in "${paths[@]}"; do
         reported=$((reported + fixed))
         printf 'fixed %s\n' "$file"
     fi
+
+    # What --fix could not rewrite is still a violation, and the tree it leaves behind is the one
+    # the check run, the pre-commit hook and the CI style job all refuse. Scanned again rather than
+    # remembered from the loop above, so this says what the file is now instead of what the fixer
+    # believed it was doing — and so a site the five-pass cap ran out on is named too.
+    while IFS=$'\t' read -r line action collapsed end; do
+        [[ -n "$line" ]] || continue
+
+        report_of "$file" "$line" "$action" "$collapsed"
+        declined=$((declined + 1))
+    done <<< "$(scan "$file")"
 done
 
-if [[ "$reported" -eq 0 ]]; then
+if [[ "$fix" -eq 0 ]]; then
+    if [[ "$reported" -eq 0 ]]; then
+        echo "Nothing to report."
+        exit 0
+    fi
+
+    printf '\n%d site(s). Run tools/style/lint-layout.sh --fix to rewrite them.\n' "$reported"
+    exit 1
+fi
+
+if [[ "$reported" -eq 0 && "$declined" -eq 0 ]]; then
     echo "Nothing to report."
     exit 0
 fi
 
-if [[ "$fix" -eq 1 ]]; then
+if [[ "$reported" -gt 0 ]]; then
     printf '\nRewrote %d site(s).\n' "$reported"
-    exit 0
 fi
 
-printf '\n%d site(s). Run tools/style/lint-layout.sh --fix to rewrite them.\n' "$reported"
-exit 1
+# Non-zero for the same reason the check run is: the tree still violates the rule. Printing the
+# rewrites and stopping at 0 told a developer the file was clean while the same script in check mode
+# exited 1 on it — a fourth green run over work not done, in the repository that keeps a section
+# about the other three.
+if [[ "$declined" -gt 0 ]]; then
+    printf '\n%d site(s) left alone; --fix does not rewrite them.\n' "$declined"
+    exit 1
+fi
+
+exit 0

@@ -91,9 +91,14 @@ the check, since a checker that reports nothing because it is broken reads exact
 tree. It has no exception mechanism on purpose: everything it reports already fits, so the only
 answer is to rewrite it, and everything too wide it never reports at all.
 
-One shape it admits it cannot read: a suppression sharing its brackets with another attribute, as in
-`[Fact, SuppressMessage(...)]`. Knowing where one attribute ends there means parsing C#, so it stays
-silent rather than guessing.
+Two shapes it admits it cannot read, and they are one question asked at either end of the attribute:
+a suppression sharing its brackets with another one, as in `[Fact, SuppressMessage(...)]`, and a
+wrapped suppression whose closing `)]` is followed by a member on the same line. Knowing where one
+attribute ends, or what follows it, means parsing C#, so it stays silent rather than guessing.
+
+`--fix` reports what it declines and exits non-zero for it, rather than printing what it rewrote and
+stopping at 0 — a fixer that leaves a violation behind and answers like a clean tree sends a
+developer to commit what the same script, in check mode, is about to refuse.
 
 ## An `if` wrapping the rest of a method becomes a guard
 

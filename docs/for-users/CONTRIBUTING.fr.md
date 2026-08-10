@@ -100,11 +100,14 @@ unique cesse d'être la plus lisible, parce qu'elles portent de la logique ; une
 parcourt pour savoir quelle règle et se survole pour savoir pourquoi, jamais pour sa logique — la
 replier ne fait rien gagner et coûte la comparaison.
 
-`tools/style/lint-layout.sh` signale ce qui n'y répond pas, `--fix` le réécrit, et la CI l'exécute
-sans l'option — en lançant d'abord le test du vérificateur, pour que « rien à signaler » veuille
-dire quelque chose. C'est donc vérifié plutôt que retenu. Il reste muet sur une forme qu'il ne sait
-pas lire : une suppression qui partage ses crochets avec un autre attribut, comme dans
-`[Fact, SuppressMessage(...)]`, où savoir quoi joindre suppose d'analyser le C#.
+`tools/style/lint-layout.sh` signale ce qui n'y répond pas, `--fix` réécrit ce qu'il peut et nomme ce
+qu'il ne peut pas — en sortant non nul pour cela, afin qu'une exécution ayant laissé une violation
+derrière elle ne se lise pas comme un arbre propre — et la CI l'exécute sans l'option, en lançant
+d'abord le test du vérificateur, pour que « rien à signaler » veuille dire quelque chose. C'est donc
+vérifié plutôt que retenu. Il reste muet sur deux formes qu'il ne sait pas lire : une suppression qui
+partage ses crochets avec un autre attribut, comme dans `[Fact, SuppressMessage(...)]`, et une
+suppression repliée dont le `)]` de fermeture est suivi d'un membre sur la même ligne. Dans les deux
+cas, savoir quoi joindre suppose d'analyser le C#.
 
 ## Branches
 

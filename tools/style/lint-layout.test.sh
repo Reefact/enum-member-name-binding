@@ -1,10 +1,15 @@
 #!/usr/bin/env bash
 #
 # The checker guards the codebase, so something has to guard the checker. Not ceremony: it has
-# shipped two bugs already, one in each direction. It tested for `else\b`, and `\b` is a backspace
-# in awk rather than a word boundary, so every `if`/`else` in the repository was reported as
-# collapsible. Then it skipped any body containing a brace — meant for nested blocks, and in fact
-# every interpolated string, so five guards were never reported at all.
+# shipped four bugs already, in both directions and in both modes. It tested for `else\b`, and `\b`
+# is a backspace in awk rather than a word boundary, so every `if`/`else` in the repository was
+# reported as collapsible. Then it skipped any body containing a brace — meant for nested blocks,
+# and in fact every interpolated string, so five guards were never reported at all. Then it asked
+# whether a line *ended* in `)]` where it meant to ask whether the attribute closed there, so a
+# suppression already on one line but carrying a trailing comment read as a wrapped one — and --fix
+# joined it to everything up to the next `)]`, deleting the members in between and folding them
+# behind the comment. And --fix, over a site it declined to rewrite, printed "Nothing to report."
+# and exited 0 while the same file in check mode exited 1.
 #
 # Neither shows in a green build. The shapes a checker must stay silent about, and the ones it must
 # not miss, are both invisible in its output, so they are named here instead.
@@ -165,6 +170,24 @@ class Fixture {
                 Justification = "Inside a raw string.")]
             """;
     }
+
+    // Left alone: already on one line, and the trailing comment does not make it a wrapped one.
+    // The two members under it are the ones --fix deleted when it did: the forward scan ran from
+    // here to the next line ending in `)]`, and everything between was folded behind this comment.
+    [SuppressMessage("Category", "RULE0009", Justification = "One line, then a comment.")] // and a note
+    void OneLineThenAComment() { }
+
+    void FirstMemberBelowIt() { }
+
+    [Obsolete("the line the forward scan used to run to")]
+    void SecondMemberBelowIt() { }
+
+    // Left alone: wrapped, but it closes on a line that carries a member as well, so joining would
+    // fold that member onto the attribute. The mirror of the shared brackets above, and unread for
+    // the same reason — knowing where the attribute ends is one thing, knowing what follows it on
+    // its last line is the same question asked at the other end.
+    [SuppressMessage("Category", "RULE0010",
+        Justification = "Closes with a member after it.")] void ClosesWithAMemberAfterIt() { }
 }
 FIXTURE
 
@@ -227,8 +250,28 @@ fi
 # The fixer has to produce what the checker printed, and leave every other case untouched.
 before="$(wc -l < "$work/Fixture.cs")"
 unterminated_before="$(wc -l < "$work/Unterminated.cs")"
-"$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" > /dev/null
+
+set +e
+fix_output="$("$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" 2>&1)"
+fix_status=$?
+set -e
+
 after="$(wc -l < "$work/Fixture.cs")"
+
+# A site the fixer declines is still a violation, so the run that declined it has to answer what the
+# check run answers. Exit 0 here is the shape this whole file exists to catch: the developer is told
+# the tree is clean, and the hook — which runs the checker in check mode — then refuses the commit.
+if [[ "$fix_status" -ne 1 ]]; then
+    echo "FAIL: --fix exited $fix_status over a site it declined, expected 1"
+    echo "$fix_output"
+    exit 1
+fi
+
+if ! grep -q 'Unterminated.cs:2: a suppression belongs on one line; this one never closes' <<< "$fix_output"; then
+    echo "FAIL: --fix did not name the site it left alone"
+    echo "$fix_output"
+    exit 1
+fi
 
 if [[ "$((before - after))" -ne 9 ]]; then
     echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 9"
@@ -285,6 +328,24 @@ if ! grep -q '^            \[SuppressMessage("Category", "RULE0006",$' "$work/Fi
     exit 1
 fi
 
+if ! grep -q '^    \[SuppressMessage("Category", "RULE0009", Justification = "One line, then a comment.")\] // and a note$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix rewrote a one-line suppression carrying a trailing comment"
+    exit 1
+fi
+
+# The assertion the other one cannot make: a rewrite that swallowed these would leave the attribute
+# above intact, so only the members it ate say whether the forward scan ran.
+if ! grep -q '^    void FirstMemberBelowIt() { }$' "$work/Fixture.cs" \
+|| ! grep -q '^    void SecondMemberBelowIt() { }$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix deleted the members below a one-line suppression carrying a trailing comment"
+    exit 1
+fi
+
+if ! grep -q '^        Justification = "Closes with a member after it.")\] void ClosesWithAMemberAfterIt() { }$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix rewrote a suppression that closes on a line carrying a member"
+    exit 1
+fi
+
 if ! grep -q '^\[assembly: SuppressMessage("Category", "RULE0007", Justification = "Assembly level, and still one line.")\]$' "$work/Assembly.cs"; then
     echo "FAIL: --fix did not write the assembly-level suppression as one line"
     exit 1
@@ -300,4 +361,11 @@ if ! "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" >
     exit 1
 fi
 
-echo "ok — nine sites reported, one refused, rewritten, and clean afterwards."
+# And the other half of the exit code, so that making --fix answer 1 for a declined site did not
+# quietly make it answer 1 for every run: over a clean tree it still says nothing and succeeds.
+if ! "$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" > /dev/null; then
+    echo "FAIL: --fix reports a site on a tree the checker calls clean"
+    exit 1
+fi
+
+echo "ok — nine sites reported, one refused and named, rewritten, and clean afterwards."
