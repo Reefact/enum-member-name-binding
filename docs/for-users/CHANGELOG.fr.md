@@ -208,7 +208,7 @@ brûler sans rien perdre.
 - La documentation est désormais bilingue, suivant la convention utilisée dans les projets Reefact :
   chaque page existe en `Xxx.en.md` et `Xxx.fr.md` sous `docs/for-users`, et s'ouvre sur un lien vers sa
   contrepartie. Le README garde son nom et sa place, puisque NuGet le rend ; sa version française est
-  `docs/for-users/README.fr.md`, et le changelog suit la même règle. Des tests échouent sur une page qui
+  `README.fr.md`, et le changelog suit la même règle. Des tests échouent sur une page qui
   n'existe que dans une langue, sur une page qui n'offre pas l'autre, et sur une traduction dont la
   structure ne correspond plus à celle de l'original — les mots sont traduits, les sections, les
   puces, les lignes de tableau et les extraits ne sont ni retirés ni ajoutés. C'est ce dernier point
@@ -220,6 +220,14 @@ brûler sans rien perdre.
   aussi ce que lisent les suites — le contrat de compilation couvre `for-users` et rien d'autre, si
   bien qu'une page de mainteneur écrite demain en sort sans que personne ait à l'exclure. Les help
   links des analyseurs ont suivi les pages de règles qu'ils visent, vers `docs/for-users/rules/`.
+
+- Chaque dossier de documentation porte un index — le `README.md` que GitHub affiche quand on
+  l'ouvre — si bien que naviguer dans l'arborescence ne dépend jamais de deviner un nom de fichier.
+  Un index est la seule page dont tout le travail est d'être complète, et la seule dont rien d'autre
+  ne verrait qu'elle a décroché : un test tient donc chacun au dossier dont il parle, et une page
+  ajoutée à côté d'un index qui ne la liste pas casse le build. Le jumeau français de la page
+  d'accueil est remonté à la racine du dépôt, à côté de l'anglais, parce que `README.fr.md` sous
+  `docs/for-users` occupait le nom dont l'index de ce dossier avait besoin.
 
 ### Limitations connues
 

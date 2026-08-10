@@ -38,8 +38,14 @@ namespace AspNetCore.EnumMemberNameBinding.Documentation.Tests;
 internal static partial class DocumentationCorpus {
 
     /// <summary>The front page, which GitHub and NuGet both render from this fixed name.</summary>
+    /// <remarks>
+    /// Its translation sits beside it rather than under <c>docs</c>, unlike the other three root
+    /// pages: <c>README.md</c> is the name GitHub renders for a directory, so leaving a translation
+    /// of the front page under <c>docs/for-users</c> would have occupied the one name that folder's
+    /// own index needs.
+    /// </remarks>
     private const string FrontPage = "README.md";
-    private const string FrenchFrontPage = "docs/for-users/README.fr.md";
+    private const string FrenchFrontPage = "README.fr.md";
 
     /// <summary>
     /// The translations that live under <c>docs</c> only because GitHub insists their English
@@ -70,7 +76,7 @@ internal static partial class DocumentationCorpus {
     public static TheoryData<string, string> TranslationPairs {
         get {
             TheoryData<string, string> data = new();
-            foreach (DocumentationPage page in Pages.Where(page => page.RelativePath.EndsWith(".en.md", StringComparison.Ordinal) || page.RelativePath == FrontPage)) {
+            foreach (DocumentationPage page in Pages.Where(page => !page.RelativePath.EndsWith(".fr.md", StringComparison.Ordinal))) {
                 data.Add(page.RelativePath, TwinOf(page.RelativePath));
             }
 
@@ -83,22 +89,34 @@ internal static partial class DocumentationCorpus {
     }
 
     /// <summary>
-    /// Where a page's translation belongs. The front pages keep the bare names GitHub and NuGet
-    /// render; every other page carries its language in its file name.
+    /// Where a page's translation belongs.
     /// </summary>
+    /// <remarks>
+    /// Most pages carry their language in the file name. The exceptions are the pages GitHub renders
+    /// from a fixed name — the front page, and the index of every documentation folder — which keep
+    /// the bare <c>README.md</c> and pair with the <c>README.fr.md</c> beside them.
+    /// </remarks>
     public static string TwinOf(string relativePath) {
         ArgumentNullException.ThrowIfNull(relativePath);
 
-        if (relativePath == FrontPage) { return FrenchFrontPage; }
-        if (relativePath == FrenchFrontPage) { return FrontPage; }
         if (relativePath.EndsWith(".en.md", StringComparison.Ordinal)) { return relativePath[..^".en.md".Length] + ".fr.md"; }
-        if (relativePath.EndsWith(".fr.md", StringComparison.Ordinal)) { return relativePath[..^".fr.md".Length] + ".en.md"; }
+        if (relativePath.EndsWith(".md", StringComparison.Ordinal) && !relativePath.EndsWith(".fr.md", StringComparison.Ordinal)) { return relativePath[..^".md".Length] + ".fr.md"; }
 
-        throw new ArgumentException($"{relativePath} carries no language, so it has no twin.", nameof(relativePath));
+        // Going the other way, the stem alone does not say which of the two spellings the English
+        // page uses — `analyzers.en.md` carries its language, `README.md` cannot — so the twin is the
+        // one that exists. Both are returned as a path rather than a promise: whether it is there is
+        // what the pairing test asserts.
+        if (relativePath.EndsWith(".fr.md", StringComparison.Ordinal)) {
+            string stem = relativePath[..^".fr.md".Length];
+
+            return File.Exists(Path.Combine(RepositoryRoot.FullName, stem + ".en.md")) ? stem + ".en.md" : stem + ".md";
+        }
+
+        throw new ArgumentException($"{relativePath} is not a documentation page, so it has no twin.", nameof(relativePath));
     }
 
     private static bool IsInScope(string relativePath) {
-        if (relativePath == FrontPage) { return true; }
+        if (relativePath is FrontPage or FrenchFrontPage) { return true; }
         if (!relativePath.StartsWith("docs/for-users/", StringComparison.Ordinal)) { return false; }
 
         return !RelocatedRootTranslations.Contains(relativePath, StringComparer.Ordinal);

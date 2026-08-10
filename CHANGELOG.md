@@ -191,7 +191,7 @@ first one to make the trip is one that costs nothing to burn.
 - The documentation is now bilingual, following the convention used across Reefact projects: every
   page exists as `Xxx.en.md` and `Xxx.fr.md` under `docs/for-users`, each opening with a link to its
   counterpart. The README keeps its name and its place, since NuGet renders it; its French version is
-  `docs/for-users/README.fr.md`, and the changelog follows the same rule. Tests fail on a page that exists in
+  `README.fr.md`, and the changelog follows the same rule. Tests fail on a page that exists in
   only one language, on a page that does not offer the other one, and on a translation whose
   structure no longer lines up with the original — words are translated, sections, bullets, table
   rows and snippets are neither dropped nor added. That last one is what catches an entry appended to
@@ -203,6 +203,13 @@ first one to make the trip is one that costs nothing to burn.
   compile contract covers `for-users` and nothing else, so a maintainer page written tomorrow is out
   of it without anyone remembering to exclude it. The analyzers' help links moved with the rule pages
   they point at, to `docs/for-users/rules/`.
+
+- Every documentation folder carries an index — the `README.md` GitHub renders when someone opens
+  it — so navigating the tree never depends on guessing a file name. An index is the one page whose
+  whole job is to be complete and the one nothing else would notice going stale, so a test holds
+  each one to the folder it speaks for: a page added beside an index that does not list it fails the
+  build. The front page's French twin moved to the repository root, beside the English one, because
+  `README.fr.md` under `docs/for-users` was occupying the name that folder's own index needed.
 
 ### Known limitations
 

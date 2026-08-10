@@ -56,20 +56,20 @@
       The pages that cannot live under docs/, linked in so the project holds the whole corpus that
       DocumentationLinksTests holds to the translation contract. GitHub renders the repository's
       front page, its changelog, its contributing guidelines and its security policy from fixed
-      paths at the root, and renders a directory's README.md and nothing else — so these five stay
-      where they are and appear here as links. Their French counterparts need no entry: four of them
-      already sit under docs/, where the glob above finds them.
+      paths at the root, and renders a directory's README.md and nothing else — so these stay where
+      they are and appear here as links.
 
-      The four root pages are linked INTO for-users rather than at the top of this project, so each
-      lands beside the translation the glob already put there. A pair that has to be read together
-      is a pair that should not be a folder apart in the one view built for reading it.
+      Every link goes under a folder named after where the file really is, and that is now load
+      bearing rather than tidy: since each documentation folder carries a README.md index of its
+      own, linking the repository's README to this project's root — or into for-users — would put
+      two different files at one display path. The name says which README a reader is opening.
     -->
-    <None Include="..\README.md" Link="for-users\README.md" />
-    <None Include="..\CHANGELOG.md" Link="for-users\CHANGELOG.md" />
-    <None Include="..\CONTRIBUTING.md" Link="for-users\CONTRIBUTING.md" />
-    <None Include="..\SECURITY.md" Link="for-users\SECURITY.md" />
-    <!-- Linked under their real path rather than flattened: this pair documents a test harness, and
-         a reader who opens it should see where it actually lives. -->
+    <None Include="..\README.md" Link="repository-root\README.md" />
+    <None Include="..\README.fr.md" Link="repository-root\README.fr.md" />
+    <None Include="..\CHANGELOG.md" Link="repository-root\CHANGELOG.md" />
+    <None Include="..\CONTRIBUTING.md" Link="repository-root\CONTRIBUTING.md" />
+    <None Include="..\SECURITY.md" Link="repository-root\SECURITY.md" />
+    <!-- This pair documents a test harness, and a reader who opens it should see where it lives. -->
     <None Include="..\tests\PackageSmokeTest\README.md" Link="tests\PackageSmokeTest\README.md" />
     <None Include="..\tests\PackageSmokeTest\README.fr.md" Link="tests\PackageSmokeTest\README.fr.md" />
   </ItemGroup>

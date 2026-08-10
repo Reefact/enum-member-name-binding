@@ -31,20 +31,19 @@ public sealed partial class DocumentationLinksTests {
     private const string EnglishFrontPage = "README.md";
 
     /// <summary>
-    /// The pages GitHub and NuGet expect at a fixed name keep it, and their French version sits
-    /// beside them; every other page follows the file-suffix convention from inside <c>docs</c>.
+    /// The three pages whose two halves do not sit side by side: GitHub only recognises them at the
+    /// repository root, so the English original stays there and the translation joins the rest of
+    /// the user documentation. Every other pair is found by name — <c>Xxx.en.md</c> beside
+    /// <c>Xxx.fr.md</c>, or a <c>README.md</c> beside the <c>README.fr.md</c> in the same directory.
     /// </summary>
-    private static readonly (string English, string French)[] RootPages = [
-        (EnglishFrontPage, "docs/for-users/README.fr.md"),
+    private static readonly (string English, string French)[] RelocatedPairs = [
         ("CHANGELOG.md", "docs/for-users/CHANGELOG.fr.md"),
         // GitHub links "Contributing guidelines" from the issue and pull-request forms when it
         // finds this at the root; its translation follows the others into docs.
         ("CONTRIBUTING.md", "docs/for-users/CONTRIBUTING.fr.md"),
         // GitHub only offers "Report a vulnerability" when it finds the policy at one of a few fixed
         // paths, of which the repository root is one; its translation follows the others into docs.
-        ("SECURITY.md", "docs/for-users/SECURITY.fr.md"),
-        // GitHub renders a directory's README.md and nothing else, so this one stays where it is.
-        ("tests/PackageSmokeTest/README.md", "tests/PackageSmokeTest/README.fr.md")
+        ("SECURITY.md", "docs/for-users/SECURITY.fr.md")
     ];
 
     public static TheoryData<string> Pages {
@@ -147,10 +146,16 @@ public sealed partial class DocumentationLinksTests {
         }
     }
 
+    /// <summary>
+    /// A page under <c>docs</c> says which language it is in, with one exception that is not a
+    /// loophole: a folder's index has to be called <c>README.md</c>, because that is the only name
+    /// GitHub renders when someone opens the folder. Its French half is <c>README.fr.md</c>, which
+    /// carries its language like everything else.
+    /// </summary>
     [Fact]
     public void every_page_under_docs_declares_its_language() {
-        foreach (string page in MarkdownPages().Where(page => page.StartsWith("docs/", StringComparison.Ordinal))) {
-            Check.WithCustomMessage($"{page} carries no language suffix; pages under docs are named Xxx.en.md and Xxx.fr.md.")
+        foreach (string page in MarkdownPages().Where(page => page.StartsWith("docs/", StringComparison.Ordinal) && !IsIndexOrFrontPage(page))) {
+            Check.WithCustomMessage($"{page} carries no language suffix; pages under docs are named Xxx.en.md and Xxx.fr.md, and only a folder index may be README.md.")
                  .That(page.EndsWith(".en.md", StringComparison.Ordinal) || page.EndsWith(".fr.md", StringComparison.Ordinal)).IsTrue();
         }
     }
@@ -197,7 +202,7 @@ public sealed partial class DocumentationLinksTests {
     }
 
     private static IEnumerable<(string English, string French)> Pairs() {
-        foreach ((string english, string french) in RootPages) {
+        foreach ((string english, string french) in RelocatedPairs) {
             yield return (english, french);
         }
 
@@ -205,10 +210,22 @@ public sealed partial class DocumentationLinksTests {
             yield return (page, page[..^".en.md".Length] + ".fr.md");
         }
 
-        string[] rooted = [.. RootPages.Select(pair => pair.French)];
-        foreach (string page in MarkdownPages().Where(page => page.EndsWith(".fr.md", StringComparison.Ordinal) && !rooted.Contains(page))) {
-            yield return (page[..^".fr.md".Length] + ".en.md", page);
+        // A page GitHub renders from a fixed name — the front page, and the index of every folder —
+        // cannot carry its language, so it pairs with the README.fr.md beside it.
+        foreach (string page in MarkdownPages().Where(IsIndexOrFrontPage)) {
+            yield return (page, page[..^".md".Length] + ".fr.md");
         }
+
+        string[] relocated = [.. RelocatedPairs.Select(pair => pair.French)];
+        foreach (string page in MarkdownPages().Where(page => page.EndsWith(".fr.md", StringComparison.Ordinal) && !relocated.Contains(page))) {
+            string stem = page[..^".fr.md".Length];
+
+            yield return (File.Exists(Path.Combine(RepositoryRoot.FullName, stem + ".en.md")) ? stem + ".en.md" : stem + ".md", page);
+        }
+    }
+
+    private static bool IsIndexOrFrontPage(string page) {
+        return Path.GetFileName(page) == "README.md";
     }
 
     /// <summary>
