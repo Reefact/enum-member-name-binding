@@ -127,6 +127,15 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **A registration that failed could still change a running application.** The contract enums were
+  written into the record the model binder provider reads on every request *before* the service
+  collection was configured — so a call made after `Build()`, where that collection is read-only,
+  threw `InvalidOperationException` having already recorded them. The application then bound those
+  enums by their declared names and serialized them as numbers, no converter having gone with them:
+  the exact bind/serialize divergence this package exists to remove, produced by a call the caller
+  was told had failed. The record is now filled last, once nothing is left that can throw, which is
+  what the code already claimed — "the registration did not happen" has to be true rather than
+  nearly true.
 - **The OpenAPI `[Flags]` pattern described neither half of the vocabulary exactly.** A member left
   unannotated keeps its C# name, which the binder matches ignoring case, but the pattern listed it as
   written — so `delete`, `DELETE` and `read, delete` were excluded from the document while the server
@@ -241,6 +250,11 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Documentation
 
+- **The trimming section put `AddEnumMemberNameBinding` in the wrong bucket.** It listed the MVC
+  registration as carrying `[RequiresUnreferencedCode]` only, while the entry point has carried
+  `[RequiresDynamicCode]` too since it was written — it has to, since it reaches the construction of
+  the generic JSON converters, which the same sentence names as needing both. Corrected on both
+  language pages, which carried the identical claim.
 - The README was split. It had grown to a length nobody reads before adopting a package, so the front
   page now carries the problem, the installation, one example, the channel table, the guarantees and
   the two limitations worth knowing before adopting — the rest moved, unabridged, to

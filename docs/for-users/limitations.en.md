@@ -121,11 +121,15 @@ having the warnings suppressed, so a consumer compiling for either gets an accur
 of a silent failure at run time.
 
 The two constraints are applied separately, since they are not the same constraint: reading an enum's
-metadata needs reflection but generates no code. `GetPublicNames`, `IsFlagsContract`, the MVC
-registration and the whole OpenAPI package carry `[RequiresUnreferencedCode]` only; `GetPublicName`,
-the `[Flags]` formatting path and the construction of the generic JSON converters carry both.
+metadata needs reflection but generates no code. `GetPublicNames`, `IsFlagsContract` and the whole
+OpenAPI package carry `[RequiresUnreferencedCode]` only; `GetPublicName`, the `[Flags]` formatting
+path, the construction of the generic JSON converters — and therefore `AddEnumMemberNameBinding`
+itself, which reaches them — carry both.
 
 ## Call it at start-up
 
-ASP.NET Core caches the model binder it builds for a type on first use, so a registration made after
-the first request has no effect.
+Registration configures the container, so it belongs before `WebApplicationBuilder.Build()`. After
+that the service collection is read-only and the call throws — having recorded nothing, which is the
+point: a failed call never leaves the application binding an enum it named. Later still, ASP.NET Core
+has cached the model binder it built for a type on first use, so a parameter already bound would not
+see a new registration even if one could be made.
