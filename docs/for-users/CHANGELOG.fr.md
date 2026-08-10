@@ -61,7 +61,11 @@ brûler sans rien perdre.
   regardent l'attribut avant de découper. Les refuser aurait rendu une énumération enregistrée plus
   stricte que la même énumération laissée tranquille.
 - Une suite de tests de parité qui utilise `JsonSerializer` lui-même comme oracle — pour chaque entrée
-  candidate, le résultat HTTP doit être égal au résultat obtenu par le corps.
+  candidate, le résultat HTTP doit être égal au résultat obtenu par le corps. Elle couvre tous les
+  types sous-jacents qu'une `enum` peut avoir, et pas seulement `int` : l'analyse élargit chaque
+  membre en `ulong`, les combine par OU puis rétrécit le résultat, et l'extension de signe comme le
+  bit de poids fort sont exactement ce que cette arithmétique peut perdre — ce qu'une énumération
+  `int` sans membre négatif n'éprouve ni l'un ni l'autre.
 - `EMN0006`, qui signale un nom public qu'au moins un canal ne peut pas transporter. L'ensemble
   interdit a été établi en envoyant chaque caractère sur les cinq canaux face à un serveur en
   fonctionnement, pas lu dans une spécification : une barre oblique est refusée dans un segment de
