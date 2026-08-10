@@ -69,8 +69,12 @@ first one to make the trip is one that costs nothing to burn.
   name except its own. Those five are errors; `EMN0006` above is the one warning, because a
   portability limit depends on the channels an API actually binds from, whereas the other five report
   an ambiguity that is wrong on every channel. An enum that declares no contract is never analysed.
-- CI checks that fail the build if the produced package does not declare its
-  `Microsoft.AspNetCore.App` framework reference, or does not ship the analyzers.
+- A check on what is inside both published packages, run by CI and again by the release from one
+  shared script. It fails the build if the main package does not declare its
+  `Microsoft.AspNetCore.App` framework reference or does not ship the analyzers, and if the
+  companion does not depend on the main package, does not ship the `build/*.targets` a consumer
+  cannot do without, or declares a `Microsoft.OpenApi` below the floor that avoids
+  GHSA-v5pm-xwqc-g5wc. The companion was previously verified by nothing.
 - A package smoke test, run on both SDKs in CI and again as the last gate before publishing. It packs
   into a local feed, compiles an application that consumes the result by `PackageReference`, and
   drives it over HTTP — covering the ground a `ProjectReference` skips entirely: the framework

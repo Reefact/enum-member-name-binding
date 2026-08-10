@@ -66,18 +66,12 @@ jobs:
 
       # The previous generation of this library shipped for years without its ASP.NET Core
       # framework reference, because the package was assembled by a hand-written .nuspec.
-      # This check makes that class of mistake impossible to merge.
-      - name: Verify the package declares its ASP.NET Core framework reference
-        run: |
-          set -euo pipefail
-          package=$(ls artifacts/AspNetCore.EnumMemberNameBinding.[0-9]*.nupkg)
-          unzip -p "$package" 'AspNetCore.EnumMemberNameBinding.nuspec' > /tmp/packed.nuspec
-          echo "--- packed nuspec ---"
-          cat /tmp/packed.nuspec
-          grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' /tmp/packed.nuspec \
-            || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
-          unzip -l "$package" | grep -q 'analyzers/dotnet/cs/AspNetCore.EnumMemberNameBinding.Analyzers.dll' \
-            || { echo "::error::the package does not ship the analyzers"; exit 1; }
+      # This check makes that class of mistake impossible to merge. It is a script rather than
+      # inline bash so the release runs the same one — a check written out twice is a check that is
+      # eventually only true once, and the companion package is what that cost: it was published
+      # verified by nothing while this step read the main package only.
+      - name: Verify what is inside both packages
+        run: tools/packaging/verify-packages.sh artifacts
 
       # Everything above reaches the library through a ProjectReference, which never exercises the
       # package: not the framework reference, not the analyzers' place inside it, not the MSBuild
@@ -119,6 +113,11 @@ jobs:
   # because that one is about what the C# looks like, and separate from `build` because none of this
   # needs an SDK.
   #
+  # Five scripts, over a thousand lines, and fourteen inline `run:` blocks, read by nothing until
+  # now — in a repository that lints its C# down to the width of a guard. shellcheck ships on the
+  # runner image, and actionlint carries its own shellcheck pass over the inline blocks, which is
+  # the half no script linter can reach.
+  #
   # The changelog extractor earns a test more than most: it runs once, inside the release workflow,
   # at the one moment nothing can be taken back, and every way it can be wrong is silent. A section
   # that comes back empty reads exactly like a release with nothing to report.
@@ -131,6 +130,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Static before behavioural, because a failing step stops the ones after it and a script
+      # shellcheck rejects is one whose test result says less.
+      - name: Every tracked shell script
+        run: git ls-files '*.sh' | xargs shellcheck
+
+      # Pinned by digest rather than by version, and verified before it runs: this downloads an
+      # executable and hands it the repository. The tag is only a comment, the way the actions above
+      # carry theirs.
+      - name: The workflows, and the shell inside them
+        env:
+          ACTIONLINT_VERSION: '1.7.7'
+          ACTIONLINT_SHA256: '023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757'
+        run: |
+          set -euo pipefail
+          url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o actionlint.tar.gz "$url"
+          echo "${ACTIONLINT_SHA256}  actionlint.tar.gz" | sha256sum --check --strict
+          tar -xzf actionlint.tar.gz actionlint
+          ./actionlint -color
 
       - name: The changelog extractor returns what it must and refuses what it must
         run: tools/release-notes/changelog-section.test.sh
