@@ -33,8 +33,8 @@ concurrency:
 # The reasons live in the repository rather than as clicks in the SonarQube UI, where they would be
 # invisible to a reader and lost if the project were ever recreated. The line drawn is between a
 # rule whose premise does not hold here — silenced — and a rule that is right and simply not acted
-# on yet, which stays visible as known debt. Four findings are deliberately in that second category:
-# three S3776 cognitive-complexity reports and one S4456.
+# on yet, which stays visible as known debt. That second category is empty today: the three S3776
+# cognitive-complexity reports and the one S4456 it used to name have all been acted on since.
 #
 #   shell:S5332 "using clear-text protocols" on tests/PackageSmokeTest/run.sh
 #     The line chooses no protocol. It greps `http://127.0.0.1:<port>` out of the log Kestrel writes
