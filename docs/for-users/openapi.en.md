@@ -28,6 +28,20 @@ companion fixes. And for a `[Flags]` enum it deliberately emits no value at all 
 cannot express combinations, so the companion emits a regular expression instead, which is both
 precise and machine-checkable.
 
+## Only the enums this application registered
+
+The companion describes an enum when `AddEnumMemberNameBinding` registered it, not merely because it
+carries `[JsonStringEnumMemberName]`. The two read as the same thing and are not: an annotated enum
+nobody registered binds by its C# names and serializes as a number, so announcing its declared names
+as a string would be wrong about the query string *and* about the body, and a client generated from
+that document would send requests the server answers 400 to.
+
+Used on its own — by an application that registers its own `JsonStringEnumConverter<T>` and never
+calls `AddEnumMemberNameBinding` — there is no registration to consult, and every contract enum is
+described as before. A missing record is not an empty one: what the record rules out is the case
+where one exists and the enum is not in it, which is the only case where document and server can be
+known to disagree.
+
 ## The `[Flags]` pattern
 
 The pattern covers exactly what the binder accepts, whitespace and trailing comma included — see

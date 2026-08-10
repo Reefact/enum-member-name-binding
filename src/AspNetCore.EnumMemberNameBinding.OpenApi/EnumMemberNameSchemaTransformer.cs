@@ -6,12 +6,14 @@ using System.Text.RegularExpressions;
 using DiagnosticCatalog.Trimming;
 
 using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 
 namespace AspNetCore.EnumMemberNameBinding.OpenApi;
 
 /// <summary>
-/// Rewrites the schema of every contract enum so the document describes what the server accepts.
+/// Rewrites the schema of every contract enum this application registered, so the document describes
+/// what the server accepts.
 /// </summary>
 /// <remarks>
 /// Three things are corrected:
@@ -45,6 +47,8 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
         ArgumentNullException.ThrowIfNull(context);
 
         Type type = context.JsonTypeInfo.Type;
+        if (!IsDescribable(context, type)) { return Task.CompletedTask; }
+
         IReadOnlyList<string>? names = EnumMemberNames.GetPublicNames(type);
         if (names is null || names.Count == 0) { return Task.CompletedTask; }
 
@@ -62,6 +66,32 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
         schema.Enum = [.. names.Select(static name => (JsonNode)JsonValue.Create(name))];
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Whether this application asked for <paramref name="type" /> to be bound by its declared names.
+    /// </summary>
+    /// <remarks>
+    /// Carrying <c>[JsonStringEnumMemberName]</c> is not the same as being covered, and treating the
+    /// two as one is how a document comes to promise what the server refuses: an annotated enum that
+    /// nobody registered binds by its C# names and serializes as a number, so describing it as a
+    /// string with its declared names is wrong twice over, and a generated client sends requests that
+    /// answer 400.
+    /// <para>
+    /// A missing record is not an empty one. This package is usable on its own — a minimal API that
+    /// registers its own <c>JsonStringEnumConverter&lt;T&gt;</c> and never calls
+    /// <c>AddEnumMemberNameBinding</c> has no record to consult, and its document is still worth
+    /// correcting. What the record rules out is the case where one exists and this type is not in it,
+    /// which is the only case where the two can be known to disagree.
+    /// </para>
+    /// </remarks>
+    private static bool IsDescribable(OpenApiSchemaTransformerContext context, Type type) {
+        EnumMemberNameBindingRegistrations? registered = context.ApplicationServices.GetService<EnumMemberNameBindingRegistrations>();
+        if (registered is null) { return true; }
+
+        Type underlying = Nullable.GetUnderlyingType(type) ?? type;
+
+        return registered.Contains(underlying);
     }
 
     /// <summary>
