@@ -33,7 +33,9 @@
 #   tools/style/lint-layout.sh [--fix] [path ...]
 #
 # With no path, every tracked C# file outside obj/ and bin/. Exits 1 when something is reported,
-# which is what makes it usable from CI. `--fix` rewrites the files instead of reporting.
+# which is what makes it usable from CI. `--fix` rewrites the files instead of reporting. Exit 2 is
+# a third answer, and separate on purpose: it says the checker is broken rather than the tree, which
+# a CI log reading exit 1 would take for an ordinary dirty tree.
 
 set -euo pipefail
 
@@ -190,6 +192,17 @@ scan() {
     ' "$file"
 }
 
+# An action neither `case` below recognises means scan() learned to emit one and only one of the
+# two was told. Without this the run stays green while the site is silently skipped — success
+# reported for work not done, which this repository has already been caught by three times. Exit 2
+# rather than 1, so a CI log cannot read a broken checker as an ordinary dirty tree.
+bug() {
+    local message="$1"
+
+    printf 'lint-layout: %s\n' "$message" >&2
+    exit 2
+}
+
 # The same four values in the same order as apply() below. Named rather than read as $1..$4
 # because the two are called one after the other in the same loop, and two sibling helpers taking
 # file, line and action in two different orders is a bug waiting for whoever edits one of them.
@@ -202,6 +215,7 @@ report_of() {
         joinvalue)   printf '%s:%s: this value fits beside its name; do not break after the =\n    %s\n' "$file" "$line" "$collapsed" ;;
         suppression) printf '%s:%s: a suppression belongs on one line, so a duplicate is seen rather than read\n    %s\n' "$file" "$line" "$collapsed" ;;
         unclosed)    printf '%s:%s: a suppression belongs on one line; this one never closes\n' "$file" "$line" ;;
+        *)           bug "unknown action '$action' reported at $file:$line" ;;
     esac
 }
 
@@ -238,6 +252,9 @@ apply() {
                 NR == target + 1 { next }
                 { print }
             ' "$file" > "$file.tmp"
+            ;;
+        *)
+            bug "unknown action '$action' to apply at $file:$line"
             ;;
     esac
 
