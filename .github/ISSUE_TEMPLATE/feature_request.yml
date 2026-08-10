@@ -1,0 +1,42 @@
+name: Feature request
+description: Something the library should do, and does not.
+labels: ["enhancement"]
+
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Two gaps are known and written down rather than open: Minimal API parameters, which cannot
+        be supported because their binding needs a `static TryParse` or `BindAsync` on the bound
+        type and an `enum` can carry neither, and link generation, which formats route values
+        without consulting `TypeDescriptor`. Both, with what to do instead, are in
+        [limitations](https://github.com/Reefact/enum-member-name-binding/blob/main/docs/for-users/limitations.en.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >-
+        What are you trying to do, and where does the library get in the way? Describe the situation
+        rather than the change you have in mind — a proposal is much easier to judge once the thing
+        it is answering is clear, and sometimes the situation has an answer that already exists.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like it to do
+      description: If you have a shape in mind, including how it would look at the call site.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: >-
+        Workarounds you found and why they are not enough. One that works and is merely unpleasant
+        is worth mentioning too — it says how much the gap actually costs.
+    validations:
+      required: false
