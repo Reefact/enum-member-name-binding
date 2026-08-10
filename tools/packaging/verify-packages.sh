@@ -33,12 +33,17 @@ OPENAPI_FLOOR="2.11.0"
 failures=0
 
 fail() {
-    echo "::error::$1"
+    local message="$1"
+
+    # stderr, not stdout: this is a failure, and the caller may be reading the pass lines.
+    echo "::error::$message" >&2
     failures=1
 }
 
 pass() {
-    printf '   ok   %s\n' "$1"
+    local message="$1"
+
+    printf '   ok   %s\n' "$message"
 }
 
 # A package id, not a prefix: the two ids share one, so a plain glob on the main id matches the
@@ -50,11 +55,15 @@ pass() {
 # verification that cannot fail is worse than none: this one was caught by deleting a package and
 # watching the script pass.
 package_at() {
-    find "$ARTIFACTS" -maxdepth 1 -name "$1.[0-9]*.nupkg" -not -name '*.symbols.nupkg' -print -quit
+    local id="$1"
+
+    find "$ARTIFACTS" -maxdepth 1 -name "$id.[0-9]*.nupkg" -not -name '*.symbols.nupkg' -print -quit
 }
 
 nuspec_of() {
-    unzip -p "$1" "*.nuspec"
+    local package="$1"
+
+    unzip -p "$package" "*.nuspec"
 }
 
 echo "== $MAIN_ID"
