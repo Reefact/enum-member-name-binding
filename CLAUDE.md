@@ -131,5 +131,7 @@ and says what it should. Read the artifact, query the API, count the findings.
 
 `.github/pull_request_template.md` asks about the public API and about the French counterpart of any
 documentation change. Both are enforced by tests that fail the build — the committed API baseline,
-and the structural comparison in `DocumentationLinksTests`. Ticking them without doing them turns a
-failing build into a puzzle.
+and `AspNetCore.EnumMemberNameBinding.Documentation.Tests`, which holds four contracts at once:
+every link resolves, every page is paired with a translation of the same structure, every C# sample
+compiles and obeys the rules this library ships, and every folder's index lists what is beside it.
+Ticking those boxes without doing the work turns a failing build into a puzzle.
