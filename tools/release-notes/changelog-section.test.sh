@@ -64,7 +64,9 @@ echo hello
 CHANGELOG
 
 fail() {
-    echo "FAIL: $1"
+    local message="$1"
+
+    echo "FAIL: $message"
     exit 1
 }
 
