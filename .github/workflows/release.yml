@@ -14,6 +14,14 @@ on:
         required: false
         default: '0.0.0-dryrun'
 
+# Serialise releases, and never cancel one. The CI workflow supersedes a run the moment a newer
+# commit arrives, which is right there and wrong here: the steps after the smoke test push packages
+# and create a release, and a run killed between them leaves a version half published — a state no
+# rerun can reach, because the tag can neither be moved nor deleted.
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   id-token: write        # required by NuGet trusted publishing (OIDC)
@@ -152,17 +160,12 @@ jobs:
           dotnet test -c Release --no-build
           dotnet pack -c Release --no-build -o artifacts -p:Version="$VERSION"
 
-      - name: Verify the package declares its ASP.NET Core framework reference and ships the analyzers
-        run: |
-          set -euo pipefail
-          package=$(ls artifacts/AspNetCore.EnumMemberNameBinding.[0-9]*.nupkg)
-          unzip -p "$package" 'AspNetCore.EnumMemberNameBinding.nuspec' \
-            | grep -q 'frameworkReference name="Microsoft.AspNetCore.App"' \
-            || { echo "::error::the package does not declare Microsoft.AspNetCore.App"; exit 1; }
-          unzip -l "$package" | grep -q 'analyzers/dotnet/cs/AspNetCore.EnumMemberNameBinding.Analyzers.dll' \
-            || { echo "::error::the package does not ship the analyzers"; exit 1; }
-          echo "Packages built:"
-          ls -1 artifacts
+      # The same script CI runs, so what is proved on every pull request is what is proved here.
+      # It covers both published packages; this step read only the main one until then, which left
+      # the companion — its dependency floor and the build/*.targets a consumer cannot do without —
+      # verified by nothing on the way to nuget.org.
+      - name: Verify what is inside both packages
+        run: tools/packaging/verify-packages.sh artifacts
 
       # The last gate before anything irreversible: build a consumer against the packed library and
       # drive it over HTTP. The step above checks what is inside the package; this one checks that

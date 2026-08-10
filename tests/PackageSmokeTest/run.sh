@@ -75,7 +75,7 @@ expect_contains() {
 step "Pack the libraries into a local feed"
 dotnet pack "$ROOT/EnumMemberNameBinding.slnx" -c Release -o "$WORK/feed" -p:Version="$VERSION" \
     > "$WORK/pack.log" 2>&1 || { cat "$WORK/pack.log"; exit 1; }
-ls -1 "$WORK/feed"/*.nupkg | sed 's|.*/|   |'
+for package in "$WORK/feed"/*.nupkg; do printf '   %s\n' "$(basename "$package")"; done
 
 step "Both packages carry their icon"
 # PackageIcon is declared once in Directory.Build.props, but the file has to be included by each

@@ -76,8 +76,12 @@ brûler sans rien perdre.
   ci-dessus est le seul avertissement, car une limite de portabilité dépend des canaux depuis lesquels
   une API lie réellement, là où les cinq autres signalent une ambiguïté fausse sur tous les canaux.
   Une énumération qui ne déclare aucun contrat n'est jamais analysée.
-- Des vérifications de CI qui font échouer le build si le paquet produit ne déclare pas sa référence
-  de framework `Microsoft.AspNetCore.App`, ou ne livre pas les analyseurs.
+- Une vérification du contenu des deux paquets publiés, exécutée par la CI puis à nouveau par la
+  release depuis un unique script partagé. Elle fait échouer le build si le paquet principal ne
+  déclare pas sa référence de framework `Microsoft.AspNetCore.App` ou ne livre pas les analyseurs,
+  et si le compagnon ne dépend pas du paquet principal, ne livre pas le `build/*.targets` dont un
+  consommateur ne peut pas se passer, ou déclare un `Microsoft.OpenApi` sous le plancher qui évite
+  GHSA-v5pm-xwqc-g5wc. Le compagnon n'était jusque-là vérifié par rien.
 - Un test de fumée du paquet, exécuté sur les deux SDK en CI puis à nouveau comme dernière barrière
   avant publication. Il packe dans un feed local, compile une application qui consomme le résultat par
   `PackageReference`, et la pilote en HTTP — couvrant ce qu'une `ProjectReference` saute entièrement :
