@@ -115,6 +115,26 @@ jobs:
       - name: Guards, runs of guards, values beside their name, and one-line suppressions
         run: tools/style/lint-layout.sh
 
+  # The repository's own shell tooling, which nothing else exercises. Kept apart from the style job
+  # because that one is about what the C# looks like, and separate from `build` because none of this
+  # needs an SDK.
+  #
+  # The changelog extractor earns a test more than most: it runs once, inside the release workflow,
+  # at the one moment nothing can be taken back, and every way it can be wrong is silent. A section
+  # that comes back empty reads exactly like a release with nothing to report.
+  scripts:
+    name: Script checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: The changelog extractor returns what it must and refuses what it must
+        run: tools/release-notes/changelog-section.test.sh
+
   # The one check `main` requires, and the only reason this job exists.
   #
   # The matrix above reports under names that carry the SDK it ran on — "build (SDK 10.0.100)" and
@@ -135,7 +155,7 @@ jobs:
   # nothing.
   ci:
     name: CI
-    needs: [build, style]
+    needs: [build, style, scripts]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -147,11 +167,14 @@ jobs:
         env:
           BUILD: ${{ needs.build.result }}
           STYLE: ${{ needs.style.result }}
+          SCRIPTS: ${{ needs.scripts.result }}
         run: |
           set -euo pipefail
           echo "build: $BUILD"
           echo "style: $STYLE"
+          echo "scripts: $SCRIPTS"
           failed=0
           [ "$BUILD" = "success" ] || { echo "::error::the build matrix did not succeed (result: $BUILD)"; failed=1; }
           [ "$STYLE" = "success" ] || { echo "::error::the coding style check did not succeed (result: $STYLE)"; failed=1; }
+          [ "$SCRIPTS" = "success" ] || { echo "::error::the script checks did not succeed (result: $SCRIPTS)"; failed=1; }
           exit "$failed"
