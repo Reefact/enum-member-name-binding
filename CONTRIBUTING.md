@@ -139,6 +139,23 @@ The English README is also the NuGet package page, where a relative link is dead
 into this repository are absolute. Pages under `docs/` are only ever read on GitHub and link
 relatively.
 
+## Samples in the documentation are compiled
+
+Every C# block under `docs/` and in the README is compiled against the shipped packages, and the
+analyzers this library ships are then run over the result. A sample that no longer binds, or that
+teaches code `EMN0005` would reject, fails the build like any other test — documentation is the one
+thing nothing executes, so nothing else would ever notice.
+
+Samples are fragments on purpose: an action without its controller, three statements without the
+`Main` around them. Which wrapping a fragment needs is worked out by parsing it, so nothing has to
+be declared. Two things do, each on the line above the fence and in both languages:
+
+- `<!-- emn:allow=EMN0003 -->` — the sample shows the mistake deliberately, and the rule must fire.
+  An allowance that no longer fires fails too, because the example has stopped being one.
+- `<!-- emn:skip -->` — the sample is not code anybody could compile, such as a fragment of a call
+  chain shown to point at a single line. It has to genuinely not compile: an opt-out that is no
+  longer needed fails as well.
+
 ## Analyzer findings
 
 A finding from Roslyn or SonarQube is a claim about the code, and [CLAUDE.md](CLAUDE.md) sets out

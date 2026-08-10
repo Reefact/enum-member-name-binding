@@ -145,6 +145,24 @@ Le README anglais est aussi la page du paquet NuGet, où un lien relatif est mor
 ce dépôt sont donc absolus. Les pages sous `docs/` ne sont lues que sur GitHub et pointent en
 relatif.
 
+## Les exemples de la documentation sont compilés
+
+Chaque bloc C# sous `docs/` et dans le README est compilé contre les paquets publiés, puis les
+analyseurs livrés par cette bibliothèque sont passés sur le résultat. Un exemple qui ne compile
+plus, ou qui enseigne du code qu'`EMN0005` refuserait, casse le build comme n'importe quel autre
+test — la documentation est la seule chose que rien n'exécute, donc rien d'autre ne le verrait.
+
+Les exemples sont des fragments à dessein : une action sans son contrôleur, trois instructions sans
+le `Main` autour. L'enrobage dont un fragment a besoin est déduit en l'analysant, il n'y a donc rien
+à déclarer. Deux choses le sont, chacune sur la ligne au-dessus du bloc et dans les deux langues :
+
+- `<!-- emn:allow=EMN0003 -->` — l'exemple montre l'erreur volontairement, et la règle doit se
+  déclencher. Une autorisation qui ne se déclenche plus échoue aussi, parce que l'exemple a cessé
+  d'en être un.
+- `<!-- emn:skip -->` — l'exemple n'est pas du code que quiconque pourrait compiler, par exemple un
+  fragment de chaîne d'appels montré pour pointer une seule ligne. Il doit vraiment ne pas compiler :
+  une exemption devenue inutile échoue également.
+
 ## Remontées des analyseurs
 
 Une remontée de Roslyn ou de SonarQube est une affirmation sur le code, et [CLAUDE.md](../CLAUDE.md)

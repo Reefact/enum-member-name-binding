@@ -22,6 +22,7 @@ pas les énumérations avec lesquelles il n'a rien à voir.
 
 ## EMN0005, celle qui mérite deux lectures
 
+<!-- emn:allow=EMN0003,EMN0005 -->
 ```csharp
 public enum Colour
 {

@@ -73,6 +73,12 @@ first one to make the trip is one that costs nothing to burn.
   which under a test host is the test host. A second fixture is meant *not* to compile, so `EMN0003`
   has to arrive from the analyzer inside the `.nupkg`; the assertion is positive, because "no
   diagnostic appeared" is also what a missing analyzer looks like.
+- A documentation test suite: every C# sample under `docs/` and in the README is compiled against the
+  shipped packages, and the analyzers are then run over the result. Documentation is the one thing
+  nothing executes, so a renamed option or a sample written from memory reads perfectly and stays
+  wrong until a newcomer finds out. A sample that deliberately shows a mistake declares the rule it
+  demonstrates, and an allowance that no longer fires fails too — a page saying "this is what
+  `EMN0001` looks like", above code that no longer trips it, has stopped being an example.
 - `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the
   generated document describe what the server accepts: an explicit `string` type, the declared public
   names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
