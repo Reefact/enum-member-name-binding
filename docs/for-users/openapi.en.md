@@ -20,7 +20,7 @@ package now configures both, and the companion corrects what remains:
 | Schema | ASP.NET Core alone | With the companion |
 |---|---|---|
 | `ProductStatus` | `{"type":"integer"}` | `{"type":"string","enum":["available","out_of_stock","discontinued"]}` |
-| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string","pattern":"^\\s*(read\|write\|delete)(\\s*,\\s*(read\|write\|delete))*\\s*,?\\s*$"}` |
+| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string"}`, plus the `pattern` [below](#the-flags-pattern) |
 | `PlainPriority` (no contract) | `{"type":"integer"}` | `{"type":"integer"}` — untouched |
 
 Two details worth knowing. ASP.NET Core emits enum values **without declaring a type**, which the
@@ -44,15 +44,26 @@ known to disagree.
 
 ## The `[Flags]` pattern
 
+```json
+{"type":"string","pattern":"^[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(read|write|delete)([\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*,[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(read|write|delete))*[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*,?[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$"}
+```
+
 The pattern covers exactly what the binder accepts, whitespace and trailing comma included — see
 [contract rules](contract-rules.en.md#a-flags-enum). One shape falls outside that, and only one: an
 enum declaring overlapping composites, where a list the pattern admits can decompose into no member
 and be refused with a 400 — see
 [limitations](limitations.en.md#a-combination-naming-no-member-is-refused-outside-the-body).
-It is written in the ECMA-262 dialect a JSON Schema
-`pattern` is read with, so only syntax characters are escaped: `Regex.Escape` would produce `\ ` and
-`\#`, which are not valid identity escapes there and would make a strict consumer reject the whole
-pattern. A test rejects any other escape.
+
+Two things make it long, and both are the difference between describing the server and describing
+something close to it. The whitespace class is written out rather than as `\s`, because a pattern is
+read as ECMA-262, where `\s` includes U+FEFF and excludes U+0085 — while the binder trims with
+`char.IsWhiteSpace`, which is the other way round on both. And a member left unannotated keeps its C#
+name, which the binder matches ignoring case, so it appears as `[Dd][Ee][Ll][Ee][Tt][Ee]`; a declared
+name is matched ordinally and appears as written.
+
+It is written in the ECMA-262 dialect a JSON Schema `pattern` is read with, so only syntax characters
+are escaped: `Regex.Escape` would produce `\ ` and `\#`, which are not valid identity escapes there
+and would make a strict consumer reject the whole pattern. A test rejects any other escape.
 
 A public name containing a regular-expression metacharacter is escaped and still matches literally;
 one containing a space is matched as written, since only the separators around commas are flexible.
@@ -68,8 +79,8 @@ One deliberate asymmetry. A non-`[Flags]` schema stays a closed `enum` list, so 
 the comma-separated combinations the server also accepts —
 [`available,out_of_stock`](contract-rules.en.md#a-comma-separates-values-on-every-enum) binds and is
 not in the list. That is the direction worth being wrong in, and the alternative is not merely
-uglier — it would be incorrect. A pattern is exact for a `[Flags]` enum because *every* combination
-of declared members is a value the server accepts. On an ordinary enum only the combinations whose
+uglier — it would be incorrect. A pattern is exact for a `[Flags]` enum because a combination of
+declared members is, the one shape above aside, a value the server accepts. On an ordinary enum only the combinations whose
 result names a declared member are accepted: `out_of_stock,discontinued` is `1 | 2`, which names
 none, and the server answers 400. A regular expression cannot tell those apart, so it would advertise
 values that fail — over-promising, where the closed list under-promises. The list is also the

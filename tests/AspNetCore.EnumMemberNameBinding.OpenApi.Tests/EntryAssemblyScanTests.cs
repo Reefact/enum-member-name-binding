@@ -21,9 +21,18 @@ public enum Delivery {
 /// </summary>
 /// <remarks>
 /// Exercised from this suite rather than from the core package's own, and the entry assembly is the
-/// reason — under the test runner it is the test assembly itself. This one declares only valid
-/// contracts. The core suite deliberately declares malformed ones, so a scan there would refuse,
-/// correctly, before proving anything about the scan.
+/// reason — under the test runner it is the test assembly itself. This one declares only contracts a
+/// scan can accept. The core suite deliberately declares malformed ones, so a scan there would
+/// refuse, correctly, before proving anything about the scan.
+/// <para>
+/// "Configuring nothing" means naming no assembly and no type, which is what decides the scan.
+/// <see cref="EnumMemberNameBindingOptions.AllowPartialContracts" /> is set, and it is not part of
+/// that: it governs whether a contract may be incomplete, not what is looked at.
+/// <see cref="MixedScopes" /> is the one partial contract here — the pattern tests need a member
+/// matched ignoring case, and only an unannotated one is — and without the switch the scan would
+/// refuse it, correctly, before reaching what these two tests are about. Anything else added to this
+/// assembly still has to be a contract the scan accepts.
+/// </para>
 /// </remarks>
 public sealed class EntryAssemblyScanTests {
 
@@ -48,7 +57,7 @@ public sealed class EntryAssemblyScanTests {
 
     private static EnumMemberNameBindingRegistrations Registrations() {
         ServiceCollection services = new();
-        services.AddControllers().AddEnumMemberNameBinding();
+        services.AddControllers().AddEnumMemberNameBinding(options => options.AllowPartialContracts = true);
 
         using ServiceProvider provider = services.BuildServiceProvider();
 

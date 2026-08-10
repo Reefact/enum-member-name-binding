@@ -68,6 +68,27 @@ public static class EnumMemberNames {
     }
 
     /// <summary>
+    /// The public names a value can also reach under a different casing — the C# names of the
+    /// members carrying no <c>[JsonStringEnumMemberName]</c>.
+    /// </summary>
+    /// <remarks>
+    /// Internal, and for the OpenAPI companion: it has to describe the vocabulary the binder accepts,
+    /// and half of that vocabulary is case-insensitive while the other half is not. Reading it from
+    /// here rather than re-deriving it there is the same reason <see cref="GetPublicNames" /> exists
+    /// — the resolution rules live in one place, and a companion that reimplemented them would
+    /// describe an API that drifts from the one being served.
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    internal static IReadOnlyList<string> GetNamesMatchedIgnoringCase(Type enumType) {
+        ArgumentNullException.ThrowIfNull(enumType);
+
+        Type underlying = Nullable.GetUnderlyingType(enumType) ?? enumType;
+        if (!underlying.IsEnum) { return []; }
+
+        return EnumContract.For(underlying).UnannotatedMembers;
+    }
+
+    /// <summary>
     /// Whether <paramref name="enumType" /> is a contract enum that also carries <c>[Flags]</c>.
     /// </summary>
     /// <remarks>

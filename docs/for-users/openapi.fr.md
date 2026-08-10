@@ -20,7 +20,7 @@ siennes. Le paquet principal configure désormais les deux, et le compagnon corr
 | Schéma | ASP.NET Core seul | Avec le compagnon |
 |---|---|---|
 | `ProductStatus` | `{"type":"integer"}` | `{"type":"string","enum":["available","out_of_stock","discontinued"]}` |
-| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string","pattern":"^\\s*(read\|write\|delete)(\\s*,\\s*(read\|write\|delete))*\\s*,?\\s*$"}` |
+| `Permissions` (`[Flags]`) | `{"type":"integer"}` | `{"type":"string"}`, plus le `pattern` [ci-dessous](#le-motif-flags) |
 | `PlainPriority` (sans contrat) | `{"type":"integer"}` | `{"type":"integer"}` — intact |
 
 Deux détails valent d'être connus. ASP.NET Core émet les valeurs d'énumération **sans déclarer de
@@ -45,16 +45,27 @@ seul où document et serveur peuvent être connus comme divergents.
 
 ## Le motif `[Flags]`
 
+```json
+{"type":"string","pattern":"^[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(read|write|delete)([\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*,[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*(read|write|delete))*[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*,?[\\u0009\\u000A\\u000B\\u000C\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000]*$"}
+```
+
 Le motif couvre exactement ce que le binder accepte, espaces et virgule finale compris — voir
 [règles du contrat](contract-rules.fr.md#une-énumération-flags). Une seule forme y échappe : une
 énumération déclarant des composites qui se recouvrent, où une liste admise par le motif peut ne se
 décomposer en aucun membre et être refusée par un 400 — voir
 [limitations](limitations.fr.md#une-combinaison-qui-ne-nomme-aucun-membre-est-refusée-hors-du-corps).
-Il est écrit dans le dialecte
-ECMA-262 avec lequel un `pattern` de JSON Schema est lu : seuls les caractères de syntaxe sont
-échappés. `Regex.Escape` produirait `\ ` et `\#`, qui ne sont pas des échappements d'identité valides
-dans ce dialecte et feraient rejeter le motif entier par un consommateur strict. Un test rejette tout
-autre échappement.
+
+Deux choses le rendent long, et toutes deux font la différence entre décrire le serveur et en décrire
+une approximation. La classe d'espaces est écrite en toutes lettres plutôt que `\s`, car un motif est
+lu comme de l'ECMA-262, où `\s` inclut U+FEFF et exclut U+0085 — alors que le binder détoure avec
+`char.IsWhiteSpace`, qui fait l'inverse sur les deux. Et un membre laissé sans annotation garde son
+nom C#, que le binder reconnaît sans tenir compte de la casse : il apparaît donc comme
+`[Dd][Ee][Ll][Ee][Tt][Ee]`, là où un nom déclaré apparaît tel quel.
+
+Il est écrit dans le dialecte ECMA-262 avec lequel un `pattern` de JSON Schema est lu : seuls les
+caractères de syntaxe sont échappés. `Regex.Escape` produirait `\ ` et `\#`, qui ne sont pas des
+échappements d'identité valides dans ce dialecte et feraient rejeter le motif entier par un
+consommateur strict. Un test rejette tout autre échappement.
 
 Un nom public contenant un métacaractère d'expression régulière est échappé et correspond quand même
 littéralement ; un nom contenant une espace est reconnu tel quel, puisque seuls les séparateurs autour
@@ -72,7 +83,8 @@ n'annonce donc pas les combinaisons séparées par des virgules que le serveur a
 [`available,out_of_stock`](contract-rules.fr.md#une-virgule-sépare-les-valeurs-sur-toutes-les-énumérations)
 se lie et ne figure pas dans la liste. C'est le sens dans lequel il vaut mieux se tromper, et
 l'alternative ne serait pas seulement moins élégante : elle serait fausse. Un motif est exact pour une
-`[Flags]` parce que *toute* combinaison de membres déclarés est une valeur que le serveur accepte. Sur
+`[Flags]` parce qu'une combinaison de membres déclarés est, la forme ci-dessus mise à part, une valeur
+que le serveur accepte. Sur
 une énumération ordinaire, seules le sont les combinaisons dont le résultat nomme un membre déclaré :
 `out_of_stock,discontinued` vaut `1 | 2`, qui n'en nomme aucun, et le serveur répond 400. Une
 expression régulière ne peut pas distinguer les deux, elle annoncerait donc des valeurs qui échouent —

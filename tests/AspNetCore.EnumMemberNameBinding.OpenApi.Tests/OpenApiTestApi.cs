@@ -29,6 +29,20 @@ public enum Scopes {
 
 }
 
+/// <summary>
+/// A <c>[Flags]</c> contract with one member left unannotated, which keeps its C# name. The two
+/// halves of the vocabulary are then matched differently — a declared name ordinally, a C# name
+/// ignoring case — and a pattern that wrote them the same way described neither.
+/// </summary>
+[Flags]
+public enum MixedScopes {
+
+    [JsonStringEnumMemberName("read")]  Read  = 1,
+    [JsonStringEnumMemberName("write")] Write = 2,
+    Delete = 4
+
+}
+
 public enum PlainLevel {
 
     Low,
@@ -69,6 +83,9 @@ public sealed class OrdersController : ControllerBase {
     [HttpGet("/tricky")]
     public IActionResult ByTricky([FromQuery] Tricky value) => Ok(new { value = value.ToString() });
 
+    [HttpGet("/mixed")]
+    public IActionResult ByMixedScopes([FromQuery] MixedScopes value) => Ok(new { value = value.ToString() });
+
 }
 
 /// <summary>Boots the API with the OpenAPI companion enabled (or not, for characterization).</summary>
@@ -95,7 +112,12 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
         builder.Services
                .AddControllers()
                .AddApplicationPart(typeof(OrdersController).Assembly)
-               .AddEnumMemberNameBinding(options => options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>());
+               // Partial contracts are opted into for MixedScopes alone; every other enum here
+               // annotates every member, so the switch changes nothing for them.
+               .AddEnumMemberNameBinding(options => {
+                    options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>().AddEnum<MixedScopes>();
+                    options.AllowPartialContracts = true;
+                });
 
         if (withTransformer) {
             builder.Services.AddOpenApi(options => {

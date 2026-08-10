@@ -139,6 +139,20 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Le motif `[Flags]` du document OpenAPI ne décrivait exactement ni l'une ni l'autre moitié du
+  vocabulaire.** Un membre laissé sans annotation garde son nom C#, que le binder reconnaît sans tenir
+  compte de la casse, alors que le motif le listait tel quel — `delete`, `DELETE` et `read, delete`
+  étaient donc exclus du document là où le serveur liait les trois. Un nom non annoté s'écrit
+  désormais `[Dd][Ee][Ll][Ee][Tt][Ee]` ; un nom déclaré est reconnu de façon ordinale et reste
+  littéral, si bien qu'une mauvaise casse en est toujours exclue.
+- **Ce même motif utilisait `\s`, qui n'est pas l'espace que le binder détoure.** Un `pattern` de JSON
+  Schema est lu comme de l'ECMA-262, où `\s` prend U+FEFF et laisse U+0085, tandis que `String.Trim`
+  — c'est-à-dire `char.IsWhiteSpace` — fait l'inverse sur les deux. Le document se trompait donc dans
+  les deux sens à la fois : il annonçait une valeur commençant par U+FEFF à laquelle le serveur
+  répond 400, et excluait une valeur commençant par U+0085 qu'il lie. Les vingt-cinq points de code
+  sont désormais écrits en toutes lettres. Les tests du dépôt ne pouvaient pas le voir, car ils
+  lisent le motif avec `System.Text.RegularExpressions`, dont le `\s` coïncide justement avec `Trim`
+  sur ces deux-là.
 - **De deux membres non annotés ne différant que par la casse, l'un était inatteignable.** Les noms
   C# tenaient dans un unique dictionnaire insensible à la casse : `Read` et `read` entraient donc en
   collision et le second était perdu — le jeton qui le nommait exactement se résolvait alors vers le
