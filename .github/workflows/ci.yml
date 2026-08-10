@@ -112,7 +112,7 @@ jobs:
       - name: The checker still recognises what it must and must not report
         run: tools/style/lint-layout.test.sh
 
-      - name: Guards, runs of guards, and values that fit beside their name
+      - name: Guards, runs of guards, values beside their name, and one-line suppressions
         run: tools/style/lint-layout.sh
 
   # The one check `main` requires, and the only reason this job exists.

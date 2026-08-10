@@ -39,8 +39,7 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
     public EnumMemberNameSchemaTransformer() { }
 
     /// <inheritdoc />
-    [UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id,
-        Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
+    [UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id, Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
     public Task TransformAsync(OpenApiSchema schema, OpenApiSchemaTransformerContext context, CancellationToken cancellationToken) {
         ArgumentNullException.ThrowIfNull(schema);
         ArgumentNullException.ThrowIfNull(context);

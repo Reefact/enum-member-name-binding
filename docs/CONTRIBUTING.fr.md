@@ -43,7 +43,7 @@ consommateur.
 
 ## Style de code
 
-L'essentiel tient dans `.editorconfig`, que votre éditeur lit déjà. Deux règles qu'il ne sait pas
+L'essentiel tient dans `.editorconfig`, que votre éditeur lit déjà. Trois règles qu'il ne sait pas
 exprimer, et c'est le même reproche : une ligne qui n'est pas une pensée, que le lecteur doit
 reconstituer.
 
@@ -61,15 +61,31 @@ Une déclaration ne coupe pas après le `=` quand sa valeur tient à côté du n
 internal const string Reflection = "Enum member name binding reads enum metadata reflectively…";
 ```
 
+Et un attribut de suppression s'écrit sur une ligne, quelle que soit sa largeur :
+
+```csharp
+[UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id, Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
+```
+
 La garde et ce qu'elle fait sont une seule pensée ; un nom et sa valeur en sont une autre. Tout ce
 qui est moins trivial qu'une sortie nue garde la forme multiligne, et de même une valeur qui a
 réellement besoin de plusieurs lignes — une concaténation, un initialiseur long. La largeur est un
-plafond dans les deux cas, 140 caractères pour une garde et 160 pour une valeur, et un plafond
+plafond pour ces deux règles, 140 caractères pour une garde et 160 pour une valeur, et un plafond
 plutôt qu'une dispense : ce qui est trop large est en général ce qui réclame un nom.
+
+Une suppression, elle, n'a pas de plafond, et l'écart est voulu. Un membre en porte souvent
+plusieurs, et repliées à la virgule elles s'entrelacent en un paragraphe où deux d'entre elles ne
+diffèrent que par un mot quelque part au milieu — les distinguer devient un diff fait à l'œil, c'est
+ainsi qu'un doublon survit à ce qu'on le regarde. Les deux autres règles s'arrêtent là où la ligne
+unique cesse d'être la plus lisible, parce qu'elles portent de la logique ; une suppression se
+parcourt pour savoir quelle règle et se survole pour savoir pourquoi, jamais pour sa logique — la
+replier ne fait rien gagner et coûte la comparaison.
 
 `tools/style/lint-layout.sh` signale ce qui n'y répond pas, `--fix` le réécrit, et la CI l'exécute
 sans l'option — en lançant d'abord le test du vérificateur, pour que « rien à signaler » veuille
-dire quelque chose. C'est donc vérifié plutôt que retenu.
+dire quelque chose. C'est donc vérifié plutôt que retenu. Il reste muet sur une forme qu'il ne sait
+pas lire : une suppression qui partage ses crochets avec un autre attribut, comme dans
+`[Fact, SuppressMessage(...)]`, où savoir quoi joindre suppose d'analyser le C#.
 
 ## Branches
 

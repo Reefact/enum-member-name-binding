@@ -68,8 +68,7 @@ public sealed class BindingController : ControllerBase {
     public IActionResult StatusFromForm([FromForm] ProductStatus value) => Ok(new Bound(value.ToString()));
 
     [HttpPost("/status/body")]
-    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id,
-                     Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public IActionResult StatusFromBody([FromBody] Payload payload) => Ok(new Bound(payload.Value.ToString()));
 
     [HttpGet("/partial/query")]
