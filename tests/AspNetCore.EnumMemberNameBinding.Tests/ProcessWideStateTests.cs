@@ -64,9 +64,9 @@ public sealed class ProcessWideStateTests {
         options.AddEnum<ValidButRefusedAlongside>();
         options.AddEnum<DeclaresNoContract>();
 
-        Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>();
 
-        Assert.IsNotType<EnumMemberNameConverter>(TypeDescriptor.GetConverter(typeof(ValidButRefusedAlongside)));
+        Check.That(TypeDescriptor.GetConverter(typeof(ValidButRefusedAlongside))).IsNotInstanceOf<EnumMemberNameConverter>();
     }
 
     public enum ValidBesideAPartialOne {
@@ -98,9 +98,9 @@ public sealed class ProcessWideStateTests {
         options.AddEnum<ValidBesideAPartialOne>();
         options.AddEnum<PartiallyAnnotatedHere>();
 
-        Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>();
 
-        Assert.IsNotType<EnumMemberNameConverter>(TypeDescriptor.GetConverter(typeof(ValidBesideAPartialOne)));
+        Check.That(TypeDescriptor.GetConverter(typeof(ValidBesideAPartialOne))).IsNotInstanceOf<EnumMemberNameConverter>();
     }
 
     [Fact]
@@ -109,13 +109,13 @@ public sealed class ProcessWideStateTests {
             EnumMemberNameBindingOptions options = new();
             options.AddEnum<Repeated>();
 
-            Assert.Contains(typeof(Repeated), EnumMemberNameBindingRegistry.Register(options));
+            Check.That(EnumMemberNameBindingRegistry.Register(options)).Contains(typeof(Repeated));
         }
 
         TypeConverter converter = TypeDescriptor.GetConverter(typeof(Repeated));
 
-        Assert.IsType<EnumMemberNameConverter>(converter);
-        Assert.Equal(Repeated.Second, converter.ConvertFromString("second"));
+        Check.That(converter).IsInstanceOf<EnumMemberNameConverter>();
+        Check.That(converter.ConvertFromString("second")).IsEqualTo(Repeated.Second);
     }
 
     [Fact]
@@ -127,11 +127,11 @@ public sealed class ProcessWideStateTests {
             using HttpResponseMessage accepted = await host.Client.GetAsync("/repeated?value=second", TestContext.Current.CancellationToken);
             using HttpResponseMessage refused = await host.Client.GetAsync("/repeated?value=Second", TestContext.Current.CancellationToken);
 
-            Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+            Check.That(accepted.StatusCode).IsEqualTo(HttpStatusCode.OK);
             using JsonDocument document = JsonDocument.Parse(await accepted.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-            Assert.Equal(nameof(Repeated.Second), document.RootElement.GetProperty("value").GetString());
+            Check.That(document.RootElement.GetProperty("value").GetString()).IsEqualTo(nameof(Repeated.Second));
 
-            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+            Check.That(refused.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
         }
     }
 
@@ -139,13 +139,13 @@ public sealed class ProcessWideStateTests {
     public async Task a_host_started_after_another_has_stopped_still_binds_correctly() {
         await using (Host first = await Host.StartAsync()) {
             using HttpResponseMessage response = await first.Client.GetAsync("/repeated?value=first", TestContext.Current.CancellationToken);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
 
         await using Host second = await Host.StartAsync();
         using HttpResponseMessage again = await second.Client.GetAsync("/repeated?value=first", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, again.StatusCode);
+        Check.That(again.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
     private sealed class Host : IAsyncDisposable {

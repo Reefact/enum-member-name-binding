@@ -45,7 +45,7 @@ public sealed class DiscoveryTests {
 
         IReadOnlyList<Type> registered = EnumMemberNameBindingRegistry.Register(options);
 
-        Assert.Equal([typeof(NamedTwice)], registered);
+        Check.That(registered).ContainsExactly(typeof(NamedTwice));
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public sealed class DiscoveryTests {
 
         IReadOnlyList<Type> registered = EnumMemberNameBindingRegistry.Register(options);
 
-        Assert.Equal([typeof(NamedAlone)], registered);
+        Check.That(registered).ContainsExactly(typeof(NamedAlone));
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public sealed class DiscoveryTests {
 
         IReadOnlyList<Type> registered = EnumMemberNameBindingRegistry.Register(options);
 
-        Assert.Empty(registered);
+        Check.That(registered).IsEmpty();
     }
 
     /// <summary>
@@ -92,10 +92,10 @@ public sealed class DiscoveryTests {
         EnumMemberNameBindingOptions options = new();
         options.AddEnum<NoContractAtAll>();
 
-        EnumContractException exception = Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        EnumContractException exception = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>().Value;
 
-        Assert.Equal(typeof(NoContractAtAll), exception.EnumType);
-        Assert.Contains("no contract to apply", exception.Message, StringComparison.Ordinal);
+        Check.That(exception.EnumType).IsEqualTo(typeof(NoContractAtAll));
+        Check.That(exception.Message).Contains("no contract to apply");
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ public sealed class DiscoveryTests {
         options.AddEnum<NamedAlone>();
         options.AddEnum<NoContractAtAll>();
 
-        Assert.Throws<EnumContractException>(() => EnumMemberNameBindingRegistry.Register(options));
+        Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options)).Throws<EnumContractException>();
     }
 
 }

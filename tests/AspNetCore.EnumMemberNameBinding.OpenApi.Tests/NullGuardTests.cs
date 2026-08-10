@@ -11,19 +11,20 @@ public sealed class NullGuardTests {
 
     [Fact]
     public void adding_the_transformer_to_null_options_is_refused() {
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(null!));
+        ArgumentNullException exception = Check.ThatCode(() => EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(null!))
+                                               .Throws<ArgumentNullException>().Value;
 
-        Assert.Equal("options", exception.ParamName);
+        Check.That(exception.ParamName).IsEqualTo("options");
     }
 
     [Fact]
     public void transforming_a_null_schema_is_refused() {
         EnumMemberNameSchemaTransformer transformer = new();
 
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(
-            () => { _ = transformer.TransformAsync(null!, null!, CancellationToken.None); });
+        ArgumentNullException exception = Check.ThatCode(() => { _ = transformer.TransformAsync(null!, null!, CancellationToken.None); })
+                                               .Throws<ArgumentNullException>().Value;
 
-        Assert.Equal("schema", exception.ParamName);
+        Check.That(exception.ParamName).IsEqualTo("schema");
     }
 
     [Fact]
@@ -31,10 +32,10 @@ public sealed class NullGuardTests {
         EnumMemberNameSchemaTransformer transformer = new();
         OpenApiSchema                   schema      = new();
 
-        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(
-            () => { _ = transformer.TransformAsync(schema, null!, CancellationToken.None); });
+        ArgumentNullException exception = Check.ThatCode(() => { _ = transformer.TransformAsync(schema, null!, CancellationToken.None); })
+                                               .Throws<ArgumentNullException>().Value;
 
-        Assert.Equal("context", exception.ParamName);
+        Check.That(exception.ParamName).IsEqualTo("context");
     }
 
 }

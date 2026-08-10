@@ -97,11 +97,11 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
     [InlineData("with space", nameof(Portability.Space))]
     [InlineData("with\ttab", nameof(Portability.Tab))]
     public async Task a_portable_name_binds_on_every_channel(string name, string expected) {
-        Assert.Equal(expected, await Route(name));
-        Assert.Equal(expected, await Query(name));
-        Assert.Equal(expected, await Header(name));
-        Assert.Equal(expected, await Form(name));
-        Assert.Equal(expected, await Body(name));
+        Check.That(await Route(name)).IsEqualTo(expected);
+        Check.That(await Query(name)).IsEqualTo(expected);
+        Check.That(await Header(name)).IsEqualTo(expected);
+        Check.That(await Form(name)).IsEqualTo(expected);
+        Check.That(await Body(name)).IsEqualTo(expected);
     }
 
     [Fact]
@@ -110,12 +110,12 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
         string expected = nameof(Portability.Slash);
 
         using HttpResponseMessage route = await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(Name), TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.BadRequest, route.StatusCode);
+        Check.That(route.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
 
-        Assert.Equal(expected, await Query(Name));
-        Assert.Equal(expected, await Header(Name));
-        Assert.Equal(expected, await Form(Name));
-        Assert.Equal(expected, await Body(Name));
+        Check.That(await Query(Name)).IsEqualTo(expected);
+        Check.That(await Header(Name)).IsEqualTo(expected);
+        Check.That(await Form(Name)).IsEqualTo(expected);
+        Check.That(await Body(Name)).IsEqualTo(expected);
     }
 
     [Fact]
@@ -126,12 +126,12 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
         using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
         request.Headers.TryAddWithoutValidation("X-V", Name);
         using HttpResponseMessage header = await _client.SendAsync(request, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.BadRequest, header.StatusCode);
+        Check.That(header.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
 
-        Assert.Equal(expected, await Route(Name));
-        Assert.Equal(expected, await Query(Name));
-        Assert.Equal(expected, await Form(Name));
-        Assert.Equal(expected, await Body(Name));
+        Check.That(await Route(Name)).IsEqualTo(expected);
+        Check.That(await Query(Name)).IsEqualTo(expected);
+        Check.That(await Form(Name)).IsEqualTo(expected);
+        Check.That(await Body(Name)).IsEqualTo(expected);
     }
 
     /// <summary>
@@ -145,12 +145,12 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
 
         using HttpRequestMessage request = new(HttpMethod.Get, "/portability/header");
         request.Headers.TryAddWithoutValidation("X-V", Name);
-        await Assert.ThrowsAsync<HttpRequestException>(() => _client.SendAsync(request, TestContext.Current.CancellationToken));
+        Check.ThatCode(() => _client.SendAsync(request, TestContext.Current.CancellationToken)).Throws<HttpRequestException>();
 
-        Assert.Equal(expected, await Route(Name));
-        Assert.Equal(expected, await Query(Name));
-        Assert.Equal(expected, await Form(Name));
-        Assert.Equal(expected, await Body(Name));
+        Check.That(await Route(Name)).IsEqualTo(expected);
+        Check.That(await Query(Name)).IsEqualTo(expected);
+        Check.That(await Form(Name)).IsEqualTo(expected);
+        Check.That(await Body(Name)).IsEqualTo(expected);
     }
 
     private async Task<string> Route(string name)  => await Read(await _client.GetAsync("/portability/route/" + Uri.EscapeDataString(name), TestContext.Current.CancellationToken));
@@ -173,7 +173,7 @@ public sealed class ChannelPortabilityTests : IAsyncLifetime {
 
     private static async Task<string> Read(HttpResponseMessage response) {
         using (response) {
-            Assert.True(response.IsSuccessStatusCode, $"expected success, got {(int)response.StatusCode}");
+            Check.WithCustomMessage($"expected success, got {(int)response.StatusCode}").That(response.IsSuccessStatusCode).IsTrue();
             using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
             return document.RootElement.GetProperty("value").GetString()!;

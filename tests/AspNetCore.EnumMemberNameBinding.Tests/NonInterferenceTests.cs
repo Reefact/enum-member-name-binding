@@ -25,9 +25,9 @@ public sealed class NonInterferenceTests {
     public async Task a_plain_enum_keeps_the_stock_binding_behaviour(string input, string expected) {
         using HttpResponseMessage response = await _api.Client.GetAsync("/plain/query?value=" + input, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(expected, document.RootElement.GetProperty("value").GetString());
+        Check.That(document.RootElement.GetProperty("value").GetString()).IsEqualTo(expected);
     }
 
     [Theory]
@@ -36,20 +36,20 @@ public sealed class NonInterferenceTests {
     public async Task a_plain_enum_keeps_the_stock_validation(string input) {
         using HttpResponseMessage response = await _api.Client.GetAsync("/plain/query?value=" + input, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task a_plain_enum_keeps_its_numeric_wire_format() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/plain/serialized", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
 
         // The global JsonStringEnumConverter factory is never installed, so a non-contract enum
         // is still written as a number.
-        Assert.Equal(JsonValueKind.Number, document.RootElement.GetProperty("value").ValueKind);
-        Assert.Equal((int)PlainPriority.High, document.RootElement.GetProperty("value").GetInt32());
+        Check.That(document.RootElement.GetProperty("value").ValueKind).IsEqualTo(JsonValueKind.Number);
+        Check.That(document.RootElement.GetProperty("value").GetInt32()).IsEqualTo((int)PlainPriority.High);
     }
 
     [Fact]
@@ -58,27 +58,27 @@ public sealed class NonInterferenceTests {
         // the MVC options. Configuring only the latter would leave this endpoint writing a number.
         using HttpResponseMessage response = await _api.Client.GetAsync("/minimal/contract-serialized", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal("out_of_stock", document.RootElement.GetProperty("value").GetString());
+        Check.That(document.RootElement.GetProperty("value").GetString()).IsEqualTo("out_of_stock");
     }
 
     [Fact]
     public async Task a_plain_enum_keeps_its_numeric_wire_format_in_a_minimal_api_too() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/minimal/plain-serialized", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(JsonValueKind.Number, document.RootElement.GetProperty("value").ValueKind);
+        Check.That(document.RootElement.GetProperty("value").ValueKind).IsEqualTo(JsonValueKind.Number);
     }
 
     [Fact]
     public async Task a_contract_enum_is_written_with_its_public_name() {
         using HttpResponseMessage response = await _api.Client.GetAsync("/status/serialized", TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal("out_of_stock", document.RootElement.GetProperty("value").GetString());
+        Check.That(document.RootElement.GetProperty("value").GetString()).IsEqualTo("out_of_stock");
     }
 
 }

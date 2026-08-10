@@ -52,44 +52,44 @@ public sealed class FormattingTests {
     public void an_alias_is_written_with_the_first_declared_name() {
         EnumContract contract = EnumContract.For(typeof(Aliased));
 
-        Assert.Equal("first", contract.Format(Aliased.First));
-        Assert.Equal("first", contract.Format(Aliased.Uno));
+        Check.That(contract.Format(Aliased.First)).IsEqualTo("first");
+        Check.That(contract.Format(Aliased.Uno)).IsEqualTo("first");
     }
 
     [Fact]
     public void both_alias_names_are_read_back_to_the_same_value() {
         EnumContract contract = EnumContract.For(typeof(Aliased));
 
-        Assert.True(contract.TryParse("first", out object? first));
-        Assert.True(contract.TryParse("uno", out object? uno));
-        Assert.Equal(first, uno);
-        Assert.Equal(Aliased.First, first);
+        Check.That(contract.TryParse("first", out object? first)).IsTrue();
+        Check.That(contract.TryParse("uno", out object? uno)).IsTrue();
+        Check.That(uno).IsEqualTo(first);
+        Check.That(first).IsEqualTo(Aliased.First);
     }
 
     [Fact]
     public void a_combination_without_a_name_of_its_own_is_written_as_a_list() {
         EnumContract contract = EnumContract.For(typeof(WithZero));
 
-        Assert.Equal("read, write", contract.Format(WithZero.Read | WithZero.Write));
+        Check.That(contract.Format(WithZero.Read | WithZero.Write)).IsEqualTo("read, write");
     }
 
     [Fact]
     public void a_combination_that_has_its_own_name_is_written_with_it() {
         EnumContract contract = EnumContract.For(typeof(Composite));
 
-        Assert.Equal("all", contract.Format(Composite.Read | Composite.Write));
-        Assert.Equal("all", contract.Format(Composite.All));
+        Check.That(contract.Format(Composite.Read | Composite.Write)).IsEqualTo("all");
+        Check.That(contract.Format(Composite.All)).IsEqualTo("all");
     }
 
     [Fact]
     public void a_zero_member_is_written_with_its_name() {
-        Assert.Equal("none", EnumContract.For(typeof(WithZero)).Format(WithZero.None));
+        Check.That(EnumContract.For(typeof(WithZero)).Format(WithZero.None)).IsEqualTo("none");
     }
 
     [Fact]
     public void a_value_carrying_an_undeclared_bit_has_no_public_name() {
-        Assert.Null(EnumContract.For(typeof(WithZero)).Format((WithZero)8));
-        Assert.Null(EnumContract.For(typeof(WithZero)).Format(WithZero.Read | (WithZero)8));
+        Check.That(EnumContract.For(typeof(WithZero)).Format((WithZero)8)).IsNull();
+        Check.That(EnumContract.For(typeof(WithZero)).Format(WithZero.Read | (WithZero)8)).IsNull();
     }
 
     [Theory]
@@ -101,9 +101,9 @@ public sealed class FormattingTests {
 
         string? written = contract.Format(value);
 
-        Assert.NotNull(written);
-        Assert.True(contract.TryParse(written, out object? read));
-        Assert.Equal(value, read);
+        Check.That(written).IsNotNull();
+        Check.That(contract.TryParse(written!, out object? read)).IsTrue();
+        Check.That(read).IsEqualTo(value);
     }
 
     /// <summary>
@@ -117,15 +117,15 @@ public sealed class FormattingTests {
     public void what_is_written_matches_what_system_text_json_writes(WithZero value) {
         string expected = JsonSerializer.Deserialize<string>(JsonSerializer.Serialize(value, Oracle))!;
 
-        Assert.Equal(expected, EnumContract.For(typeof(WithZero)).Format(value));
+        Check.That(EnumContract.For(typeof(WithZero)).Format(value)).IsEqualTo(expected);
     }
 
     [Fact]
     public void the_type_converter_writes_the_public_name() {
         TypeConverter converter = new EnumMemberNameConverter(typeof(ProductStatus));
 
-        Assert.Equal("out_of_stock", converter.ConvertToString(ProductStatus.OutOfStock));
-        Assert.Equal(ProductStatus.OutOfStock, converter.ConvertFrom(null, CultureInfo.InvariantCulture, "out_of_stock"));
+        Check.That(converter.ConvertToString(ProductStatus.OutOfStock)).IsEqualTo("out_of_stock");
+        Check.That(converter.ConvertFrom(null, CultureInfo.InvariantCulture, "out_of_stock")).IsEqualTo(ProductStatus.OutOfStock);
     }
 
     /// <summary>
@@ -141,8 +141,8 @@ public sealed class FormattingTests {
         object? combined = converter.ConvertFrom(null, CultureInfo.InvariantCulture,
                                                  new Enum[] { ProductStatus.Available, ProductStatus.OutOfStock });
 
-        Assert.Equal(ProductStatus.Available | ProductStatus.OutOfStock, combined);
-        Assert.Throws<NotSupportedException>(() => converter.ConvertFrom(null, CultureInfo.InvariantCulture, 1));
+        Check.That(combined).IsEqualTo(ProductStatus.Available | ProductStatus.OutOfStock);
+        Check.ThatCode(() => converter.ConvertFrom(null, CultureInfo.InvariantCulture, 1)).Throws<NotSupportedException>();
     }
 
     /// <summary>
@@ -160,9 +160,9 @@ public sealed class FormattingTests {
         object? decomposed = converter.ConvertTo(null, CultureInfo.InvariantCulture,
                                                  Permissions.Read | Permissions.Write, typeof(Enum[]));
 
-        Assert.Equal(new Enum[] { Permissions.Read, Permissions.Write }, (Enum[])decomposed!);
-        Assert.Equal(string.Empty, converter.ConvertTo(null, CultureInfo.InvariantCulture, null, typeof(string)));
-        Assert.Equal("64", converter.ConvertTo(null, CultureInfo.InvariantCulture, (Permissions)64, typeof(string)));
+        Check.That((Enum[])decomposed!).IsEqualTo(new Enum[] { Permissions.Read, Permissions.Write });
+        Check.That(converter.ConvertTo(null, CultureInfo.InvariantCulture, null, typeof(string))).IsEqualTo(string.Empty);
+        Check.That(converter.ConvertTo(null, CultureInfo.InvariantCulture, (Permissions)64, typeof(string))).IsEqualTo("64");
     }
 
     /// <summary>
@@ -175,21 +175,21 @@ public sealed class FormattingTests {
     public async Task a_link_built_from_the_enum_value_carries_the_csharp_name_and_is_refused() {
         string link = await ReadLink("/status/link-raw");
 
-        Assert.Equal("/status/route/OutOfStock", link);
+        Check.That(link).IsEqualTo("/status/route/OutOfStock");
 
         using HttpResponseMessage response = await _api.Client.GetAsync(link, TestContext.Current.CancellationToken);
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task a_link_built_from_the_public_name_is_correct() {
-        Assert.Equal("/status/route/out_of_stock", await ReadLink("/status/link"));
+        Check.That(await ReadLink("/status/link")).IsEqualTo("/status/route/out_of_stock");
     }
 
     [Fact]
     public void the_public_name_of_a_non_contract_enum_is_null() {
-        Assert.Null(EnumMemberNames.GetPublicName(PlainPriority.High));
-        Assert.Equal("out_of_stock", EnumMemberNames.GetPublicName(ProductStatus.OutOfStock));
+        Check.That(EnumMemberNames.GetPublicName(PlainPriority.High)).IsNull();
+        Check.That(EnumMemberNames.GetPublicName(ProductStatus.OutOfStock)).IsEqualTo("out_of_stock");
     }
 
     [Fact]
@@ -198,23 +198,23 @@ public sealed class FormattingTests {
 
         using HttpResponseMessage response = await _api.Client.GetAsync(link, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument bound = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(nameof(ProductStatus.OutOfStock), bound.RootElement.GetProperty("value").GetString());
+        Check.That(bound.RootElement.GetProperty("value").GetString()).IsEqualTo(nameof(ProductStatus.OutOfStock));
     }
 
     [Fact]
     public async Task a_composite_flags_link_round_trips() {
         string link = await ReadLink("/permissions/link");
 
-        Assert.Contains("read", link, StringComparison.Ordinal);
-        Assert.Contains("write", link, StringComparison.Ordinal);
+        Check.That(link).Contains("read");
+        Check.That(link).Contains("write");
 
         using HttpResponseMessage response = await _api.Client.GetAsync(link, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         using JsonDocument bound = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        Assert.Equal("Read, Write", bound.RootElement.GetProperty("value").GetString());
+        Check.That(bound.RootElement.GetProperty("value").GetString()).IsEqualTo("Read, Write");
     }
 
     private async Task<string> ReadLink(string url) {
