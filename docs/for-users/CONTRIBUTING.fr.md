@@ -41,6 +41,25 @@ La CI compile et teste sur deux SDK — le plancher de `global.json` et le derni
 qu'un désaccord entre versions d'analyseurs a sa place ici plutôt que dans le build d'un
 consommateur.
 
+## Un changement arrive avec ses tests
+
+Une fonctionnalité majeure arrive avec ses tests dans la suite automatisée, dans la même pull
+request. Cette part-là est une politique et non un contrôle, parce que rien ne sait distinguer une
+fonctionnalité d'un remaniement — mais ce qui l'entoure, lui, est imposé : un changement de la
+surface publique casse le build tant que la baseline committée ne l'enregistre pas, et un exemple de
+la documentation qui cesse de compiler échoue comme n'importe quel autre test.
+
+Quand l'ordre peut être choisi, écrivez le test d'abord. Pas comme méthode de conception, et pas du
+TDD — l'affirmation est plus étroite que l'un comme l'autre. Un test de régression écrit après le
+correctif n'a jamais été vu échouer : rien n'établit donc qu'il couvre le bogue plutôt qu'il ne passe
+pour une raison sans rapport. Le voir rougir, puis voir le correctif le faire verdir, est la seule
+chose qui l'établisse — c'est l'argument même du job de style, qui lance le test du vérificateur
+avant le vérificateur. Un correctif porte donc le test qui l'aurait attrapé, écrit avant le correctif
+partout où c'est possible.
+
+Partout où ça ne l'est pas — un test qui ne peut pas exister avant la fonctionnalité — dites-le dans
+la pull request plutôt que d'escamoter l'étape.
+
 ## Style de code
 
 L'essentiel tient dans `.editorconfig`, que votre éditeur lit déjà. Trois règles qu'il ne sait pas
