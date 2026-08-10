@@ -29,6 +29,13 @@ first one to make the trip is one that costs nothing to burn.
   reviewed diff rather than a side effect. The surface was read symbol by symbol before this
   release and deliberately kept to what a consumer needs: 19 entries in the main package, 2 in the
   companion.
+- The registration is configurable through `EnumMemberNameBindingOptions`: `AddEnum<TEnum>()` names
+  a contract explicitly and `ScanAssemblyContaining<T>()` points the scan somewhere other than the
+  entry assembly, with `EnumTypes` and `Assemblies` underneath as escape hatches for a caller
+  holding a `Type` or an `Assembly` at run time. `AllowPartialContracts` accepts an enum annotated
+  in part, and `ConfigureJsonSerialization` declines the `System.Text.Json` half of the
+  registration for an application that configures its converters itself. Naming anything at all is
+  taken as "scan nothing else", so the entry assembly is a default rather than an addition.
 - Start-up validation of every registered contract, raising `EnumContractException` for duplicate
   public names, names with surrounding whitespace, and commas inside a `[Flags]` member name.
 - Registration is all or nothing, on both paths — an explicit list and the assembly scan. Every
@@ -79,7 +86,8 @@ first one to make the trip is one that costs nothing to burn.
   wrong until a newcomer finds out. A sample that deliberately shows a mistake declares the rule it
   demonstrates, and an allowance that no longer fires fails too — a page saying "this is what
   `EMN0001` looks like", above code that no longer trips it, has stopped being an example.
-- `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose schema transformer makes the
+- `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose one entry point,
+  `AddEnumMemberNames()` on `OpenApiOptions`, installs a schema transformer that makes the
   generated document describe what the server accepts: an explicit `string` type, the declared public
   names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
   expression covering comma-separated combinations. Its tests assert document/runtime coherence by
@@ -90,7 +98,6 @@ first one to make the trip is one that costs nothing to burn.
   default placeholder. The smoke test checks each package for both halves of it — that the `.nuspec`
   declares an icon, and that the file it names is really inside — since keeping the include without
   the property produces a perfectly valid package that nuget.org still shows grey.
-
 - `EnumMemberNames.GetPublicName(Enum)`, for generating links. ASP.NET Core formats route values
   without consulting `TypeDescriptor`, so a link built from an enum value carries the C# name and the
   binder refuses it. That gap cannot be closed from a `TypeConverter`; it is documented and this is
@@ -166,7 +173,6 @@ first one to make the trip is one that costs nothing to burn.
   measured not to. It enables the one namespace Microsoft enables and nothing more. Found by the
   package smoke test on the first run of its life, and the consumer fixture now makes that
   assignment itself so the distinction cannot be lost again.
-
 - `Microsoft.AspNetCore.OpenApi` and minimal API serialization read `Http.Json.JsonOptions`, while
   MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described
   as an integer in the generated document. Both are now configured, still one converter per contract

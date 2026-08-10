@@ -32,6 +32,13 @@ brûler sans rien perdre.
   surface publiée soit une différence relue et non un effet de bord. La surface a été lue symbole par
   symbole avant cette publication et volontairement réduite à ce dont un consommateur a besoin :
   19 entrées dans le paquet principal, 2 dans le compagnon.
+- L'enregistrement se configure par `EnumMemberNameBindingOptions` : `AddEnum<TEnum>()` nomme un
+  contrat explicitement et `ScanAssemblyContaining<T>()` dirige le scan ailleurs que sur l'assembly
+  d'entrée, avec `EnumTypes` et `Assemblies` en dessous comme échappatoires pour un appelant qui
+  tient un `Type` ou un `Assembly` à l'exécution. `AllowPartialContracts` accepte une énumération
+  annotée en partie, et `ConfigureJsonSerialization` refuse la moitié `System.Text.Json` de
+  l'enregistrement pour une application qui configure ses convertisseurs elle-même. Nommer quoi que
+  ce soit vaut « ne scanne rien d'autre » : l'assembly d'entrée est un défaut, pas un ajout.
 - Validation au démarrage de chaque contrat enregistré, levant `EnumContractException` pour les noms
   publics en double, les noms entourés d'espaces et les virgules dans le nom d'un membre `[Flags]`.
 - L'enregistrement est tout ou rien, sur les deux chemins — une liste explicite et le scan
@@ -88,8 +95,9 @@ brûler sans rien perdre.
   volontairement une erreur déclare la règle qu'il illustre, et une autorisation qui ne se déclenche
   plus échoue aussi — une page qui dit « voici à quoi ressemble `EMN0001` », au-dessus d'un code qui
   ne le déclenche plus, a cessé d'être un exemple.
-- `AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont le transformateur de schéma
-  fait décrire au document généré ce que le serveur accepte réellement : un type `string` explicite,
+- `AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont l'unique point d'entrée,
+  `AddEnumMemberNames()` sur `OpenApiOptions`, installe un transformateur de schéma qui fait décrire
+  au document généré ce que le serveur accepte réellement : un type `string` explicite,
   les noms publics déclarés, et — pour les énumérations `[Flags]`, qu'ASP.NET Core documente sans
   aucune valeur — une expression régulière couvrant les combinaisons séparées par des virgules. Ses
   tests vérifient la cohérence document/exécution en rejouant chaque valeur annoncée face au serveur
@@ -100,7 +108,6 @@ brûler sans rien perdre.
   derrière le placeholder par défaut. Le test de fumée vérifie les deux moitiés sur chaque paquet —
   que le `.nuspec` déclare une icône, et que le fichier qu'il nomme s'y trouve réellement — car garder
   l'inclusion sans la propriété produit un paquet parfaitement valide que nuget.org affiche gris.
-
 - `EnumMemberNames.GetPublicName(Enum)`, pour la génération de liens. ASP.NET Core formate les valeurs
   de route sans consulter `TypeDescriptor` : un lien construit à partir d'une valeur d'énumération
   porte donc le nom C#, et le binder le refuse. Cet écart ne peut pas être comblé depuis un
@@ -184,7 +191,6 @@ brûler sans rien perdre.
   survivant pas. Elle active le seul espace de noms que Microsoft active, et rien de plus. Trouvé par
   le test de fumée du paquet dès sa première exécution, et le fixture consommateur fait désormais
   cette affectation lui-même pour que la distinction ne puisse plus se perdre.
-
 - `Microsoft.AspNetCore.OpenApi` et la sérialisation des Minimal APIs lisent `Http.Json.JsonOptions`,
   tandis que MVC lit `Mvc.JsonOptions`. Seules ces dernières étaient configurées, si bien que chaque
   énumération sous contrat était décrite comme un entier dans le document généré. Les deux sont
