@@ -66,7 +66,7 @@ public sealed class NullGuardTests {
     [Fact]
     public void the_boundary_is_not_empty() {
         Check.WithCustomMessage($"Only {BoundaryParameters().Count} boundary parameters were discovered; the reflection filter is probably wrong.")
-             .That(BoundaryParameters().Count >= 12).IsTrue();
+             .That(BoundaryParameters().Count).IsGreaterOrEqualThan(12);
     }
 
     private static object? ValueFor(ParameterInfo parameter) {

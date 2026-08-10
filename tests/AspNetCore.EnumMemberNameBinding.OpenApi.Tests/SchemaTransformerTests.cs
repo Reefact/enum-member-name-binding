@@ -93,9 +93,9 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
             using HttpResponseMessage route = await api.Client.GetAsync("/orders/" + Uri.EscapeDataString(advertised), TestContext.Current.CancellationToken);
 
             Check.WithCustomMessage($"the document advertises '{advertised}' but the query string rejected it.")
-                 .That(query.StatusCode == HttpStatusCode.OK).IsTrue();
+                 .That(query.StatusCode).IsEqualTo(HttpStatusCode.OK);
             Check.WithCustomMessage($"the document advertises '{advertised}' but the route rejected it.")
-                 .That(route.StatusCode == HttpStatusCode.OK).IsTrue();
+                 .That(route.StatusCode).IsEqualTo(HttpStatusCode.OK);
         }
     }
 

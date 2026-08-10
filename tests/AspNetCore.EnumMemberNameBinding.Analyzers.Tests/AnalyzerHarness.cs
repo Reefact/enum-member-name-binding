@@ -23,7 +23,7 @@ internal static class AnalyzerHarness {
         // A snippet that does not compile would make the analyzer results meaningless.
         Diagnostic[] compilationErrors = [.. compilation.GetDiagnostics().Where(d => d.Severity == DiagnosticSeverity.Error)];
         Check.WithCustomMessage("the test snippet does not compile: " + string.Join("; ", compilationErrors.Select(d => d.ToString())))
-             .That(compilationErrors.Length == 0).IsTrue();
+             .That(compilationErrors).IsEmpty();
 
         CompilationWithAnalyzers withAnalyzers = compilation.WithAnalyzers([new EnumContractAnalyzer()]);
 

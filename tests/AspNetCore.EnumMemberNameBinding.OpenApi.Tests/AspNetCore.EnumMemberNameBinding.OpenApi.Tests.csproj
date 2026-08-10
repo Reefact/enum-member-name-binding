@@ -20,6 +20,7 @@
     <!-- Assertions. xUnit still discovers, runs and reports; only the assertion is NFluent.
          See docs/adr/0001-nfluent-for-test-assertions.en.md. -->
     <PackageReference Include="NFluent" Version="3.1.0" />
+    <PackageReference Include="NFluent.Analyzer" Version="0.1.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <!-- Emits the coverage report the Sonar analysis reads. The format lives in
          coverage.runsettings, so a local run and the analysis produce the same report. -->
