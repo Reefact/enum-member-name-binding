@@ -56,7 +56,10 @@ first one to make the trip is one that costs nothing to burn.
   one, because neither `Enum.Parse` nor `System.Text.Json` looks at the attribute before splitting.
   Refusing them would have made a registered enum stricter than the same enum left alone.
 - A parity test suite that uses `JsonSerializer` itself as the oracle — for each candidate input,
-  the HTTP outcome must equal the body outcome.
+  the HTTP outcome must equal the body outcome. It runs over every underlying type an `enum` can
+  have and not `int` alone, because the parse widens each member to `ulong`, ORs them and narrows
+  the result back: sign extension and the top bit are precisely what that arithmetic can lose, and
+  an `int` enum with no negative member exercises neither.
 - `EMN0006`, reporting a public name at least one channel cannot carry. The forbidden set was
   established by sending each character over all five channels against a running server, not read off
   a specification: a slash is refused inside a route segment, and a line break or a character outside
