@@ -146,6 +146,26 @@ public sealed class FormattingTests {
     }
 
     /// <summary>
+    /// The three ways this converter has nothing to write, each handed to the base converter rather
+    /// than answered for: a destination that is not a string, no value at all, and a value the
+    /// contract cannot name. Asserted through answers only the base produces — it decomposes a
+    /// <c>[Flags]</c> value into an <see cref="Enum" /> array, writes nothing as the empty string,
+    /// and falls back to the number — so each proves the hand-over happened rather than that
+    /// something merely refused.
+    /// </summary>
+    [Fact]
+    public void the_type_converter_defers_what_it_has_no_name_for() {
+        TypeConverter converter = new EnumMemberNameConverter(typeof(Permissions));
+
+        object? decomposed = converter.ConvertTo(null, CultureInfo.InvariantCulture,
+                                                 Permissions.Read | Permissions.Write, typeof(Enum[]));
+
+        Assert.Equal(new Enum[] { Permissions.Read, Permissions.Write }, (Enum[])decomposed!);
+        Assert.Equal(string.Empty, converter.ConvertTo(null, CultureInfo.InvariantCulture, null, typeof(string)));
+        Assert.Equal("64", converter.ConvertTo(null, CultureInfo.InvariantCulture, (Permissions)64, typeof(string)));
+    }
+
+    /// <summary>
     /// Characterizes a real gap: ASP.NET Core formats route values without consulting
     /// <c>TypeDescriptor</c>, so a link built from the enum value carries the C# name and this very
     /// API answers 400 to it. It cannot be corrected from a TypeConverter, hence
