@@ -127,6 +127,18 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **The OpenAPI `[Flags]` pattern described neither half of the vocabulary exactly.** A member left
+  unannotated keeps its C# name, which the binder matches ignoring case, but the pattern listed it as
+  written — so `delete`, `DELETE` and `read, delete` were excluded from the document while the server
+  bound all three. An unannotated name is now written as `[Dd][Ee][Ll][Ee][Tt][Ee]`; a declared name
+  is matched ordinally and stays literal, so a miscased one is still excluded.
+- **The same pattern used `\s`, which is not the whitespace the binder trims.** A JSON Schema pattern
+  is read as ECMA-262, where `\s` takes U+FEFF and leaves U+0085, while `String.Trim` — that is,
+  `char.IsWhiteSpace` — does the opposite on both. The document was wrong in both directions at once:
+  it advertised a value opening on U+FEFF that answers 400, and excluded one opening on U+0085 that
+  binds. The twenty-five code points are now written out. The repository's own tests could not see
+  this, because they read the pattern with `System.Text.RegularExpressions`, whose `\s` happens to
+  agree with `Trim` on exactly those two.
 - **Of two unannotated members differing only by case, one was unreachable.** The C# names were held
   in a single case-insensitive dictionary, so `Read` and `read` collided and the second was dropped —
   the token naming it exactly then resolved to the first. `System.Text.Json` matches the exact

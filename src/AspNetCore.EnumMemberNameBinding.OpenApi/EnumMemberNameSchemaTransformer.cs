@@ -57,7 +57,7 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
         if (EnumMemberNames.IsFlagsContract(type)) {
             // A combination is an open set, so it cannot be enumerated. A pattern describes it exactly.
             schema.Enum = null;
-            schema.Pattern = BuildFlagsPattern(names);
+            schema.Pattern = BuildFlagsPattern(names, EnumMemberNames.GetNamesMatchedIgnoringCase(type));
             schema.Description = Append(schema.Description, FlagsCombination(names));
 
             return Task.CompletedTask;
@@ -104,13 +104,78 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
              + $"Combine several with a comma, for example \"{string.Join(", ", names.Take(2))}\".";
     }
 
-    private static string BuildFlagsPattern(IReadOnlyList<string> names) {
-        string alternatives = string.Join('|', names.Select(EscapeForJsonSchema));
+    /// <summary>
+    /// The whitespace the binder trims, written out rather than as <c>\s</c>.
+    /// </summary>
+    /// <remarks>
+    /// <c>\s</c> is not that set. A JSON Schema pattern is read as ECMA-262, where <c>\s</c> is
+    /// WhiteSpace plus LineTerminator — which includes U+FEFF, and excludes U+0085. The binder trims
+    /// with <c>String.Trim</c>, which is <see cref="char.IsWhiteSpace(char)" />, and that is the other way
+    /// round on both. So the document was wrong in both directions at once: it advertised a value
+    /// opening on U+FEFF, which the server answers 400 to, and excluded one opening on U+0085,
+    /// which the server binds.
+    /// <para>
+    /// Written as the twenty-five code points <see cref="char.IsWhiteSpace(char)" /> admits, which is
+    /// a closed set — <c>the_pattern_admits_exactly_the_whitespace_the_binder_trims</c> enumerates
+    /// every <c>char</c> against both. That test reads the pattern with .NET's own engine, which is
+    /// sound once the class is explicit code points: no dialect reads those differently, where
+    /// <c>\s</c> is precisely the thing they disagree about. It is also why the divergence was
+    /// invisible here — the suite evaluated the pattern with <c>System.Text.RegularExpressions</c>,
+    /// whose <c>\s</c> happens to agree with <c>Trim</c> on both, so only a consumer outside .NET
+    /// could ever have seen it.
+    /// </para>
+    /// </remarks>
+    private const string Whitespace = @"[\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]";
+
+    private static string BuildFlagsPattern(IReadOnlyList<string> names, IReadOnlyList<string> ignoringCase) {
+        string alternatives = string.Join('|', names.Select(name => Alternative(name, ignoringCase)));
 
         // Surrounding whitespace and a single trailing comma are accepted by the binder, because
         // System.Text.Json accepts them. A pattern that excluded them would advertise a contract
         // stricter than the one the server honours.
-        return $@"^\s*({alternatives})(\s*,\s*({alternatives}))*\s*,?\s*$";
+        return $"^{Whitespace}*({alternatives})({Whitespace}*,{Whitespace}*({alternatives}))*{Whitespace}*,?{Whitespace}*$";
+    }
+
+    /// <summary>
+    /// One name as the pattern must read it: literally, or under any casing.
+    /// </summary>
+    /// <remarks>
+    /// The two halves of the vocabulary are not matched the same way, and writing them the same way
+    /// is what made the document refuse values the server binds. A declared name is matched
+    /// ordinally, so it belongs in the pattern as written. A member left unannotated keeps its C#
+    /// name, which is matched ignoring case — so <c>Delete</c> alone advertised a name of which the
+    /// server also accepts <c>delete</c> and <c>DELETE</c>.
+    /// </remarks>
+    private static string Alternative(string name, IReadOnlyList<string> ignoringCase) {
+        return ignoringCase.Contains(name, StringComparer.Ordinal) ? EscapeIgnoringCase(name) : EscapeForJsonSchema(name);
+    }
+
+    /// <summary>
+    /// A name written so that every casing of it matches, which ECMA-262 has no flag for inside a
+    /// pattern: each cased character becomes the two-element class of its own two forms.
+    /// </summary>
+    /// <remarks>
+    /// A character whose two forms are equal is left outside a class deliberately, and not written as
+    /// <c>[--]</c>: a name may contain a hyphen, and a hyphen inside a class is a range. Only cased
+    /// characters reach the class, and none of the four a class would need escaped — <c>\</c>,
+    /// <c>]</c>, <c>^</c> and <c>-</c> — has an upper form differing from its lower one.
+    /// </remarks>
+    private static string EscapeIgnoringCase(string name) {
+        StringBuilder escaped = new(name.Length * 4);
+
+        foreach (char character in name) {
+            char upper = char.ToUpperInvariant(character);
+            char lower = char.ToLowerInvariant(character);
+
+            if (upper == lower) {
+                Escape(escaped, character);
+                continue;
+            }
+
+            escaped.Append('[').Append(upper).Append(lower).Append(']');
+        }
+
+        return escaped.ToString();
     }
 
     /// <summary>
@@ -124,16 +189,18 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
     /// spaces included, is a literal in both dialects.
     /// </remarks>
     private static string EscapeForJsonSchema(string name) {
-        const string SyntaxCharacters = @"^$\.*+?()[]{}|/";
-
         StringBuilder escaped = new(name.Length + 8);
-        foreach (char character in name) {
-            if (SyntaxCharacters.Contains(character, StringComparison.Ordinal)) { escaped.Append('\\'); }
-
-            escaped.Append(character);
-        }
+        foreach (char character in name) { Escape(escaped, character); }
 
         return escaped.ToString();
+    }
+
+    private static void Escape(StringBuilder escaped, char character) {
+        const string SyntaxCharacters = @"^$\.*+?()[]{}|/";
+
+        if (SyntaxCharacters.Contains(character, StringComparison.Ordinal)) { escaped.Append('\\'); }
+
+        escaped.Append(character);
     }
 
     private static string Append(string? description, string addition) {
