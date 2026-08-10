@@ -43,24 +43,33 @@ consommateur.
 
 ## Style de code
 
-L'essentiel tient dans `.editorconfig`, que votre éditeur lit déjà. Une règle qu'il ne sait pas
-exprimer : un `if` dont tout le corps est une seule sortie — `return`, `throw`, `continue`, `break` —
-s'écrit sur une ligne.
+L'essentiel tient dans `.editorconfig`, que votre éditeur lit déjà. Deux règles qu'il ne sait pas
+exprimer, et c'est le même reproche : une ligne qui n'est pas une pensée, que le lecteur doit
+reconstituer.
+
+Un `if` dont tout le corps est une seule sortie — `return`, `throw`, `continue`, `break` — s'écrit
+sur une ligne, et une suite de gardes forme un bloc, sans ligne vide entre elles :
 
 ```csharp
 if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
 if (isFlags && name.Contains(',')) { return Problem.CommaInFlagsName(memberName, name); }
 ```
 
-La garde et ce qu'elle fait sont une seule pensée, et trois lignes obligent le lecteur à la
-reconstituer. Une suite de gardes forme un seul bloc : pas de ligne vide entre elles, sans quoi on
-rend la hauteur que la forme sur une ligne venait de gagner. Tout ce qui est moins trivial qu'une
-sortie nue garde la forme multiligne, ainsi qu'une garde qui dépasserait 140 caractères une fois
-repliée, car au-delà la ligne unique cesse d'être la plus lisible. C'est un plafond et non une
-dispense : une garde trop large est en général une garde dont la condition demande un nom.
+Une déclaration ne coupe pas après le `=` quand sa valeur tient à côté du nom :
 
-`tools/style/lint-single-line-exits.sh` signale ce qui n'y répond pas, `--fix` le réécrit, et la CI
-l'exécute sans l'option. C'est donc vérifié plutôt que retenu.
+```csharp
+internal const string Reflection = "Enum member name binding reads enum metadata reflectively…";
+```
+
+La garde et ce qu'elle fait sont une seule pensée ; un nom et sa valeur en sont une autre. Tout ce
+qui est moins trivial qu'une sortie nue garde la forme multiligne, et de même une valeur qui a
+réellement besoin de plusieurs lignes — une concaténation, un initialiseur long. La largeur est un
+plafond dans les deux cas, 140 caractères pour une garde et 160 pour une valeur, et un plafond
+plutôt qu'une dispense : ce qui est trop large est en général ce qui réclame un nom.
+
+`tools/style/lint-layout.sh` signale ce qui n'y répond pas, `--fix` le réécrit, et la CI l'exécute
+sans l'option — en lançant d'abord le test du vérificateur, pour que « rien à signaler » veuille
+dire quelque chose. C'est donc vérifié plutôt que retenu.
 
 ## Branches
 

@@ -21,4 +21,4 @@ staged="$(git diff --cached --name-only --diff-filter=ACM -- '*.cs' | grep -Ev '
 # shellcheck disable=SC2086
 # Word splitting is the point: one path per line, none of which can contain a space, since the
 # repository has no such file and git would quote it if it did.
-exec "$root/tools/style/lint-single-line-exits.sh" $staged
+exec "$root/tools/style/lint-layout.sh" $staged

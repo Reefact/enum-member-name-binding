@@ -24,7 +24,7 @@ csharp_prefer_braces = true:warning
 # An `if` whose whole body is one exit is written on one line — `if (name is null) { return; }`.
 # The braces are still required by the rule above; what this setting protects is the line they sit
 # on. Set to false, the formatter breaks every one of them apart, so it is pinned rather than left
-# to the default: `tools/style/lint-single-line-exits.sh` would then report what Format Document
+# to the default: `tools/style/lint-layout.sh` would then report what Format Document
 # had just done.
 csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true

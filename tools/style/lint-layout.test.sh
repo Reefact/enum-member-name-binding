@@ -9,12 +9,12 @@
 # Neither shows in a green build. The shapes a checker must stay silent about, and the ones it must
 # not miss, are both invisible in its output, so they are named here instead.
 #
-# Usage: tools/style/lint-single-line-exits.test.sh
+# Usage: tools/style/lint-layout.test.sh
 
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-checker="$here/lint-single-line-exits.sh"
+checker="$here/lint-layout.sh"
 
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -110,6 +110,19 @@ class Fixture {
     }
 
     void Log() { }
+
+    // Rule 3: the value fits beside its name, so the break after the = is gratuitous.
+    private const string Split =
+        "a value short enough to sit on the line its name is on";
+
+    // Left alone: joined this would pass the ceiling, and it has a seam of its own to break at.
+    private static readonly string TooWide =
+        Describe("a value long enough that joining it would run past the ceiling this rule keeps").Trim().ToUpperInvariant();
+
+    // Left alone: the value itself needs more than one line, which is what the break is for.
+    private const string Continued =
+        "a first half that carries its own line "
+      + "and a second half under it;";
 }
 FIXTURE
 
@@ -125,7 +138,7 @@ class Interpolated {
 }
 FIXTURE
 
-expected="Fixture.cs:3:collapse Fixture.cs:12:unblank Interpolated.cs:3:collapse"
+expected="Fixture.cs:3:collapse Fixture.cs:12:unblank Fixture.cs:91:joinvalue Interpolated.cs:3:collapse"
 
 summarise() {
     "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" 2>&1 || true
@@ -136,6 +149,7 @@ summarise() {
 actual="$(summarise \
     | sed -n -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): an if whose.*$|\1:\2:collapse|p' \
              -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): blank line.*$|\1:\2:unblank|p' \
+             -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): this value fits.*$|\1:\2:joinvalue|p' \
     | tr '\n' ' ')"
 actual="${actual% }"
 
@@ -152,8 +166,8 @@ before="$(wc -l < "$work/Fixture.cs")"
 "$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" > /dev/null
 after="$(wc -l < "$work/Fixture.cs")"
 
-if [ "$((before - after))" -ne 3 ]; then
-    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 3"
+if [ "$((before - after))" -ne 4 ]; then
+    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 4"
     exit 1
 fi
 
@@ -167,9 +181,14 @@ if ! grep -q "ArgumentException(\$\"'{name}' is empty.\", nameof(name)); }$" "$w
     exit 1
 fi
 
+if ! grep -q '^    private const string Split = "a value short enough' "$work/Fixture.cs"; then
+    echo "FAIL: --fix did not put the value back beside its name"
+    exit 1
+fi
+
 if ! "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" > /dev/null; then
     echo "FAIL: the checker still reports something after --fix"
     exit 1
 fi
 
-echo "ok — three sites reported, rewritten, and clean afterwards."
+echo "ok — four sites reported, rewritten, and clean afterwards."
