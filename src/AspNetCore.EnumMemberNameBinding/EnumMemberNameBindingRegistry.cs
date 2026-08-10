@@ -143,16 +143,12 @@ internal static class EnumMemberNameBindingRegistry {
     /// </param>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static void RefuseUnlessContractEnum(Type explicitType, string paramName) {
-        if (!explicitType.IsEnum) {
-            throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", paramName);
-        }
+        if (!explicitType.IsEnum) { throw new ArgumentException($"'{explicitType.FullName}' is not an enum.", paramName); }
 
         // Registering an enum that declares nothing would change how an ordinary enum binds and
         // serializes, which is exactly what this library promises never to do. Naming one
         // explicitly is a mistake worth reporting rather than a preference worth honouring.
-        if (!EnumContract.For(explicitType).IsContract) {
-            throw new EnumContractException(explicitType, [Problem.NoContractToApply()]);
-        }
+        if (!EnumContract.For(explicitType).IsContract) { throw new EnumContractException(explicitType, [Problem.NoContractToApply()]); }
     }
 
     /// <summary>
@@ -188,13 +184,19 @@ internal static class EnumMemberNameBindingRegistry {
     /// configured — naming types or assemblies is taken as "scan nothing else".
     /// </summary>
     private static IEnumerable<Assembly> AssembliesToScan(EnumMemberNameBindingOptions options) {
-        if (options.Assemblies.Count > 0 || options.EnumTypes.Count > 0) {
-            return options.Assemblies.Distinct();
-        }
+        if (SomethingWasNamed(options)) { return options.Assemblies.Distinct(); }
 
         Assembly? entry = Assembly.GetEntryAssembly();
 
         return entry is null ? [] : [entry];
+    }
+
+    /// <summary>
+    /// Whether the caller named anything at all — an assembly, or a type. Naming one is what turns
+    /// the entry assembly from a default into something that was not asked for.
+    /// </summary>
+    private static bool SomethingWasNamed(EnumMemberNameBindingOptions options) {
+        return options.Assemblies.Count > 0 || options.EnumTypes.Count > 0;
     }
 
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]

@@ -18,9 +18,10 @@ git config core.hooksPath .githooks
 dotnet build -c Release
 ```
 
-The `core.hooksPath` line enables the `commit-msg` hook, which checks a message before it is
-recorded. A hook cannot install itself, which is why this is a step rather than magic. Skipping it
-costs nothing at commit time and costs a rewritten history later, when CI runs the same check.
+The `core.hooksPath` line enables two hooks: `commit-msg`, which checks a message before it is
+recorded, and `pre-commit`, which checks the staged C# against the style rule below. A hook cannot
+install itself, which is why this is a step rather than magic. Skipping it costs nothing at commit
+time and costs a rewritten history later, when CI runs the same checks.
 
 ## Building and testing
 
@@ -36,6 +37,27 @@ only check that would notice a package that compiles and does not work.
 
 CI runs the build and the tests on two SDKs — the floor from `global.json` and the latest 10.0.x —
 because a disagreement between analyzer versions belongs here rather than in a consumer's build.
+
+## Coding style
+
+Most of it lives in `.editorconfig`, which your editor already reads. One rule it cannot express: an
+`if` whose whole body is a single exit — `return`, `throw`, `continue`, `break` — is written on one
+line.
+
+```csharp
+if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
+if (isFlags && name.Contains(',')) { return Problem.CommaInFlagsName(memberName, name); }
+```
+
+The guard and what it does are one thought, and three lines make the reader assemble it. A run of
+them is one block, so consecutive guards take no blank line between them — the height the one-line
+form saves is the whole point of it. Anything less trivial than a bare exit keeps the multi-line
+form, and so does a guard that would run past 140 characters collapsed, since beyond that width the
+one line stops being the easier read. That is a ceiling rather than an exemption: a guard too wide
+to fit is usually one whose condition wants a name.
+
+`tools/style/lint-single-line-exits.sh` reports what does not follow this, `--fix` rewrites it, and
+CI runs it without the flag. So this is checked rather than remembered.
 
 ## Branches
 

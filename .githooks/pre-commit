@@ -1,0 +1,24 @@
+#!/bin/sh
+# Check the staged C# files before the commit is recorded.
+#
+# Enabled by the same line as the other hook, once per clone:
+#
+#   git config core.hooksPath .githooks
+#
+# The same check runs in CI on every pull request, so a bypass (`git commit --no-verify`) is caught
+# before merge rather than never. Locally it is not enforcement, it is that `--fix` fixes it now
+# rather than in a follow-up commit that says "style".
+
+set -e
+
+root="$(git rev-parse --show-toplevel)"
+
+# Only what this commit touches. Running over the whole tree would fail a commit for a file it does
+# not contain, which is how a hook earns the reputation of being in the way.
+staged="$(git diff --cached --name-only --diff-filter=ACM -- '*.cs' | grep -Ev '/(obj|bin)/' || true)"
+[ -n "$staged" ] || exit 0
+
+# shellcheck disable=SC2086
+# Word splitting is the point: one path per line, none of which can contain a space, since the
+# repository has no such file and git would quote it if it did.
+exec "$root/tools/style/lint-single-line-exits.sh" $staged

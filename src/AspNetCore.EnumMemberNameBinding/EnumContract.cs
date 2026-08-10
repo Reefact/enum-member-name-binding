@@ -86,9 +86,7 @@ internal sealed class EnumContract {
 
         AddShadowingProblems(declaredBy, unannotated, problems);
 
-        if (problems.Count > 0) {
-            throw new EnumContractException(enumType, problems);
-        }
+        if (problems.Count > 0) { throw new EnumContractException(enumType, problems); }
 
         _byContractName = byContractName.ToFrozenDictionary(StringComparer.Ordinal);
         _byClrName      = byClrName.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
@@ -104,17 +102,9 @@ internal sealed class EnumContract {
     /// inspect.
     /// </summary>
     private static string? MalformedNameProblem(string memberName, string name, bool isFlags) {
-        if (string.IsNullOrEmpty(name)) {
-            return Problem.EmptyName(memberName);
-        }
-
-        if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) {
-            return Problem.SurroundingWhitespace(memberName, name);
-        }
-
-        if (isFlags && name.Contains(',', StringComparison.Ordinal)) {
-            return Problem.CommaInFlagsName(memberName, name);
-        }
+        if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
+        if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) { return Problem.SurroundingWhitespace(memberName, name); }
+        if (isFlags && name.Contains(',', StringComparison.Ordinal)) { return Problem.CommaInFlagsName(memberName, name); }
 
         return null;
     }
@@ -198,7 +188,6 @@ internal sealed class EnumContract {
     internal static EnumContract For(Type enumType) {
         ArgumentNullException.ThrowIfNull(enumType);
         if (!enumType.IsEnum) { throw new ArgumentException($"'{enumType.FullName}' is not an enum.", nameof(enumType)); }
-
         if (Cache.TryGetValue(enumType, out EnumContract? cached)) { return cached; }
 
         // Built outside GetOrAdd so the annotation on enumType survives; a concurrent build is
@@ -223,9 +212,7 @@ internal sealed class EnumContract {
             return false;
         }
 
-        if (_isFlags && trimmed.Contains(',')) {
-            return TryParseFlags(trimmed, out result);
-        }
+        if (_isFlags && trimmed.Contains(',')) { return TryParseFlags(trimmed, out result); }
 
         return TryParseSingle(trimmed.ToString(), out result);
     }

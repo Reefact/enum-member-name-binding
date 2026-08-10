@@ -43,6 +43,22 @@ Whichever is chosen, the reason lives in the repository — in an attribute, a c
 and never as a click in the SonarQube UI, where a reader of this repository cannot see it and a
 recreated project loses it.
 
+## An `if` that only exits fits on one line
+
+```csharp
+if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
+if (isFlags && name.Contains(',')) { return Problem.CommaInFlagsName(memberName, name); }
+```
+
+A run of them is one block, so consecutive guards take no blank line between them. The body has to
+be a single `return`, `throw`, `continue` or `break` — anything else keeps the multi-line form, and
+so does a guard that would run past 140 characters collapsed — a ceiling, not an exemption: a guard
+too wide to fit is usually one whose condition wants a name.
+
+`tools/style/lint-single-line-exits.sh` decides the cases that can be decided mechanically, and CI
+runs it. It has no exception mechanism on purpose: everything it reports already fits, so the only
+answer is to rewrite it — and everything too wide it never reports at all.
+
 ## Verify, do not assume
 
 Three integrations in this repository have reported success while doing nothing: `dotnet test`

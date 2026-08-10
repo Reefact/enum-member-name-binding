@@ -20,6 +20,15 @@ csharp_using_directive_placement = outside_namespace:warning
 csharp_style_namespace_declarations = file_scoped:warning
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
 csharp_prefer_braces = true:warning
+
+# An `if` whose whole body is one exit is written on one line — `if (name is null) { return; }`.
+# The braces are still required by the rule above; what this setting protects is the line they sit
+# on. Set to false, the formatter breaks every one of them apart, so it is pinned rather than left
+# to the default: `tools/style/lint-single-line-exits.sh` would then report what Format Document
+# had just done.
+csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_blocks = true
+
 # Every member on the boundary of a type guards the reference arguments it declared non-null. The
 # annotation states that contract with the compiler; nothing enforces it for a caller with nullable
 # disabled, or for a value arriving through reflection, DI or a deserializer.

@@ -138,25 +138,23 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     /// duplicate. A member earns at most one of these, which is why the caller stops at the first.
     /// </remarks>
     private static Diagnostic? Reject(Member member, bool isFlags, Dictionary<string, Member> declared, Location location) {
-        string? name = member.PublicName;
+        string? name  = member.PublicName;
+        string  field = member.Field.Name;
 
-        if (string.IsNullOrEmpty(name)) {
-            return Diagnostic.Create(InvalidPublicName, location, member.Field.Name, name, "is empty");
-        }
-
-        if (char.IsWhiteSpace(name![0]) || char.IsWhiteSpace(name[name.Length - 1])) {
-            return Diagnostic.Create(InvalidPublicName, location, member.Field.Name, name, "has leading or trailing whitespace");
-        }
-
-        if (isFlags && name.IndexOf(',') >= 0) {
-            return Diagnostic.Create(CommaInFlagsName, location, member.Field.Name, name);
-        }
-
-        if (declared.TryGetValue(name, out Member existing)) {
-            return Diagnostic.Create(DuplicatePublicName, location, existing.Field.Name, member.Field.Name, name);
-        }
+        if (string.IsNullOrEmpty(name)) { return At(InvalidPublicName, location, field, name, "is empty"); }
+        if (IsPadded(name!)) { return At(InvalidPublicName, location, field, name, "has leading or trailing whitespace"); }
+        if (isFlags && name!.IndexOf(',') >= 0) { return At(CommaInFlagsName, location, field, name); }
+        if (declared.TryGetValue(name!, out Member owner)) { return At(DuplicatePublicName, location, owner.Field.Name, field, name); }
 
         return null;
+    }
+
+    private static bool IsPadded(string name) {
+        return char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[name.Length - 1]);
+    }
+
+    private static Diagnostic At(DiagnosticDescriptor rule, Location location, params object?[] arguments) {
+        return Diagnostic.Create(rule, location, arguments);
     }
 
     /// <summary>
@@ -207,11 +205,9 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     }
 
     private static Location? LocationOf(AttributeData attribute) {
-        if (attribute.ApplicationSyntaxReference?.GetSyntax() is AttributeSyntax syntax) {
-            return syntax.ArgumentList?.Arguments.FirstOrDefault()?.GetLocation() ?? syntax.GetLocation();
-        }
+        if (attribute.ApplicationSyntaxReference?.GetSyntax() is not AttributeSyntax syntax) { return null; }
 
-        return null;
+        return syntax.ArgumentList?.Arguments.FirstOrDefault()?.GetLocation() ?? syntax.GetLocation();
     }
 
     private sealed class Member(IFieldSymbol field, AttributeData? attribute, string? publicName) {
