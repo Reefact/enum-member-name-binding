@@ -215,6 +215,18 @@ jobs:
           fi
           echo "A short-lived API key was issued."
 
+      # Both packages go in one invocation — the glob expands to two arguments and `dotnet nuget push`
+      # takes them all, which was measured rather than read off the synopsis. The symbol packages are
+      # deliberately not in the glob: `*.nupkg` does not match `.snupkg`, and NuGet pushes the `.snupkg`
+      # sitting beside a package along with it. Widening this to `artifacts/*` would try to push them
+      # as packages in their own right.
+      #
+      # --skip-duplicate is the one flag here that is not cosmetic. This step is also the only one a
+      # dry run never reaches, so a partial failure is discovered in a real release or not at all: the
+      # main package published, the companion lost to a network error, and the workflow red. On the
+      # rerun the main package is a duplicate, and without this flag its 409 stops the command before
+      # the companion — the very package the rerun exists to send. The flag turns that into a warning
+      # and, in the CLI's own words, "continue[s] with the next package in the push".
       - name: Push
         if: env.DRY_RUN != 'true'
         env:
@@ -222,6 +234,7 @@ jobs:
         run: |
           set -euo pipefail
           dotnet nuget push artifacts/*.nupkg \
+            --skip-duplicate \
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json
 
