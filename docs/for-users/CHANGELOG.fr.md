@@ -139,6 +139,16 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Un enregistrement en échec pouvait tout de même modifier une application en fonctionnement.** Les
+  énumérations sous contrat étaient inscrites dans le registre que le model binder provider consulte à
+  chaque requête *avant* que la collection de services ne soit configurée — si bien qu'un appel
+  effectué après `Build()`, où cette collection est en lecture seule, levait
+  `InvalidOperationException` en les ayant déjà inscrites. L'application liait alors ces énumérations
+  par leurs noms déclarés et les sérialisait en nombres, aucun convertisseur ne les ayant accompagnées :
+  exactement la divergence liaison/sérialisation que ce paquet existe pour supprimer, produite par un
+  appel dont l'appelant s'était vu dire qu'il avait échoué. Le registre est désormais rempli en
+  dernier, une fois qu'il ne reste plus rien qui puisse lever — ce que le code affirmait déjà :
+  « l'enregistrement n'a pas eu lieu » doit être vrai, et non presque vrai.
 - **Le motif `[Flags]` du document OpenAPI ne décrivait exactement ni l'une ni l'autre moitié du
   vocabulaire.** Un membre laissé sans annotation garde son nom C#, que le binder reconnaît sans tenir
   compte de la casse, alors que le motif le listait tel quel — `delete`, `DELETE` et `read, delete`
@@ -269,6 +279,11 @@ brûler sans rien perdre.
 
 ### Documentation
 
+- **La section trimming rangeait `AddEnumMemberNameBinding` dans le mauvais groupe.** Elle donnait
+  l'enregistrement MVC comme portant `[RequiresUnreferencedCode]` seul, alors que le point d'entrée
+  porte `[RequiresDynamicCode]` depuis son écriture — il le doit, puisqu'il atteint la construction
+  des convertisseurs JSON génériques, que la même phrase désigne comme exigeant les deux. Corrigé
+  dans les deux langues, qui portaient la même affirmation.
 - Le README a été scindé. Il avait atteint une longueur que personne ne lit avant d'adopter un
   paquet : la page d'accueil porte désormais le problème, l'installation, un exemple, le tableau des
   canaux, les garanties et les deux limitations à connaître avant d'adopter — le reste a été déplacé,

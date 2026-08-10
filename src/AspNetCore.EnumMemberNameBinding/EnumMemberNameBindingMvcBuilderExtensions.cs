@@ -39,8 +39,10 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
     /// <returns>The same builder, for chaining.</returns>
     /// <exception cref="EnumContractException">An enum declares an ambiguous or malformed contract.</exception>
     /// <remarks>
-    /// Must be called during application start-up. ASP.NET Core caches the model binder it builds
-    /// for a given type on first use, so a registration made after the first request has no effect.
+    /// Must be called during application start-up — before <c>Build</c>, after which the service
+    /// collection is read-only and this throws, having recorded nothing. Later still, ASP.NET Core
+    /// has cached the model binder it built for a type on first use, so a parameter already bound
+    /// would not see a new registration even if one could be made.
     /// <para>
     /// Everything it configures belongs to <paramref name="builder" />'s own container: the set of
     /// registered enums, the model binder provider that reads it, and the two
@@ -70,28 +72,48 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
         // has to be true rather than nearly true.
         IReadOnlyList<Type> contractEnums = EnumMemberNameBindingRegistry.Register(options);
 
-        Bind(builder.Services, contractEnums);
+        EnumMemberNameBindingRegistrations registrations = Bind(builder.Services);
 
-        // Declining the System.Text.Json half must not decline the binding: a caller who configures
-        // their own converters is saying which package writes the JSON, not which one reads a query
-        // string. The early return therefore comes after the binder, never before it.
-        if (!options.ConfigureJsonSerialization) { return builder; }
-        if (contractEnums.Count == 0) { return builder; }
+        ConfigureJsonSerialization(builder, options, contractEnums);
 
-        builder.AddJsonOptions(json => PutInFront(json.JsonSerializerOptions.Converters, contractEnums));
-
-        // MVC and the rest of the stack read two different option objects. Microsoft.AspNetCore.OpenApi
-        // and minimal API serialization use Http.Json.JsonOptions, so configuring only the MVC one
-        // leaves the generated OpenAPI document describing every contract enum as an integer.
-        builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(
-            json => PutInFront(json.SerializerOptions.Converters, contractEnums));
+        // Last, and that is the whole of the atomicity. Everything above only adds descriptors to a
+        // collection nothing has read yet, so a throw there leaves the application as it was. This
+        // one writes into the record the model binder provider consults on every request, and no
+        // exception can take it back — so it runs once the steps that can throw have not.
+        registrations.Add(contractEnums);
 
         return builder;
     }
 
     /// <summary>
-    /// Records the contract enums in the application's container and puts the model binder provider
-    /// that reads them in front of the one ASP.NET Core uses for enums.
+    /// Puts this package's converters in front of the application's own, in both option objects.
+    /// </summary>
+    /// <remarks>
+    /// Declining the <c>System.Text.Json</c> half must not decline the binding: a caller who
+    /// configures their own converters is saying which package writes the JSON, not which one reads a
+    /// query string. The early return therefore lives here, where it declines this half alone, rather
+    /// than in the caller where it would also skip what follows.
+    /// <para>
+    /// MVC and the rest of the stack read two different option objects. Microsoft.AspNetCore.OpenApi
+    /// and minimal API serialization use <c>Http.Json.JsonOptions</c>, so configuring only the MVC one
+    /// leaves the generated OpenAPI document describing every contract enum as an integer.
+    /// </para>
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
+    private static void ConfigureJsonSerialization(IMvcBuilder builder, EnumMemberNameBindingOptions options, IReadOnlyList<Type> contractEnums) {
+        if (!options.ConfigureJsonSerialization) { return; }
+        if (contractEnums.Count == 0) { return; }
+
+        builder.AddJsonOptions(json => PutInFront(json.JsonSerializerOptions.Converters, contractEnums));
+
+        builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(
+            json => PutInFront(json.SerializerOptions.Converters, contractEnums));
+    }
+
+    /// <summary>
+    /// Puts the model binder provider in front of the one ASP.NET Core uses for enums, and hands back
+    /// the record it will read — which the caller fills once nothing is left that can throw.
     /// </summary>
     /// <remarks>
     /// The two halves are separate because they accumulate differently. The registrations are one
@@ -99,17 +121,25 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
     /// one entry in a list, so a second call must not add another. Both are reached through the
     /// container rather than through anything static, which is what keeps one host's registration
     /// out of the next one's.
+    /// <para>
+    /// Filling the record was the first thing this did, and it is now the last thing the caller does.
+    /// The record is live — the provider reads it on every request — while everything else here only
+    /// adds descriptors to a collection nobody has read yet. So a call that threw part-way used to
+    /// leave a running application binding enums it had just been told were not registered, with no
+    /// converter to serialize them back: <c>RegistrationRefusalTests</c> holds it.
+    /// </para>
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
-    private static void Bind(IServiceCollection services, IReadOnlyList<Type> contractEnums) {
+    private static EnumMemberNameBindingRegistrations Bind(IServiceCollection services) {
         EnumMemberNameBindingRegistrations registrations = Registrations(services);
-        registrations.Add(contractEnums);
 
         services.Configure<MvcOptions>(mvc => {
             if (mvc.ModelBinderProviders.Any(provider => provider is EnumMemberNameModelBinderProvider)) { return; }
 
             mvc.ModelBinderProviders.Insert(AheadOfTheStockEnumBinder(mvc.ModelBinderProviders), new EnumMemberNameModelBinderProvider(registrations));
         });
+
+        return registrations;
     }
 
     /// <summary>

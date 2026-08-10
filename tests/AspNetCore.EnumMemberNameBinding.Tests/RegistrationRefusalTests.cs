@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
@@ -134,6 +135,45 @@ public sealed class RegistrationRefusalTests {
 
         Check.WithCustomMessage("at the front it would take [FromBody] away from System.Text.Json.").That(at).IsNotEqualTo(0);
         Check.That(at + 1 < providers.Count ? providers[at + 1].GetType() : null).IsEqualTo(expectedSuccessor);
+    }
+
+    /// <summary>
+    /// The refusal that does not come from this package at all: a call made after
+    /// <c>WebApplicationBuilder.Build</c>, when the service collection has gone read-only. It must
+    /// leave the same nothing behind as the ones decided here.
+    /// </summary>
+    /// <remarks>
+    /// Out of the documented start-up window, and that is what makes it worth pinning rather than
+    /// worth allowing. The record is live — the model binder provider installed by the first call
+    /// reads it on every request — so filling it before the steps that can throw left a running
+    /// application binding an enum by names it had just been told were not registered, and
+    /// serializing it as a number, because no converter went with it. The call reported total
+    /// failure while changing the application: precisely the divergence this package exists to
+    /// remove, produced by the package.
+    /// <para>
+    /// The builder is captured before <c>Build</c> so the second call reaches
+    /// <c>AddEnumMemberNameBinding</c> at all — going through <c>AddControllers</c> again would throw
+    /// before it, proving nothing.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void a_registration_that_throws_after_the_container_is_built_records_nothing() {
+        WebApplicationBuilder builder = WebApplication.CreateBuilder();
+        IMvcBuilder mvc = builder.Services.AddControllers();
+        mvc.AddEnumMemberNameBinding(options => options.AddEnum<Repeated>());
+
+        using WebApplication app = builder.Build();
+
+        Check.WithCustomMessage("the service collection is read-only once the container is built, so this call cannot succeed.")
+             .ThatCode(() => mvc.AddEnumMemberNameBinding(options => options.AddEnum<ValidBesideAPartialOne>()))
+             .Throws<InvalidOperationException>();
+
+        EnumMemberNameBindingRegistrations registrations = app.Services.GetRequiredService<EnumMemberNameBindingRegistrations>();
+
+        Check.WithCustomMessage("the call threw, so the enum it named must not be bound by the running application.")
+             .That(registrations.Contains(typeof(ValidBesideAPartialOne))).IsFalse();
+        Check.WithCustomMessage("and the registration that did succeed must survive it.")
+             .That(registrations.Contains(typeof(Repeated))).IsTrue();
     }
 
     /// <summary>The two stock providers that claim an enum, dropped in the order they are consulted.</summary>

@@ -126,12 +126,16 @@ plutôt que de voir ses avertissements supprimés : un consommateur qui compile 
 obtient ainsi un avertissement exact au lieu d'un échec silencieux à l'exécution.
 
 Les deux contraintes sont appliquées séparément, car ce ne sont pas les mêmes : lire les métadonnées
-d'une énumération exige de la réflexion mais ne génère aucun code. `GetPublicNames`, `IsFlagsContract`,
-l'enregistrement MVC et tout le paquet OpenAPI portent donc `[RequiresUnreferencedCode]` seul ;
-`GetPublicName`, le chemin de formatage `[Flags]` et la construction des convertisseurs JSON
-génériques portent les deux.
+d'une énumération exige de la réflexion mais ne génère aucun code. `GetPublicNames`, `IsFlagsContract`
+et tout le paquet OpenAPI portent donc `[RequiresUnreferencedCode]` seul ; `GetPublicName`, le chemin
+de formatage `[Flags]`, la construction des convertisseurs JSON génériques — et donc
+`AddEnumMemberNameBinding` lui-même, qui les atteint — portent les deux.
 
 ## Appelez-le au démarrage
 
-ASP.NET Core met en cache le model binder qu'il construit pour un type à la première utilisation : un
-enregistrement effectué après la première requête n'a donc aucun effet.
+L'enregistrement configure le conteneur : il a donc sa place avant `WebApplicationBuilder.Build()`.
+Passé ce point, la collection de services est en lecture seule et l'appel lève — sans avoir rien
+enregistré, et c'est tout l'enjeu : un appel qui échoue ne laisse jamais l'application liant une
+énumération qu'il a nommée. Plus tard encore, ASP.NET Core a mis en cache le model binder construit
+pour un type à la première utilisation : un paramètre déjà lié ne verrait donc pas un nouvel
+enregistrement, même s'il était possible d'en faire un.
