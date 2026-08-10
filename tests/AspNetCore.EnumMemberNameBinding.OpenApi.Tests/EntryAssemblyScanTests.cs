@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Text.Json.Serialization;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -28,34 +27,32 @@ public enum Delivery {
 /// </remarks>
 public sealed class EntryAssemblyScanTests {
 
+    /// <summary>
+    /// Read back from the application's own registration record, which is also what the OpenAPI
+    /// companion consults — so this asserts the scan against the very thing that will decide whether
+    /// <c>Delivery</c> is described with its declared names.
+    /// </summary>
     [Fact]
     public void configuring_nothing_scans_the_entry_assembly() {
-        ServiceCollection services = new();
-
-        services.AddControllers().AddEnumMemberNameBinding();
-
-        // Only the scan could have reached this one, and only this package's converter refuses the C#
-        // name: the stock EnumConverter parses it, case-insensitively at that.
-        TypeConverter delivery = TypeDescriptor.GetConverter(typeof(Delivery));
-        Check.That(delivery.ConvertFromString("express")).IsEqualTo(Delivery.Express);
-        Check.ThatCode(() => delivery.ConvertFromString(nameof(Delivery.Express))).Throws<FormatException>();
+        Check.That(Registrations().Contains(typeof(Delivery))).IsTrue();
     }
 
     /// <summary>
     /// The scan passes by the enum in that same assembly that declares no contract, rather than
     /// adopting it on the way past.
     /// </summary>
-    /// <remarks>
-    /// Asserted on a numeric value because that is where the two converters part company: the stock
-    /// one accepts it, and this package's never does.
-    /// </remarks>
     [Fact]
     public void a_scan_adopts_no_enum_that_declares_nothing() {
-        ServiceCollection services = new();
+        Check.That(Registrations().Contains(typeof(PlainLevel))).IsFalse();
+    }
 
+    private static EnumMemberNameBindingRegistrations Registrations() {
+        ServiceCollection services = new();
         services.AddControllers().AddEnumMemberNameBinding();
 
-        Check.That(TypeDescriptor.GetConverter(typeof(PlainLevel)).ConvertFromString("0")).IsEqualTo(PlainLevel.Low);
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        return provider.GetRequiredService<EnumMemberNameBindingRegistrations>();
     }
 
 }

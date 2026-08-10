@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -7,56 +6,29 @@ using System.Text.Json.Serialization;
 namespace AspNetCore.EnumMemberNameBinding;
 
 /// <summary>
-/// Discovers contract enums and installs the <see cref="EnumMemberNameConverter" /> for each of them.
+/// Resolves the contract enums an application asked for, and refuses the ones it cannot honour.
 /// </summary>
 internal static class EnumMemberNameBindingRegistry {
 
     /// <summary>
-    /// <see cref="TypeDescriptor.AddAttributes(Type, Attribute[])" /> mutates process-wide state and
-    /// stacks a new provider on every call, so a type is only ever registered once. Several hosts in
-    /// one process — a test suite, most often — then share one registration instead of piling up.
-    /// </summary>
-    /// <remarks>
-    /// A lock rather than a concurrent dictionary, because the requirement is not merely that the
-    /// converter be installed once: no caller may return before the installation has completed. A
-    /// host that started serving while another was still registering would resolve the stock
-    /// converter and cache a model binder built on it, permanently, for that host. Registration
-    /// happens once at start-up, so the cost of the lock is irrelevant.
-    /// </remarks>
-    private static readonly Lock         Gate       = new();
-    private static readonly HashSet<Type> Registered = [];
-
-    /// <summary>
-    /// Resolves the enums covered by <paramref name="options" />, validates each contract and
-    /// registers the converter. Every contract is validated here, at startup — an invalid one throws
+    /// Resolves the enums covered by <paramref name="options" /> and validates each contract. Every
+    /// contract is validated here, at start-up — an invalid one throws
     /// <see cref="EnumContractException" /> before the application serves its first request.
     /// </summary>
     /// <remarks>
-    /// All or nothing: if any enum is refused, none is installed. That is a guarantee and not a
-    /// side effect of the ordering, because the alternative cannot be repaired — a caller who reads
-    /// the exception has no way to undo the registrations that preceded it.
+    /// All or nothing: if any enum is refused, the caller receives nothing to register. Resolving
+    /// and refusing are both finished before a single type is returned, so a caller who reads the
+    /// exception has nothing to undo — which is what "the registration did not happen" has to mean
+    /// for it to be worth saying.
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     internal static IReadOnlyList<Type> Register(EnumMemberNameBindingOptions options) {
         ArgumentNullException.ThrowIfNull(options);
 
-        // Three steps, in this order, and the order is the guarantee: resolve everything, refuse
-        // everything that must be refused, then install. TypeDescriptor.AddAttributes mutates
-        // process-wide state and cannot be undone, so a registration that installed part of its
-        // list before refusing the rest would leave the process in a state the caller never asked
-        // for and cannot roll back — after a failure they will read as "nothing happened".
         List<Type> discovered = [.. Discover(options)];
 
         foreach (Type enumType in discovered) {
             RefuseIfContractIsPartial(enumType, options.AllowPartialContracts);
-        }
-
-        foreach (Type enumType in discovered) {
-            lock (Gate) {
-                if (Registered.Add(enumType)) {
-                    TypeDescriptor.AddAttributes(enumType, new TypeConverterAttribute(typeof(EnumMemberNameConverter)));
-                }
-            }
         }
 
         return discovered;
@@ -119,11 +91,9 @@ internal static class EnumMemberNameBindingRegistry {
     /// </summary>
     /// <remarks>
     /// Deliberately not an iterator. Every explicit registration is checked here, before the first
-    /// element is produced, so an invalid one is refused before a single converter is installed —
-    /// <see cref="TypeDescriptor.AddAttributes(Type, Attribute[])" /> mutates process-wide state and
-    /// cannot be undone, which makes "all or nothing" the only honest outcome. An iterator would
-    /// defer these throws to the first <c>MoveNext</c>, and the caller would already have registered
-    /// whatever came before the bad entry.
+    /// element is produced, which is what makes "all or nothing" true of the refusals decided at this
+    /// step as well as of the ones decided per type. An iterator would defer these throws to the
+    /// first <c>MoveNext</c>, and the caller would already be part-way through the list.
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static IEnumerable<Type> Discover(EnumMemberNameBindingOptions options) {

@@ -1,5 +1,9 @@
-using System.ComponentModel;
 using System.Text.Json.Serialization;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
@@ -13,10 +17,16 @@ public enum Racer6 { [JsonStringEnumMemberName("a")] A, [JsonStringEnumMemberNam
 public enum Racer7 { [JsonStringEnumMemberName("a")] A, [JsonStringEnumMemberName("b")] B }
 
 /// <summary>
-/// Registration installs a converter into process-wide state. Installing it once is not enough:
-/// no caller may return before the installation has completed, or a host that started concurrently
-/// would resolve the stock converter and cache a model binder built on it for good.
+/// Registration writes into one application's container, but it reads from a cache the whole process
+/// shares — the resolved contracts. Several applications starting at once is the ordinary case in a
+/// test suite, so what that cache does under contention has to be known rather than hoped.
 /// </summary>
+/// <remarks>
+/// It used to matter more. When the converter was installed through <c>TypeDescriptor</c>, a caller
+/// returning before the installation had finished let a concurrent host cache a model binder built
+/// on the stock converter, permanently. Nothing is shared for a race to be lost in any more, and
+/// what is left here is the cache and the proof that two callers do not see each other.
+/// </remarks>
 public sealed class ConcurrentRegistrationTests {
 
     private const int Threads = 8;
@@ -52,23 +62,33 @@ public sealed class ConcurrentRegistrationTests {
     };
 
     /// <summary>
-    /// Every thread checks, the instant its own registration call returns, that the converter is
-    /// already in place — which is what a caller is entitled to assume.
+    /// Every thread registers the same enum into a container of its own, and reads back a binding
+    /// that works — the contract resolved once and shared, the provider installed once per
+    /// container.
     /// </summary>
-    /// <remarks>
-    /// This test does <b>not</b> prove the synchronisation. It was run against the earlier
-    /// <c>ConcurrentDictionary.TryAdd</c> implementation, where a losing caller returned before the
-    /// winner had finished installing the converter, and it passed there too — most likely because
-    /// <see cref="TypeDescriptor" /> serialises its own readers against writers, so the observation
-    /// blocks until the installation completes. The window is real by construction but was not
-    /// reproducible without adding a test seam to production code, which is not worth it. The lock
-    /// is what makes the invariant hold; this test guards against corruption, exceptions and
-    /// duplicate registration under contention, not against that specific interleaving.
-    /// </remarks>
     [Theory]
     [MemberData(nameof(Racers))]
-    public void every_concurrent_caller_sees_the_converter_installed_when_its_call_returns(Type enumType) {
-        Type[] observed = new Type[Threads];
+    public void every_concurrent_caller_gets_a_registration_of_its_own(Type enumType) {
+        int[] providers = new int[Threads];
+
+        RaceOn(index => {
+            ServiceCollection services = new();
+            services.AddControllers().AddEnumMemberNameBinding(options => options.EnumTypes.Add(enumType));
+
+            providers[index] = OurProviders(services);
+        });
+
+        Check.That(providers).ContainsOnlyElementsThatMatch(count => count == 1);
+    }
+
+    /// <summary>
+    /// The contract each of them resolved is the same object, and it parses. This is the assertion
+    /// the cache exists for: eight callers, one resolution, no half-built descriptor observed.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Racers))]
+    public void a_concurrent_race_leaves_a_single_usable_contract(Type enumType) {
+        EnumContract[] resolved = new EnumContract[Threads];
 
         RaceOn(index => {
             EnumMemberNameBindingOptions options = new();
@@ -76,27 +96,21 @@ public sealed class ConcurrentRegistrationTests {
 
             EnumMemberNameBindingRegistry.Register(options);
 
-            observed[index] = TypeDescriptor.GetConverter(enumType).GetType();
+            resolved[index] = EnumContract.For(enumType);
         });
 
-        Check.That(observed).ContainsOnlyElementsThatMatch(converter => converter == typeof(EnumMemberNameConverter));
+        Check.That(resolved).ContainsOnlyElementsThatMatch(contract => ReferenceEquals(contract, EnumContract.For(enumType)));
+        Check.That(EnumContract.For(enumType).TryParse("b", out object? parsed)).IsTrue();
+        Check.That(parsed).IsEqualTo(Enum.Parse(enumType, "B"));
+        Check.That(EnumContract.For(enumType).TryParse("B", out object? refused)).IsFalse();
+        Check.That(refused).IsNull();
     }
 
-    [Theory]
-    [MemberData(nameof(Racers))]
-    public void a_concurrent_race_leaves_a_single_usable_registration(Type enumType) {
-        RaceOn(_ => {
-            EnumMemberNameBindingOptions options = new();
-            options.EnumTypes.Add(enumType);
+    private static int OurProviders(IServiceCollection services) {
+        using ServiceProvider provider = services.BuildServiceProvider();
 
-            EnumMemberNameBindingRegistry.Register(options);
-        });
-
-        TypeConverter converter = TypeDescriptor.GetConverter(enumType);
-
-        Check.That(converter).IsInstanceOf<EnumMemberNameConverter>();
-        Check.That(converter.ConvertFromString("b")).IsEqualTo(Enum.Parse(enumType, "B"));
-        Check.ThatCode(() => converter.ConvertFromString("B")).Throws<FormatException>();
+        return provider.GetRequiredService<IOptions<MvcOptions>>().Value
+                       .ModelBinderProviders.Count(binder => binder is EnumMemberNameModelBinderProvider);
     }
 
     [Fact]
