@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
 
 using AspNetCore.EnumMemberNameBinding;
 
@@ -46,6 +47,15 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
     /// <c>System.Text.Json</c> option objects. Another application hosted in the same process is
     /// left exactly as it was, whether it starts before this one or after.
     /// </para>
+    /// <para>
+    /// The converters it installs go ahead of any the application registered itself, so a
+    /// <c>JsonStringEnumConverter</c> already in the list does not end up deciding what a contract
+    /// enum accepts in the request body. This call may therefore come before or after the
+    /// application's own <c>AddJsonOptions</c>; the vocabulary is the same either way. An application
+    /// that wants to keep its own converter for a contract enum declines this half with
+    /// <see cref="EnumMemberNameBindingOptions.ConfigureJsonSerialization" />, which leaves the
+    /// binding in place.
+    /// </para>
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
@@ -68,20 +78,13 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
         if (!options.ConfigureJsonSerialization) { return builder; }
         if (contractEnums.Count == 0) { return builder; }
 
-        builder.AddJsonOptions(json => {
-            foreach (Type enumType in contractEnums) {
-                json.JsonSerializerOptions.Converters.Add(EnumMemberNameBindingRegistry.CreateJsonConverter(enumType));
-            }
-        });
+        builder.AddJsonOptions(json => PutInFront(json.JsonSerializerOptions.Converters, contractEnums));
 
         // MVC and the rest of the stack read two different option objects. Microsoft.AspNetCore.OpenApi
         // and minimal API serialization use Http.Json.JsonOptions, so configuring only the MVC one
         // leaves the generated OpenAPI document describing every contract enum as an integer.
-        builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(json => {
-            foreach (Type enumType in contractEnums) {
-                json.SerializerOptions.Converters.Add(EnumMemberNameBindingRegistry.CreateJsonConverter(enumType));
-            }
-        });
+        builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(
+            json => PutInFront(json.SerializerOptions.Converters, contractEnums));
 
         return builder;
     }
@@ -159,6 +162,32 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
         }
 
         return -1;
+    }
+
+    /// <summary>
+    /// Puts this package's converters at the head of <paramref name="converters" />, one per contract
+    /// enum and in the order they were registered.
+    /// </summary>
+    /// <remarks>
+    /// At the head rather than appended, because <c>System.Text.Json</c> takes the first converter in
+    /// the list whose <c>CanConvert</c> answers true. An application that had already registered a
+    /// <c>JsonStringEnumConverter</c> of its own would otherwise keep it for the contract enums too,
+    /// and the stock converter's default is <c>allowIntegerValues: true</c> — so the request body
+    /// would accept <c>1</c> where every other channel answers 400, which is the one divergence this
+    /// package exists to remove.
+    /// <para>
+    /// It also settles the question of order. A converter the application registers after this call is
+    /// appended, so it lands behind these either way, and the vocabulary no longer depends on which of
+    /// the two registrations ran first. An application that does want its own converter for a contract
+    /// enum still has both <c>ConfigureJsonSerialization</c> and an insertion of its own.
+    /// </para>
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    [RequiresDynamicCode(TrimmingMessages.DynamicCode)]
+    private static void PutInFront(IList<JsonConverter> converters, IReadOnlyList<Type> contractEnums) {
+        for (int index = 0; index < contractEnums.Count; index++) {
+            converters.Insert(index, EnumMemberNameBindingRegistry.CreateJsonConverter(contractEnums[index]));
+        }
     }
 
 }

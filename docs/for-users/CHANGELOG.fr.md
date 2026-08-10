@@ -207,6 +207,18 @@ brûler sans rien perdre.
   tandis que MVC lit `Mvc.JsonOptions`. Seules ces dernières étaient configurées, si bien que chaque
   énumération sous contrat était décrite comme un entier dans le document généré. Les deux sont
   désormais configurées, toujours avec un convertisseur par type sous contrat.
+- Un `JsonStringEnumConverter` que l'application avait enregistré avant `AddEnumMemberNameBinding()`
+  décidait de ce qu'une énumération sous contrat acceptait dans le corps de la requête.
+  `System.Text.Json` retient le premier convertisseur de la liste dont `CanConvert` répond vrai, et ce
+  paquet ajoutait le sien à la fin ; or le convertisseur standard a pour défaut
+  `allowIntegerValues: true`, si bien qu'un corps `{"status": 1}` était accepté là où `?status=1`
+  répondait 400 — exactement la divergence que ce paquet existe pour supprimer, réintroduite par une
+  application qui demandait des énumérations en chaînes. Les convertisseurs sont désormais insérés en
+  tête des deux objets d'options. Cela règle aussi la question de l'ordre : un convertisseur
+  enregistré *après* cet appel est ajouté à la fin et se retrouve derrière eux de toute façon, si bien
+  que le vocabulaire ne dépend plus de celui des deux appels qui a été écrit en premier. Une
+  application qui tient à son propre convertisseur pour une énumération sous contrat décline toujours
+  cette moitié avec `ConfigureJsonSerialization`, ce qui laisse la liaison en place.
 
 ### Documentation
 

@@ -188,6 +188,16 @@ first one to make the trip is one that costs nothing to burn.
   MVC reads `Mvc.JsonOptions`. Only the latter was configured, so every contract enum was described
   as an integer in the generated document. Both are now configured, still one converter per contract
   type.
+- A `JsonStringEnumConverter` the application had registered before `AddEnumMemberNameBinding()`
+  decided what a contract enum accepted in the request body. `System.Text.Json` takes the first
+  converter in the list whose `CanConvert` answers true, and this package appended its own; the stock
+  converter's default is `allowIntegerValues: true`, so a body of `{"status": 1}` was accepted while
+  `?status=1` answered 400 — the exact divergence the package exists to remove, reintroduced by an
+  application asking for string enums. The converters are now inserted at the head of both option
+  objects. That also settles the order: one registered *after* this call is appended and lands behind
+  them either way, so the vocabulary no longer depends on which of the two calls was written first.
+  An application that does want its own converter for a contract enum still declines this half with
+  `ConfigureJsonSerialization`, which leaves the binding in place.
 
 ### Documentation
 
