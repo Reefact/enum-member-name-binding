@@ -216,7 +216,7 @@ actual="$(summarise \
     | tr '\n' ' ')"
 actual="${actual% }"
 
-if [ "$actual" != "$expected" ]; then
+if [[ "$actual" != "$expected" ]]; then
     echo "FAIL: reported sites do not match."
     echo "  expected: $expected"
     echo "  actual:   ${actual:-nothing}"
@@ -230,7 +230,7 @@ unterminated_before="$(wc -l < "$work/Unterminated.cs")"
 "$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" > /dev/null
 after="$(wc -l < "$work/Fixture.cs")"
 
-if [ "$((before - after))" -ne 9 ]; then
+if [[ "$((before - after))" -ne 9 ]]; then
     echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 9"
     exit 1
 fi
@@ -290,7 +290,7 @@ if ! grep -q '^\[assembly: SuppressMessage("Category", "RULE0007", Justification
     exit 1
 fi
 
-if [ "$(wc -l < "$work/Unterminated.cs")" -ne "$unterminated_before" ]; then
+if [[ "$(wc -l < "$work/Unterminated.cs")" -ne "$unterminated_before" ]]; then
     echo "FAIL: --fix edited a file whose suppression never closes"
     exit 1
 fi

@@ -64,7 +64,7 @@ for argument in "$@"; do
     esac
 done
 
-if [ "${#paths[@]}" -eq 0 ]; then
+if [[ "${#paths[@]}" -eq 0 ]]; then
     while IFS= read -r file; do paths+=("$file"); done < <(git ls-files '*.cs' | grep -Ev '/(obj|bin)/')
 fi
 
@@ -240,11 +240,11 @@ apply() {
 reported=0
 
 for file in "${paths[@]}"; do
-    [ -f "$file" ] || continue
+    [[ -f "$file" ]] || continue
 
-    if [ "$fix" -eq 0 ]; then
+    if [[ "$fix" -eq 0 ]]; then
         sites="$(scan "$file")"
-        [ -n "$sites" ] || continue
+        [[ -n "$sites" ]] || continue
 
         while IFS=$'\t' read -r line action collapsed end; do
             report_of "$file" "$action" "$line" "$collapsed"
@@ -260,7 +260,7 @@ for file in "${paths[@]}"; do
     fixed=0
     for _ in 1 2 3 4 5; do
         sites="$(scan "$file")"
-        [ -n "$sites" ] || break
+        [[ -n "$sites" ]] || break
 
         # A site the fixer declines — an unterminated suppression — is reported by every pass and
         # rewritten by none, so what is counted is what actually changed, and a pass that changes
@@ -273,21 +273,21 @@ for file in "${paths[@]}"; do
         done <<< "$(printf '%s\n' "$sites" | sort -t$'\t' -k1,1nr)"
 
         fixed=$((fixed + rewritten))
-        [ "$rewritten" -gt 0 ] || break
+        [[ "$rewritten" -gt 0 ]] || break
     done
 
-    if [ "$fixed" -gt 0 ]; then
+    if [[ "$fixed" -gt 0 ]]; then
         reported=$((reported + fixed))
         printf 'fixed %s\n' "$file"
     fi
 done
 
-if [ "$reported" -eq 0 ]; then
+if [[ "$reported" -eq 0 ]]; then
     echo "Nothing to report."
     exit 0
 fi
 
-if [ "$fix" -eq 1 ]; then
+if [[ "$fix" -eq 1 ]]; then
     printf '\nRewrote %d site(s).\n' "$reported"
     exit 0
 fi
