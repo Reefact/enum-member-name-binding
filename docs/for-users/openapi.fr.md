@@ -66,10 +66,15 @@ est compilé et rejoué de la même façon.
 Une asymétrie assumée. Le schéma d'une énumération sans `[Flags]` reste une liste `enum` fermée : il
 n'annonce donc pas les combinaisons séparées par des virgules que le serveur accepte aussi —
 [`available,out_of_stock`](contract-rules.fr.md#une-virgule-sépare-les-valeurs-sur-toutes-les-énumérations)
-se lie et ne figure pas dans la liste. C'est le sens dans lequel il vaut mieux se tromper : la liste
-est le vocabulaire à partir duquel un client se génère, et une combinaison est une forme héritée
-d'`Enum.Parse` plutôt qu'une offre de l'API. L'annoncer comme un motif, ce qu'imposent les `[Flags]`,
-pousserait chaque client généré vers un champ texte libre là où l'endpoint veut une énumération.
+se lie et ne figure pas dans la liste. C'est le sens dans lequel il vaut mieux se tromper, et
+l'alternative ne serait pas seulement moins élégante : elle serait fausse. Un motif est exact pour une
+`[Flags]` parce que *toute* combinaison de membres déclarés est une valeur que le serveur accepte. Sur
+une énumération ordinaire, seules le sont les combinaisons dont le résultat nomme un membre déclaré :
+`out_of_stock,discontinued` vaut `1 | 2`, qui n'en nomme aucun, et le serveur répond 400. Une
+expression régulière ne peut pas distinguer les deux, elle annoncerait donc des valeurs qui échouent —
+elle sur-promettrait, là où la liste fermée sous-promet. La liste est aussi le vocabulaire à partir
+duquel un client se génère ; un motif transformerait l'énumération en champ texte libre dans chaque
+client généré.
 
 ## Plancher de version
 
