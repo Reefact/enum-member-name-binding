@@ -9,4 +9,13 @@
     <Project Path="tests/AspNetCore.EnumMemberNameBinding.OpenApi.Tests/AspNetCore.EnumMemberNameBinding.OpenApi.Tests.csproj" />
     <Project Path="tests/AspNetCore.EnumMemberNameBinding.Tests/AspNetCore.EnumMemberNameBinding.Tests.csproj" />
   </Folder>
+  <Folder Name="/docs/">
+    <!-- Documentation only, and never built: the project exists so the pages under docs/ are visible
+         beside the code, not so anything comes out of it. The Build element below is what keeps it
+         out of every configuration, which is also why it needs no PublicAPI baseline and costs the
+         CI nothing. See the csproj for the whole rationale. -->
+    <Project Path="docs/AspNetCore.EnumMemberNameBinding.Documentation.csproj">
+      <Build Solution="*|*" Project="false" />
+    </Project>
+  </Folder>
 </Solution>
