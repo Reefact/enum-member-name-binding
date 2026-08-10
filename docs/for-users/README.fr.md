@@ -167,6 +167,15 @@ possède l'attribut et la sérialisation. La migration se résume à un renommag
 `[JsonEnumValue("x")]` devient `[JsonStringEnumMemberName("x")]` — plus le remplacement de
 `AddJsonEnumValueBinding()` par `AddEnumMemberNameBinding()`.
 
+## Contribuer et obtenir de l'aide
+
+- [Signaler un bogue ou demander une fonctionnalité](https://github.com/Reefact/enum-member-name-binding/issues)
+  — le suivi des tickets. Une vulnérabilité présumée passe plutôt par le canal privé ci-dessous.
+- [Contribuer](./CONTRIBUTING.fr.md)
+  — compiler et tester, le style de code, la grammaire des commits, et ce que porte une pull request.
+- [Politique de sécurité](./SECURITY.fr.md)
+  — ce qui est dans le périmètre, et comment signaler une vulnérabilité en privé.
+
 ## Licence
 
 Apache-2.0.
