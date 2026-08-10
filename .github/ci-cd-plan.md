@@ -399,13 +399,13 @@ la raison pour laquelle il ne bloque pas la v1 — il suit à l'étape 6.
 |---|---|---|
 | A | `build: baseline the public API before v1 promises it` — PublicApiAnalyzers sur les deux projets packables, baselines remplies, surface relue (§7.1) | ~45 min |
 | B | Ruleset `v*` ; et, en option, ruleset `main` en version réduite — PR requise, sans check (§7.2) | ~15 min |
-| C | Dry run de `release.yml` sur le commit final, puis tag `v1.0.0-preview.1` (§7.3) | ~15 min |
+| C | Dry run de `release.yml` sur le commit final, puis tag `v1.0.0-rc.1` (§7.3) | ~15 min |
 
 Sur le C : la pré-version est revenue au menu après coup, et pour une raison qui n'est pas la
 prudence. Le chemin de publication n'a jamais tourné en vrai — le dry run saute justement les deux
 étapes irréversibles. Et la ruleset `v*` interdit `deletion` comme `update`, donc un tag qui
 échouerait à publier ne se reprend pas : il faudrait passer à la version suivante. Brûler
-`preview.1` ne coûte rien, brûler `1.0.0` coûte le numéro qu'on ne peut avoir qu'une fois.
+`rc.1` ne coûte rien, brûler `1.0.0` coûte le numéro qu'on ne peut avoir qu'une fois.
 
 L'ordre A → B → C est contraint : A peut changer ce qui est publié, C doit exercer ce qui l'est.
 
