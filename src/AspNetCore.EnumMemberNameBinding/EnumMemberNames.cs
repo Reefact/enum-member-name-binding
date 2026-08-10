@@ -44,8 +44,8 @@ public static class EnumMemberNames {
     /// <param name="value">An enum value. A combination of <c>[Flags]</c> members is rendered as a
     /// comma-separated list, exactly as <c>System.Text.Json</c> writes it.</param>
     /// <remarks>
-    /// Use this when generating links. ASP.NET Core formats route values without consulting
-    /// <see cref="System.ComponentModel.TypeDescriptor" />, so a link built from the enum value
+    /// Use this when generating links. ASP.NET Core formats a route value with the value's own
+    /// <c>ToString()</c> and nothing this package installs, so a link built from the enum value
     /// itself carries the C# name and the binder will refuse it:
     /// <code>
     /// // produces /products/OutOfStock, which this same API answers 400 to

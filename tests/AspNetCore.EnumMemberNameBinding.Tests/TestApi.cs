@@ -94,7 +94,7 @@ public sealed class BindingController : ControllerBase {
     [HttpGet("/status/serialized")]
     public IActionResult StatusSerialized() => Ok(new { value = ProductStatus.OutOfStock });
 
-    /// <summary>A link built from the enum value itself — ASP.NET Core does not use TypeDescriptor here.</summary>
+    /// <summary>A link built from the enum value itself — nothing this package installs is consulted here.</summary>
     [HttpGet("/status/link-raw")]
     public IActionResult StatusLinkRaw([FromServices] LinkGenerator links) => Ok(new Bound(
         links.GetPathByAction(HttpContext, nameof(StatusFromRoute), "Binding", new { value = ProductStatus.OutOfStock }) ?? "<none>"));

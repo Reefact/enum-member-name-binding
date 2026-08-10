@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace AspNetCore.EnumMemberNameBinding;
@@ -97,24 +95,26 @@ internal sealed class EnumMemberNameModelBinder : IModelBinder {
     /// no member out of a non-<c>[Flags]</c> parameter.
     /// </summary>
     /// <remarks>
-    /// Reproduced from <c>EnumTypeModelBinder</c>, including the way it tests a <c>[Flags]</c> value,
-    /// where <see cref="Enum.IsDefined(Type, object)" /> cannot be used: a combination is written as
-    /// a list of member names and an undecomposable one falls back to its number, so a value whose
-    /// text equals its own underlying number is one no set of members covers.
-    ///
-    /// This is the one input where a channel and the request body disagree, and reproducing it is
-    /// the decision rather than an omission. Letting an undefined value through here would make a
-    /// contract enum more permissive than an enum this package never touches, and the promise runs
-    /// the other way. It is written down in <c>docs/for-users/limitations.en.md</c>.
+    /// Reproduced from <c>EnumTypeModelBinder</c>, and this is the one input where a channel and the
+    /// request body disagree: <c>System.Text.Json</c> reads <c>"out_of_stock,discontinued"</c> as
+    /// <c>1 | 2</c> and hands back a value no member declares, and ASP.NET Core will not bind it.
+    /// Reproducing that is the decision rather than an omission — an enum this package never touches
+    /// is refused the same way, so letting it through would make a contract enum the more permissive
+    /// of the two, and the promise runs the other way. It is written down in
+    /// <c>docs/for-users/limitations.en.md</c>.
+    /// <para>
+    /// A <c>[Flags]</c> parameter is answered without asking, where the original runs a test of its
+    /// own — <see cref="Enum.IsDefined(Type, object)" /> does not work on a combination, so it
+    /// compares the value's text against its underlying number to find one that decomposes into no
+    /// members. Nothing reaching here can be that value: it was built by OR-ing members the contract
+    /// declares, so it decomposes into them by construction. Running the test anyway would be a
+    /// branch that cannot be taken, dressed as a decision.
+    /// </para>
     /// </remarks>
     private static bool IsDefined(ModelBindingContext bindingContext, object model) {
-        Type modelType = bindingContext.ModelMetadata.UnderlyingOrModelType;
+        if (bindingContext.ModelMetadata.IsFlagsEnum) { return true; }
 
-        if (!bindingContext.ModelMetadata.IsFlagsEnum) { return Enum.IsDefined(modelType, model); }
-
-        string? underlying = Convert.ChangeType(model, Enum.GetUnderlyingType(modelType), CultureInfo.InvariantCulture).ToString();
-
-        return !string.Equals(underlying, model.ToString(), StringComparison.OrdinalIgnoreCase);
+        return Enum.IsDefined(bindingContext.ModelMetadata.UnderlyingOrModelType, model);
     }
 
 }

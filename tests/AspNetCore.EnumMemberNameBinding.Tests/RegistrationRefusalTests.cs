@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -103,6 +104,45 @@ public sealed class RegistrationRefusalTests {
         Check.That(registrations.Contains(typeof(Repeated))).IsTrue();
         Check.That(registrations.Contains(typeof(ValidButRefusedAlongside))).IsTrue();
         Check.That(registrations.Contains(typeof(PlainPriority))).IsFalse();
+    }
+
+    /// <summary>
+    /// Where the provider lands, in the three lists it can meet. Ahead of the enum provider normally;
+    /// ahead of the simple-type one if an application removed that; at the end if it removed both.
+    /// </summary>
+    /// <remarks>
+    /// The position is not decoration. Ahead of the stock enum binder is what makes the contract win;
+    /// behind <c>BodyModelBinderProvider</c> and <c>HeaderModelBinderProvider</c> is what leaves
+    /// <c>[FromBody]</c> to <c>System.Text.Json</c> — which is why inserting at index 0 would be
+    /// wrong and why the fallbacks land where they do. Appending is safe rather than approximate:
+    /// every provider past that point claims a collection, a dictionary or a complex type, and a bare
+    /// enum is none of those.
+    /// </remarks>
+    [Theory]
+    [InlineData(0, typeof(EnumTypeModelBinderProvider))]
+    [InlineData(1, typeof(SimpleTypeModelBinderProvider))]
+    [InlineData(2, null)]
+    public void the_provider_lands_ahead_of_whichever_stock_binder_would_have_claimed_the_parameter(int removed, Type? expectedSuccessor) {
+        ServiceCollection services = new();
+        services.AddControllers(mvc => RemoveStockBinders(mvc.ModelBinderProviders, removed))
+                .AddEnumMemberNameBinding(options => options.AddEnum<Repeated>());
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IList<IModelBinderProvider> providers = provider.GetRequiredService<IOptions<MvcOptions>>().Value.ModelBinderProviders;
+
+        int at = providers.IndexOf(providers.Single(binder => binder is EnumMemberNameModelBinderProvider));
+
+        Check.WithCustomMessage("at the front it would take [FromBody] away from System.Text.Json.").That(at).IsNotEqualTo(0);
+        Check.That(at + 1 < providers.Count ? providers[at + 1].GetType() : null).IsEqualTo(expectedSuccessor);
+    }
+
+    /// <summary>The two stock providers that claim an enum, dropped in the order they are consulted.</summary>
+    private static void RemoveStockBinders(IList<IModelBinderProvider> providers, int count) {
+        Type[] stock = [typeof(EnumTypeModelBinderProvider), typeof(SimpleTypeModelBinderProvider)];
+
+        foreach (Type type in stock.Take(count)) {
+            providers.Remove(providers.Single(provider => provider.GetType() == type));
+        }
     }
 
     private static void AssertNothingWasConfigured(IServiceCollection services) {

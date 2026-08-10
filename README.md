@@ -114,16 +114,17 @@ GET /products?status=OutOfStock   → 400   { "errors": { "status": ["The value 
 ## Guarantees
 
 - **The same vocabulary everywhere.** The matching rules are not invented here, they are a port of
-  the ones `System.Text.Json` applies to the request body — down to the whitespace and the trailing
-  comma of a `[Flags]` list. Every rule was measured against `JsonSerializer`, never read off a
-  specification.
+  the ones `System.Text.Json` applies to the request body — down to the whitespace, the
+  comma-separated list and its trailing comma. Every rule was measured against `JsonSerializer`,
+  never read off a specification.
 - **Verified, not declared.** The test suite runs every candidate input through both `JsonSerializer`
   and a live HTTP request and requires the two outcomes to be identical. If .NET changes its matching
   rules, the build fails.
 - **Nothing else changes.** An enum that carries no `[JsonStringEnumMemberName]` is left completely
   alone: same binding, same validation, same JSON wire format as without this package. The global
   `JsonStringEnumConverter` factory is never installed — one converter is registered per contract
-  enum.
+  enum. Nor does any other application: everything is registered in the calling application's own
+  container, so a second host in the same process is untouched.
 - **Mistakes are build errors.** Roslyn analyzers ship inside the package, no extra install: a
   duplicate public name, an incomplete contract or a name that shadows another member's C# name is
   reported in your editor, not discovered at start-up. Enums that declare no contract are never
@@ -139,7 +140,7 @@ The two worth knowing before you adopt it:
   `BindAsync` on the bound type, which cannot be added to an `enum` — a platform-level constraint,
   not an implementation gap. Responses *are* covered.
 - **Link generation does not use the public name.** ASP.NET Core formats route values without
-  consulting `TypeDescriptor`, so a link built from the enum value carries the C# name and this very
+  the value's own `ToString()`, so a link built from the enum value carries the C# name and this very
   API answers 400 to it. `EnumMemberNames.GetPublicName(value)` is the way round.
 
 The full list — empty values, channel portability, trimming and Native AOT, and why registration must

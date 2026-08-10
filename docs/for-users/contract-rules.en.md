@@ -136,7 +136,7 @@ Two rows deserve attention, and **neither is introduced by this package**:
   stock ASP.NET Core behaviour for value types; a test asserts that an enum this package never
   touches behaves identically. Use `ProductStatus?` or `[Required]` if you want a 400.
 - **An empty value on a nullable parameter binds `null`,** where `System.Text.Json` rejects `""`.
-  ASP.NET Core treats it as an absent value before any `TypeConverter` is consulted, so it is out of
+  ASP.NET Core treats it as an absent value before any parse is reached, so it is out of
   reach from here.
 
 Both are covered by tests, so they stay visible rather than becoming folklore.

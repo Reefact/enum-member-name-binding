@@ -19,7 +19,7 @@ input side that is out of reach.
 
 ## Link generation does not use the public name
 
-ASP.NET Core formats route values without consulting `TypeDescriptor`, so a link built from the enum
+ASP.NET Core formats a route value with the value's own `ToString()`, so a link built from the enum
 value itself carries the C# name — and this very API answers 400 to it:
 
 ```csharp
@@ -38,7 +38,7 @@ returns `null` for an enum that declares no contract. Both forms are covered by 
 ## An empty value on a nullable enum parameter binds `null`
 
 Where `System.Text.Json` rejects `""`, ASP.NET Core resolves an empty value as an absent one before
-any `TypeConverter` is consulted, so it is out of reach from here. See
+any parse is reached, so it is out of reach from here. See
 [empty and absent values](contract-rules.en.md#empty-and-absent-values), which also covers the other
 row worth knowing: an absent value on a **non-nullable** parameter binds the first member instead of
 failing. Neither behaviour is introduced by this package — a test asserts that an enum it never
@@ -79,7 +79,7 @@ shrink. See [OpenAPI](openapi.en.md).
 
 ## Not compatible with trimming or Native AOT
 
-`TypeDescriptor` and the assembly scan rely on reflection. Every entry point is annotated rather than
+Resolving a contract and scanning an assembly rely on reflection. Every entry point is annotated rather than
 having the warnings suppressed, so a consumer compiling for either gets an accurate warning instead
 of a silent failure at run time.
 
