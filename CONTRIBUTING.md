@@ -93,11 +93,13 @@ survives being looked at. The other two rules stop where the single line stops b
 read, because they are logic; a suppression is scanned for which rule and skimmed for why, never
 read for its logic, so wrapping it saves nothing and costs the comparison.
 
-`tools/style/lint-layout.sh` reports what does not follow this, `--fix` rewrites it, and CI runs it
-without the flag — running the checker's own test first, so that "nothing to report" means
-something. This is checked rather than remembered. It stays silent on one shape it cannot read: a
-suppression sharing its brackets with another attribute, as in `[Fact, SuppressMessage(...)]`,
-where knowing what to join means parsing C#.
+`tools/style/lint-layout.sh` reports what does not follow this, `--fix` rewrites what it can and
+names what it cannot — exiting non-zero for it, so a run that left a violation behind does not read
+like a clean tree — and CI runs it without the flag, running the checker's own test first so that
+"nothing to report" means something. This is checked rather than remembered. It stays silent on two
+shapes it cannot read: a suppression sharing its brackets with another attribute, as in
+`[Fact, SuppressMessage(...)]`, and a wrapped one whose closing `)]` carries a member after it.
+Either way, knowing what to join means parsing C#.
 
 ## Branches
 
