@@ -14,10 +14,24 @@ on:
         required: false
         default: '0.0.0-dryrun'
 
-# Serialise releases, and never cancel one. The CI workflow supersedes a run the moment a newer
-# commit arrives, which is right there and wrong here: the steps after the smoke test push packages
-# and create a release, and a run killed between them leaves a version half published — a state no
-# rerun can reach, because the tag can neither be moved nor deleted.
+# Never cancel a release. The CI workflow supersedes a run the moment a newer commit arrives, which
+# is right there and wrong here: the steps after the smoke test push packages and create a release,
+# and a run killed between them leaves a version half published — a state no rerun can reach,
+# because the tag can neither be moved nor deleted.
+#
+# Never cancel, and deliberately not "serialise", which an earlier version of this comment claimed.
+# The group carries the ref, so a release queues behind reruns of its own tag and behind nothing
+# else: two tags are two groups and publish side by side. That reads like an oversight and is not.
+# They build different versions, push different packages and create different releases, so they have
+# nothing to race over — while a per-ref group is exactly what makes it impossible for one release to
+# cancel another, which is the property this block is here for.
+#
+# Serialising them for real would take `queue: max` as well as a ref-less group, since a group
+# replaces its pending run when a newer one arrives — dropping the ref alone would reintroduce the
+# cancellation above. That key is valid to GitHub as of 2026-05-07 and unknown to every actionlint
+# release, so adopting it today means carrying a suppression for a checker that will learn it on its
+# own. Not a trade worth making for a race with no stake. Revisit if a release ever has to serialise
+# against something real: a shared deployment environment, or a feed that cannot take two writers.
 concurrency:
   group: release-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
