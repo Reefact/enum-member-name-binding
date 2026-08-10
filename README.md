@@ -166,6 +166,15 @@ the attribute and the serialization. Migration is an attribute rename —
 `[JsonEnumValue("x")]` becomes `[JsonStringEnumMemberName("x")]` — plus swapping
 `AddJsonEnumValueBinding()` for `AddEnumMemberNameBinding()`.
 
+## Contributing and support
+
+- [Report a bug or request a feature](https://github.com/Reefact/enum-member-name-binding/issues)
+  — the issue tracker. A suspected vulnerability goes through the private channel below instead.
+- [Contributing](https://github.com/Reefact/enum-member-name-binding/blob/main/CONTRIBUTING.md)
+  — how to build and test, the coding style, the commit grammar, and what a pull request carries.
+- [Security policy](https://github.com/Reefact/enum-member-name-binding/blob/main/SECURITY.md)
+  — what is in scope, and how to report a vulnerability privately.
+
 ## Licence
 
 Apache-2.0.
