@@ -1,22 +1,29 @@
 namespace AspNetCore.EnumMemberNameBinding.Tests;
 
 /// <summary>
-/// `Check.That(value);` with nothing chained compiles, runs, asserts nothing and reports green.
-/// The xUnit form it replaced could not do that — `Assert.Equal` missing an argument is a compile
-/// error — so this is the one way the move to NFluent could weaken the suite without anything
-/// turning red. Nothing else notices: not the compiler, not an analyzer, not coverage, which counts
-/// the line as executed because it was.
+/// `Check.ThatCode(() => …);` with nothing chained compiles, runs, asserts nothing and reports
+/// green. The xUnit form it replaced could not do that — `Assert.Throws` missing its lambda is a
+/// compile error — so this is the one way the move to NFluent can weaken the suite without anything
+/// turning red. Coverage does not notice either: the line was executed.
 /// </summary>
 /// <remarks>
-/// Reads the test sources of all three projects rather than this one, since the hazard is the
-/// library and not the project. See docs/adr/0001-nfluent-for-test-assertions.en.md.
+/// Only `ThatCode`. The same hazard on `Check.That` is `NA0001`, which NFluent.Analyzer reports as a
+/// compiler diagnostic — an error here, since warnings are — and that beats a test on every count:
+/// it fires in the editor, on the line, before anything runs. Measured, though, rather than assumed
+/// from the rule's wording: `Check.That(subject);` is reported and `Check.ThatCode(() => Boom());`
+/// builds clean, which is the gap this fills. Should a later version of the analyzer close it, this
+/// test is what should go.
+/// <para>
+/// Reads the test sources of all three projects rather than this one, since the hazard belongs to
+/// the library and not to a project. See docs/adr/0001-nfluent-for-test-assertions.en.md.
+/// </para>
 /// </remarks>
 public sealed class AssertionStyleTests {
 
-    private static readonly string[] Openings = ["Check.That(", "Check.ThatCode("];
+    private static readonly string[] Openings = ["Check.ThatCode("];
 
     [Fact]
-    public void every_check_carries_an_assertion() {
+    public void every_thatcode_carries_an_assertion() {
         List<string> naked = [];
 
         foreach (string file in TestSources()) {
@@ -36,7 +43,7 @@ public sealed class AssertionStyleTests {
             }
         }
 
-        Check.WithCustomMessage($"a check with nothing chained asserts nothing: {string.Join(", ", naked)}")
+        Check.WithCustomMessage($"ThatCode with nothing chained asserts nothing: {string.Join(", ", naked)}")
              .That(naked).IsEmpty();
     }
 

@@ -20,7 +20,8 @@ Une assertion qui se lit à l'envers, c'est le même reproche un cran plus haut.
 
 ## Décision
 
-Les assertions de test s'écrivent avec [NFluent](https://github.com/tpierrain/NFluent) 3.1.0.
+Les assertions de test s'écrivent avec [NFluent](https://github.com/tpierrain/NFluent) 3.1.0,
+accompagné de `NFluent.Analyzer` 0.1.0.
 
 xUnit reste : il découvre, exécute et rapporte les tests, et `[Fact]`, `[Theory]` et les fixtures ne
 changent pas. Seule l'assertion change.
@@ -44,7 +45,7 @@ Le sujet vient d'abord, puis ce qu'on en affirme.
 
 ## Conséquences
 
-Quatre d'entre elles sont mesurées sur ce dépôt plutôt que lues dans une documentation.
+Cinq d'entre elles sont mesurées sur ce dépôt plutôt que lues dans une documentation.
 
 **NFluent 3.1.0 ne reconnaît pas xUnit v3.** Il lève `NFluent.Kernel.FluentCheckException` au lieu
 de `Xunit.Sdk.XunitException`. Le test échoue quand même, et l'exécuteur le rapporte bien comme un
@@ -55,9 +56,17 @@ v2 et non un accident d'ordre de chargement.
 
 **Un check sans assertion passe en silence.** `Check.That(valeur);` compile, s'exécute, n'affirme
 rien et rapporte au vert — là où `Assert.Equal` amputé d'un argument ne compile pas. C'est la seule
-façon dont cette migration pouvait affaiblir la suite invisiblement, alors un test y veille :
-`AssertionStyleTests` lit les sources de test et échoue sur une instruction `Check.That` sans rien
-de chaîné.
+façon dont cette migration pouvait affaiblir la suite invisiblement, et c'est la raison d'être de
+`NFluent.Analyzer` ici : son `NA0001` le signale comme diagnostic du compilateur, donc une erreur
+dans ce build, sur la ligne, dans l'éditeur, avant que rien ne s'exécute. L'analyseur ne voit pas
+`Check.ThatCode(() => …);` — mesuré, non déduit — si bien qu'`AssertionStyleTests` ne couvre plus que
+cette forme-là, et dit qu'il devra disparaître le jour où l'analyseur comblera le trou.
+
+**`NA0002` a trouvé neuf assertions dont l'échec ne disait que « false ».**
+`Check.That(a == b).IsTrue()` enfouit la comparaison dans le sujet : le message rapporte un booléen
+là où il pourrait rapporter les deux valeurs. Ce sont des `IsEqualTo`, `IsEmpty` et
+`IsLessOrEqualThan` désormais. Cette règle est ce qui justifie l'analyseur au-delà de `NA0001` :
+aucune de ces neuf n'était un défaut, et chacune était un message d'échec moins bon que nécessaire.
 
 **Capturer une exception, c'est `.Value`.** `Assert.Throws<T>(...)` rendait l'exception ;
 l'équivalent NFluent est `Check.ThatCode(...).Throws<T>().Value`, et c'est ce qu'utilisent les sites

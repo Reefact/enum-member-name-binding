@@ -115,7 +115,7 @@ public sealed class FormattingParityTests {
         }
 
         Check.WithCustomMessage($"{enumType.Name} diverges on {divergences.Count} value(s):{Environment.NewLine}" + string.Join(Environment.NewLine, divergences))
-             .That(divergences.Count == 0).IsTrue();
+             .That(divergences).IsEmpty();
     }
 
     /// <summary>Whatever is written must be readable again, and yield the value it came from.</summary>
@@ -168,7 +168,7 @@ public sealed class FormattingParityTests {
 
             ulong[] bits = [.. Enumerable.Range(0, 64).Select(offset => 1UL << offset).Where(bit => (union & bit) != 0)];
             Check.WithCustomMessage($"{enumType.Name} declares {bits.Length} distinct bits; the subset enumeration would explode.")
-                 .That(bits.Length <= 16).IsTrue();
+                 .That(bits.Length).IsLessOrEqualThan(16);
 
             for (int mask = 0; mask < 1 << bits.Length; mask++) {
                 ulong combination = 0;

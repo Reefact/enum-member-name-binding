@@ -127,13 +127,13 @@ public sealed class ParityWithSystemTextJsonTests {
 
         if (expected is null) {
             Check.WithCustomMessage($"System.Text.Json rejects '{input}' for {typeof(TEnum).Name}, but the HTTP channel answered " + $"{(int)response.StatusCode} with '{await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)}'.")
-                 .That(response.StatusCode == HttpStatusCode.BadRequest).IsTrue();
+                 .That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
 
             return;
         }
 
         Check.WithCustomMessage($"System.Text.Json accepts '{input}' for {typeof(TEnum).Name} as '{expected}', but the HTTP channel " + $"answered {(int)response.StatusCode} with '{await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)}'.")
-             .That(response.StatusCode == HttpStatusCode.OK).IsTrue();
+             .That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
 
         Check.That(await ReadBoundValue(response)).IsEqualTo(expected.Value.ToString());
     }

@@ -143,7 +143,7 @@ public sealed partial class DocumentationLinksTests {
 
         foreach ((string what, Regex pattern) in Structure) {
             Check.WithCustomMessage($"{english} has {Count(english, pattern)} {what} and {french} has {Count(french, pattern)}.")
-                 .That(Count(english, pattern) == Count(french, pattern)).IsTrue();
+                 .That(Count(english, pattern)).IsEqualTo(Count(french, pattern));
         }
     }
 

@@ -20,7 +20,8 @@ assertion read backwards is the same complaint one level up.
 
 ## Decision
 
-Test assertions are written with [NFluent](https://github.com/tpierrain/NFluent) 3.1.0.
+Test assertions are written with [NFluent](https://github.com/tpierrain/NFluent) 3.1.0, with
+`NFluent.Analyzer` 0.1.0 beside it.
 
 xUnit stays: it discovers, runs and reports the tests, and `[Fact]`, `[Theory]` and the fixtures are
 untouched. Only the assertion changes.
@@ -44,7 +45,7 @@ The subject comes first, then what is claimed about it.
 
 ## Consequences
 
-Four of these were measured against this repository rather than read off documentation.
+Five of these were measured against this repository rather than read off documentation.
 
 **NFluent 3.1.0 does not recognise xUnit v3.** It throws `NFluent.Kernel.FluentCheckException`
 instead of `Xunit.Sdk.XunitException`. The test still fails, and the runner still reports it as a
@@ -53,11 +54,19 @@ to read as a native assertion failure. Verified: forcing xUnit's assert assembly
 not change the outcome, so this is NFluent looking for xUnit v2's assembly and not a load-order
 accident.
 
-**A check with no assertion passes silently.** `Check.That(value);` compiles, runs, asserts nothing,
-and reports green — where `Assert.Equal` with a missing argument does not compile. This is the one
-way this migration could have weakened the suite invisibly, so a test guards against it:
-`AssertionStyleTests` reads the test sources and fails on a `Check.That` statement with nothing
-chained.
+**A check with no assertion passes silently.** `Check.That(value);` compiles, runs, asserts nothing
+and reports green — where `Assert.Equal` with a missing argument does not compile. That is the one
+way this migration could have weakened the suite invisibly, and it is why `NFluent.Analyzer` is here:
+its `NA0001` reports it as a compiler diagnostic, which is an error in this build, on the line, in
+the editor, before anything runs. The analyzer does not see `Check.ThatCode(() => …);` — measured,
+not inferred — so `AssertionStyleTests` covers that one shape and says it should go the day the
+analyzer closes the gap.
+
+**`NA0002` found nine assertions whose failure said only "false".** `Check.That(a == b).IsTrue()`
+hides the comparison inside the subject, so the message reports a boolean where it could report both
+values. They are `IsEqualTo`, `IsEmpty` and `IsLessOrEqualThan` now. This rule was the reason to take
+the analyzer beyond `NA0001`: none of these was a defect, and every one of them was a worse failure
+message than it needed to be.
 
 **Capturing an exception is `.Value`.** `Assert.Throws<T>(...)` returned the exception; the NFluent
 equivalent is `Check.ThatCode(...).Throws<T>().Value`, and it is what the sites asserting on
