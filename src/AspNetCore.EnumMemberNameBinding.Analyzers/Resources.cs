@@ -10,7 +10,6 @@ namespace AspNetCore.EnumMemberNameBinding.Analyzers;
 /// </remarks>
 internal static class Resources {
 
-    internal static readonly ResourceManager Manager =
-        new("AspNetCore.EnumMemberNameBinding.Analyzers.Resources", typeof(Resources).Assembly);
+    internal static readonly ResourceManager Manager = new("AspNetCore.EnumMemberNameBinding.Analyzers.Resources", typeof(Resources).Assembly);
 
 }

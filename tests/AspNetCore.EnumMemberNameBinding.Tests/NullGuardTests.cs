@@ -46,8 +46,8 @@ public sealed class NullGuardTests {
     [Theory]
     [MemberData(nameof(GuardedParameters))]
     public void a_non_nullable_reference_parameter_is_refused_when_null(string identity) {
-        (MethodBase member, ParameterInfo parameter) =
-            BoundaryParameters().Single(p => $"{p.Member.DeclaringType!.Name}.{Describe(p.Member)}({p.Parameter.Name})" == identity);
+        (MethodBase member, ParameterInfo parameter) = BoundaryParameters()
+            .Single(p => $"{p.Member.DeclaringType!.Name}.{Describe(p.Member)}({p.Parameter.Name})" == identity);
 
         if (Unexercisable.ContainsKey(member.Name)) { return; }
 

@@ -52,8 +52,7 @@ internal static class SuppressionJustification {
         /// factory. If one is ever added, this suppression is the thing to revisit first.
         /// </para>
         /// </remarks>
-        internal const string RequirementCarriedByConstructor =
-            "The constructor carries the requirement; an instance cannot exist without it.";
+        internal const string RequirementCarriedByConstructor = "The constructor carries the requirement; an instance cannot exist without it.";
 
     }
 

@@ -53,8 +53,7 @@ internal static class SuppressionJustification {
         /// claim checkable.
         /// </para>
         /// </remarks>
-        internal const string RequirementCarriedByConstructor =
-            "The constructor carries the requirement; an instance cannot exist without it.";
+        internal const string RequirementCarriedByConstructor = "The constructor carries the requirement; an instance cannot exist without it.";
 
     }
 

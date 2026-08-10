@@ -11,8 +11,7 @@ public sealed class NullGuardTests {
 
     [Fact]
     public void adding_the_transformer_to_null_options_is_refused() {
-        ArgumentNullException exception =
-            Assert.Throws<ArgumentNullException>(() => EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(null!));
+        ArgumentNullException exception = Assert.Throws<ArgumentNullException>(() => EnumMemberNameOpenApiOptionsExtensions.AddEnumMemberNames(null!));
 
         Assert.Equal("options", exception.ParamName);
     }
