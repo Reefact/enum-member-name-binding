@@ -10,12 +10,21 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// A deliberate reimplementation of ASP.NET Core's <c>SimpleTypeModelBinder</c> and the
 /// <c>EnumTypeModelBinder</c> that derives from it, with one step replaced: where they call the
 /// <see cref="System.ComponentModel.TypeConverter" /> resolved from
-/// <see cref="System.ComponentModel.TypeDescriptor" />, this one calls the contract. Everything
-/// around that step is theirs and is reproduced rather than improved — which value a repeated key
-/// yields, when a blank value is null and when it is an error, which of the three
+/// <see cref="System.ComponentModel.TypeDescriptor" />, this one calls the contract. What is
+/// reproduced rather than improved is the binding an application can observe — which value a
+/// repeated key yields, when a blank value is null and when it is an error, which of the three
 /// <c>ModelBindingMessageProvider</c> sentences a failure earns, and the refusal to bind an
 /// undefined value. Those are what an application already expects from every other parameter it
 /// binds, and <c>ModelBindingBehaviourTests</c> holds all of them.
+///
+/// Observable binding, and not the whole of ASP.NET Core's internals: the original is handed an
+/// <c>ILoggerFactory</c> and writes the model-binding trace — attempting, found no value, done
+/// attempting — where this one writes nothing, so a parameter of a contract enum is silent at Debug
+/// where every other parameter is not. That is a limit rather than a decision deferred: those
+/// messages are emitted through <c>MvcCoreLoggerExtensions</c>, which is internal to
+/// <c>Microsoft.AspNetCore.Mvc.Core</c>. What could be written instead is a lookalike under this
+/// package's own category and event ids — which a log filter aimed at ASP.NET Core's would not pick
+/// up, so it would read as parity while being none.
 ///
 /// Reimplemented rather than derived because the base class resolves its converter in its
 /// constructor, from process-wide state, with no way to supply one — which is exactly the coupling
