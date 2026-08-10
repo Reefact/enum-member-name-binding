@@ -40,8 +40,8 @@ because a disagreement between analyzer versions belongs here rather than in a c
 
 ## Coding style
 
-Most of it lives in `.editorconfig`, which your editor already reads. Two rules it cannot express,
-both the same complaint: a line that is not a thought, leaving the reader to assemble one.
+Most of it lives in `.editorconfig`, which your editor already reads. Three rules it cannot express,
+all the same complaint: a line that is not a thought, leaving the reader to assemble one.
 
 An `if` whose whole body is a single exit — `return`, `throw`, `continue`, `break` — is written on
 one line, and a run of them is one block with no blank line between them:
@@ -57,15 +57,30 @@ A declaration does not break after the `=` when its value fits beside the name:
 internal const string Reflection = "Enum member name binding reads enum metadata reflectively…";
 ```
 
+And a suppression attribute is written on one line, at any width:
+
+```csharp
+[UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id, Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
+```
+
 The guard and what it does are one thought; a name and its value are another. Anything less trivial
 than a bare exit keeps the multi-line form, and so does a value that genuinely needs more than one
-line — a concatenation, a long initializer. Width is a ceiling in both cases, 140 characters for a
+line — a concatenation, a long initializer. Width is a ceiling for those two, 140 characters for a
 guard and 160 for a value, and a ceiling rather than an exemption: something too wide to fit is
 usually something that wants a name of its own.
 
+A suppression has no ceiling, and the exception is deliberate. A member usually carries more than
+one, and wrapped at the comma they interleave into a paragraph where two of them differ by one token
+somewhere in the middle — telling them apart is then a diff done by eye, which is how a duplicate
+survives being looked at. The other two rules stop where the single line stops being the easier
+read, because they are logic; a suppression is scanned for which rule and skimmed for why, never
+read for its logic, so wrapping it saves nothing and costs the comparison.
+
 `tools/style/lint-layout.sh` reports what does not follow this, `--fix` rewrites it, and CI runs it
 without the flag — running the checker's own test first, so that "nothing to report" means
-something. This is checked rather than remembered.
+something. This is checked rather than remembered. It stays silent on one shape it cannot read: a
+suppression sharing its brackets with another attribute, as in `[Fact, SuppressMessage(...)]`,
+where knowing what to join means parsing C#.
 
 ## Branches
 

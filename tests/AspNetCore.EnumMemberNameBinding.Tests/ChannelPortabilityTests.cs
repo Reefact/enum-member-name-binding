@@ -38,8 +38,7 @@ public sealed class PortabilityController : ControllerBase {
     [HttpGet("/portability/header")]        public IActionResult H([FromHeader(Name = "X-V")] Portability value) => Ok(new { value = value.ToString() });
     [HttpPost("/portability/form")]         public IActionResult F([FromForm] Portability value) => Ok(new { value = value.ToString() });
     [HttpPost("/portability/body")]
-    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id,
-                     Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public IActionResult B([FromBody] Payload payload) => Ok(new { value = payload.Value.ToString() });
 
     public sealed class Payload {

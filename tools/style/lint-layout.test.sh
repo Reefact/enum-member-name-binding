@@ -123,6 +123,64 @@ class Fixture {
     private const string Continued =
         "a first half that carries its own line "
       + "and a second half under it;";
+
+    // Rule 4: wrapped at the comma, which is what makes two of them a diff done by eye.
+    [SuppressMessage("Category", "RULE0001",
+        Justification = "Wrapped over two lines.")]
+    void WrappedSuppression() { }
+
+    [UnconditionalSuppressMessage("Trimming", "IL2026",
+        Justification =
+            "Wrapped over three lines.")]
+    void WrappedFurther() { }
+
+    // Qualified, and with the suffix C# lets an attribute drop. Matching only the bare short name
+    // is how this rule first walked past a wrapped suppression and reported a clean tree.
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Category", "RULE0002",
+        Justification = "Written qualified.")]
+    void Qualified() { }
+
+    [SuppressMessageAttribute("Category", "RULE0003",
+        Justification = "Written with the suffix.")]
+    void WithTheSuffix() { }
+
+    // Left alone: already on one line.
+    [SuppressMessage("Category", "RULE0004", Justification = "Already one line.")]
+    void OneLine() { }
+
+    // Left alone: wrapped, and not a suppression.
+    [Obsolete(
+        "Wrapped, and not a suppression.")]
+    void NotASuppression() { }
+
+    // Left alone: shares its brackets, the one shape the checker admits it cannot read.
+    [Fact, SuppressMessage("Category", "RULE0005",
+        Justification = "Sharing its brackets with a second attribute.")]
+    void SharesItsBrackets() { }
+
+    // Left alone: a fixture's code, not this file's own.
+    string ASuppressionInsideARawString() {
+        return """
+            [SuppressMessage("Category", "RULE0006",
+                Justification = "Inside a raw string.")]
+            """;
+    }
+}
+FIXTURE
+
+# An assembly-level suppression opens its line with a target rather than with the attribute name.
+cat > "$work/Assembly.cs" <<'FIXTURE'
+[assembly: SuppressMessage("Category", "RULE0007",
+    Justification = "Assembly level, and still one line.")]
+FIXTURE
+
+# Nothing compiles to this, but the branch that decides between "rewrite it" and "say so and stop"
+# is the branch that would otherwise eat the rest of a file — and, counted wrong, would have --fix
+# report five rewrites of a file it never touched.
+cat > "$work/Unterminated.cs" <<'FIXTURE'
+class Unterminated {
+    [SuppressMessage("Category", "RULE0008",
+    void Broken() { }
 }
 FIXTURE
 
@@ -138,10 +196,13 @@ class Interpolated {
 }
 FIXTURE
 
-expected="Fixture.cs:3:collapse Fixture.cs:12:unblank Fixture.cs:91:joinvalue Interpolated.cs:3:collapse"
+expected="Fixture.cs:3:collapse Fixture.cs:12:unblank Fixture.cs:91:joinvalue \
+Fixture.cs:104:suppression Fixture.cs:108:suppression Fixture.cs:115:suppression \
+Fixture.cs:119:suppression Interpolated.cs:3:collapse Assembly.cs:1:suppression \
+Unterminated.cs:2:unclosed"
 
 summarise() {
-    "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" 2>&1 || true
+    "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" 2>&1 || true
 }
 
 # Not sorted: the checker walks the files it was given in order and each one top to bottom, so the
@@ -150,6 +211,8 @@ actual="$(summarise \
     | sed -n -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): an if whose.*$|\1:\2:collapse|p' \
              -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): blank line.*$|\1:\2:unblank|p' \
              -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): this value fits.*$|\1:\2:joinvalue|p' \
+             -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): a suppression belongs on one line, so.*$|\1:\2:suppression|p' \
+             -e 's|^.*/\([A-Za-z]*\.cs\):\([0-9]*\): a suppression belongs on one line; this one never closes$|\1:\2:unclosed|p' \
     | tr '\n' ' ')"
 actual="${actual% }"
 
@@ -163,11 +226,12 @@ fi
 
 # The fixer has to produce what the checker printed, and leave every other case untouched.
 before="$(wc -l < "$work/Fixture.cs")"
-"$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" > /dev/null
+unterminated_before="$(wc -l < "$work/Unterminated.cs")"
+"$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" > /dev/null
 after="$(wc -l < "$work/Fixture.cs")"
 
-if [ "$((before - after))" -ne 4 ]; then
-    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 4"
+if [ "$((before - after))" -ne 9 ]; then
+    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 9"
     exit 1
 fi
 
@@ -186,9 +250,54 @@ if ! grep -q '^    private const string Split = "a value short enough' "$work/Fi
     exit 1
 fi
 
-if ! "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" > /dev/null; then
+if ! grep -q '^    \[SuppressMessage("Category", "RULE0001", Justification = "Wrapped over two lines.")\]$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix did not write the two-line suppression as one"
+    exit 1
+fi
+
+if ! grep -q '^    \[UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Wrapped over three lines.")\]$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix did not write the three-line suppression as one"
+    exit 1
+fi
+
+if ! grep -q '^    \[System.Diagnostics.CodeAnalysis.SuppressMessage("Category", "RULE0002", Justification = "Written qualified.")\]$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix did not write the qualified suppression as one line"
+    exit 1
+fi
+
+if ! grep -q '^    \[SuppressMessageAttribute("Category", "RULE0003", Justification = "Written with the suffix.")\]$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix did not write the suffixed suppression as one line"
+    exit 1
+fi
+
+if ! grep -q '^    \[Obsolete($' "$work/Fixture.cs"; then
+    echo "FAIL: --fix rewrote an attribute that is not a suppression"
+    exit 1
+fi
+
+if ! grep -q '^    \[Fact, SuppressMessage("Category", "RULE0005",$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix rewrote a suppression sharing its brackets, which the checker does not read"
+    exit 1
+fi
+
+if ! grep -q '^            \[SuppressMessage("Category", "RULE0006",$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix rewrote the suppression inside the raw string"
+    exit 1
+fi
+
+if ! grep -q '^\[assembly: SuppressMessage("Category", "RULE0007", Justification = "Assembly level, and still one line.")\]$' "$work/Assembly.cs"; then
+    echo "FAIL: --fix did not write the assembly-level suppression as one line"
+    exit 1
+fi
+
+if [ "$(wc -l < "$work/Unterminated.cs")" -ne "$unterminated_before" ]; then
+    echo "FAIL: --fix edited a file whose suppression never closes"
+    exit 1
+fi
+
+if ! "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" > /dev/null; then
     echo "FAIL: the checker still reports something after --fix"
     exit 1
 fi
 
-echo "ok — four sites reported, rewritten, and clean afterwards."
+echo "ok — nine sites reported, one refused, rewritten, and clean afterwards."

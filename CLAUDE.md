@@ -66,12 +66,34 @@ when the value genuinely needs more than one line — a concatenation, a long in
 merely because the whole declaration is wide. A declaration too wide even for that usually has a
 seam of its own: break at the call, not between the name and what it is.
 
+## A suppression fits on one line, however long that line is
+
+```csharp
+[UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id, Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
+[UnconditionalSuppressMessage(TrimRule.IL3050.Category, TrimRule.IL3050.Id, Justification = SuppressionJustification.IL3050.RequirementCarriedByConstructor)]
+```
+
+A member usually carries more than one. Wrapped at the comma they interleave into a paragraph where
+two suppressions differ by one token somewhere in the middle, and telling them apart becomes a diff
+done by eye — which is how a duplicate survives being looked at. One per line turns that comparison
+into a glance down the left edge. This rule was written the day the pair above was read as a
+copy-paste of itself and reported as a duplicate.
+
+The one rule here with no ceiling, and the exception is deliberate. The others stop where the single
+line stops being the easier read, because they are logic. A suppression is not read for its logic —
+it is scanned for which rule, and skimmed for why — so wrapping it saves a reader nothing and costs
+them the comparison.
+
 ## The checker
 
-`tools/style/lint-layout.sh` decides all three of the above, and CI runs it — the test first, then
+`tools/style/lint-layout.sh` decides all four of the above, and CI runs it — the test first, then
 the check, since a checker that reports nothing because it is broken reads exactly like a clean
 tree. It has no exception mechanism on purpose: everything it reports already fits, so the only
 answer is to rewrite it, and everything too wide it never reports at all.
+
+One shape it admits it cannot read: a suppression sharing its brackets with another attribute, as in
+`[Fact, SuppressMessage(...)]`. Knowing where one attribute ends there means parsing C#, so it stays
+silent rather than guessing.
 
 ## An `if` wrapping the rest of a method becomes a guard
 

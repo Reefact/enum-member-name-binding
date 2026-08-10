@@ -69,10 +69,8 @@ internal sealed class EnumMemberNameConverter : EnumConverter {
     }
 
     /// <inheritdoc />
-    [UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id,
-        Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
-    [UnconditionalSuppressMessage(TrimRule.IL3050.Category, TrimRule.IL3050.Id,
-        Justification = SuppressionJustification.IL3050.RequirementCarriedByConstructor)]
+    [UnconditionalSuppressMessage(TrimRule.IL2026.Category, TrimRule.IL2026.Id, Justification = SuppressionJustification.IL2026.RequirementCarriedByConstructor)]
+    [UnconditionalSuppressMessage(TrimRule.IL3050.Category, TrimRule.IL3050.Id, Justification = SuppressionJustification.IL3050.RequirementCarriedByConstructor)]
     public override object? ConvertTo(ITypeDescriptorContext? context, CultureInfo? culture, object? value, Type destinationType) {
         ArgumentNullException.ThrowIfNull(destinationType);
 
