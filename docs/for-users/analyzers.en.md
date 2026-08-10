@@ -67,4 +67,6 @@ Every rule except `EMN0006` is also enforced when the application starts, for en
 runtime from an assembly built without the analyzers. `EnumContractException` then names the type,
 every problem and the expected fix.
 
-Two members may share the same numeric value as long as their public names differ.
+Two members may share the same numeric value as long as their public names differ. Writing that value
+back — in a response body, or through `EnumMemberNames.GetPublicName` — produces the name
+`System.Text.Json` writes for it, which is not necessarily the first one declared.
