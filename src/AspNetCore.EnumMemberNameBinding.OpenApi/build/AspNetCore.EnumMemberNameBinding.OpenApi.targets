@@ -5,7 +5,7 @@
   Microsoft.AspNetCore.OpenApi carries an XML comment source generator whose output uses C#
   interceptors, and enables the namespace for that output through build assets of its own. NuGet does
   not flow build assets transitively, so a consumer who takes this companion — and nothing else,
-  which is exactly what docs/openapi.en.md tells them to do — gets the generator without the property
+  which is exactly what docs/for-users/openapi.en.md tells them to do — gets the generator without the property
   that makes its output legal, and the build fails on CS9137 in generated code they never wrote.
 
   A .targets and not a .props, deliberately. NuGet imports build/*.props above the project body and

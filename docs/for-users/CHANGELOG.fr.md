@@ -1,7 +1,7 @@
 # Changelog
 
 🌍 **Langues :**  
-🇬🇧 [English](../CHANGELOG.md) | 🇫🇷 Français (ce fichier)
+🇬🇧 [English](../../CHANGELOG.md) | 🇫🇷 Français (ce fichier)
 
 Tous les changements notables de ce projet sont documentés ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
@@ -134,7 +134,7 @@ brûler sans rien perdre.
   en tête et en fin, et la virgule finale. Le document annonçait un contrat plus strict que celui que
   le serveur honorait.
 - **Les help links des analyseurs pointaient vers des pages inexistantes**, si bien que le lien
-  de l'IDE menait à un 404. Chaque règle a désormais une page sous `docs/rules`, et un test échoue si
+  de l'IDE menait à un 404. Chaque règle a désormais une page sous `docs/for-users/rules`, et un test échoue si
   une règle et sa page divergent.
 - **L'écriture d'une combinaison `[Flags]` divergeait de `System.Text.Json`.** La décomposition suivait
   l'ordre de déclaration, alors que le sérialiseur trie les membres topologiquement pour qu'une
@@ -172,7 +172,7 @@ brûler sans rien perdre.
   `Microsoft.AspNetCore.OpenApi` active l'espace de noms d'intercepteurs dans lequel écrit son
   générateur de commentaires XML, et il le fait via des assets MSBuild `build`, que NuGet ne propage
   pas en transitif. Un consommateur qui prenait le compagnon et rien d'autre — exactement ce
-  qu'indique `docs/openapi.fr.md` — héritait donc du générateur sans la propriété qui rend sa sortie
+  qu'indique `docs/for-users/openapi.fr.md` — héritait donc du générateur sans la propriété qui rend sa sortie
   légale, et son build échouait sur CS9137 dans du code généré qu'il n'avait jamais écrit. Référencer
   `Microsoft.AspNetCore.OpenApi` en direct corrigeait aussi le problème, et la plupart des
   consommateurs l'auront déjà fait, ce qui explique que rien dans ce dépôt ne l'ait remarqué. Le
@@ -195,19 +195,25 @@ brûler sans rien perdre.
 - Le README a été scindé. Il avait atteint une longueur que personne ne lit avant d'adopter un
   paquet : la page d'accueil porte désormais le problème, l'installation, un exemple, le tableau des
   canaux, les garanties et les deux limitations à connaître avant d'adopter — le reste a été déplacé,
-  sans coupe, vers `docs/contract-rules.en.md`, `docs/analyzers.en.md`, `docs/openapi.en.md` et
-  `docs/limitations.en.md`. Le README est aussi la page NuGet du paquet, où un lien relatif est mort :
+  sans coupe, vers `docs/for-users/contract-rules.en.md`, `docs/for-users/analyzers.en.md`,
+  `docs/for-users/openapi.en.md` et `docs/for-users/limitations.en.md`. Le README est aussi la page NuGet du paquet, où un lien relatif est mort :
   il pointe donc vers GitHub en absolu. Un test échoue sur un lien relatif, et sur tout lien — dans
   n'importe quelle page — visant un fichier ou un titre inexistant.
 - La documentation est désormais bilingue, suivant la convention utilisée dans les projets Reefact :
-  chaque page existe en `Xxx.en.md` et `Xxx.fr.md` sous `docs`, et s'ouvre sur un lien vers sa
+  chaque page existe en `Xxx.en.md` et `Xxx.fr.md` sous `docs/for-users`, et s'ouvre sur un lien vers sa
   contrepartie. Le README garde son nom et sa place, puisque NuGet le rend ; sa version française est
-  `docs/README.fr.md`, et le changelog suit la même règle. Des tests échouent sur une page qui
+  `docs/for-users/README.fr.md`, et le changelog suit la même règle. Des tests échouent sur une page qui
   n'existe que dans une langue, sur une page qui n'offre pas l'autre, et sur une traduction dont la
   structure ne correspond plus à celle de l'original — les mots sont traduits, les sections, les
   puces, les lignes de tableau et les extraits ne sont ni retirés ni ajoutés. C'est ce dernier point
   qui attrape une entrée ajoutée à un seul des deux changelogs. Les help links des analyseurs
   pointent vers les pages de règles anglaises, qui font foi.
+
+- Les pages sont rangées selon qui les lit : `docs/for-users` pour la documentation que lit un
+  consommateur, `docs/for-maintainers` pour les enregistrements de décision. Cette séparation est
+  aussi ce que lisent les suites — le contrat de compilation couvre `for-users` et rien d'autre, si
+  bien qu'une page de mainteneur écrite demain en sort sans que personne ait à l'exclure. Les help
+  links des analyseurs ont suivi les pages de règles qu'ils visent, vers `docs/for-users/rules/`.
 
 ### Limitations connues
 

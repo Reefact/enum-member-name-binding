@@ -1,7 +1,7 @@
 # Politique de sécurité
 
 🌍 **Langues :**  
-🇬🇧 [English](../SECURITY.md) | 🇫🇷 Français (ce fichier)
+🇬🇧 [English](../../SECURITY.md) | 🇫🇷 Français (ce fichier)
 
 ## Versions prises en charge
 

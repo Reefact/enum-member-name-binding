@@ -1,7 +1,7 @@
 # Contributing
 
 🌍 **Languages:**  
-🇬🇧 English (this file) | 🇫🇷 [Français](docs/CONTRIBUTING.fr.md)
+🇬🇧 English (this file) | 🇫🇷 [Français](docs/for-users/CONTRIBUTING.fr.md)
 
 Thank you for considering a contribution. What follows is mostly a description of what the build
 already enforces, so that nothing here is a surprise at review time: almost every rule below is
@@ -167,10 +167,10 @@ first, because it also silences the rule everywhere obeying it would have been r
 ## Decisions worth a record
 
 A choice that outlives the pull request that made it — a library, a convention, a trade taken with
-eyes open — is written down under [`docs/adr`](docs/adr), one file per decision, in both languages
+eyes open — is written down under [`docs/for-maintainers/adr`](docs/for-maintainers/adr), one file per decision, in both languages
 like every other page. What the record is for is the reasoning: the alternatives that were real at
 the time, and what the decision costs, so that a reader who disagrees can see what they would be
-overturning. The first one is [NFluent for test assertions](docs/adr/0001-nfluent-for-test-assertions.en.md).
+overturning. The first one is [NFluent for test assertions](docs/for-maintainers/adr/0001-nfluent-for-test-assertions.en.md).
 
 ## Reporting a vulnerability
 

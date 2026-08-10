@@ -210,7 +210,7 @@ public sealed class EnumContractAnalyzerTests {
 
     /// <summary>
     /// The forbidden set was measured against a running server, channel by channel, not read off a
-    /// specification. See docs/rules/EMN0006.en.md for the table.
+    /// specification. See docs/for-users/rules/EMN0006.en.md for the table.
     /// </summary>
     [Theory]
     [InlineData(@"news/world", "a slash", "a route segment")]

@@ -59,11 +59,15 @@
       paths at the root, and renders a directory's README.md and nothing else — so these five stay
       where they are and appear here as links. Their French counterparts need no entry: four of them
       already sit under docs/, where the glob above finds them.
+
+      The four root pages are linked INTO for-users rather than at the top of this project, so each
+      lands beside the translation the glob already put there. A pair that has to be read together
+      is a pair that should not be a folder apart in the one view built for reading it.
     -->
-    <None Include="..\README.md" Link="README.md" />
-    <None Include="..\CHANGELOG.md" Link="CHANGELOG.md" />
-    <None Include="..\CONTRIBUTING.md" Link="CONTRIBUTING.md" />
-    <None Include="..\SECURITY.md" Link="SECURITY.md" />
+    <None Include="..\README.md" Link="for-users\README.md" />
+    <None Include="..\CHANGELOG.md" Link="for-users\CHANGELOG.md" />
+    <None Include="..\CONTRIBUTING.md" Link="for-users\CONTRIBUTING.md" />
+    <None Include="..\SECURITY.md" Link="for-users\SECURITY.md" />
     <!-- Linked under their real path rather than flattened: this pair documents a test harness, and
          a reader who opens it should see where it actually lives. -->
     <None Include="..\tests\PackageSmokeTest\README.md" Link="tests\PackageSmokeTest\README.md" />

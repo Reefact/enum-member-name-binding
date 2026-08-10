@@ -30,9 +30,9 @@ public sealed class HelpLinkTests {
         DiagnosticDescriptor descriptor = new EnumContractAnalyzer().SupportedDiagnostics.Single(d => d.Id == id);
 
         Check.WithCustomMessage($"{id} advertises no help link.").That(string.IsNullOrWhiteSpace(descriptor.HelpLinkUri)).IsFalse();
-        Check.That(descriptor.HelpLinkUri).EndsWith($"/docs/rules/{id}.en.md");
+        Check.That(descriptor.HelpLinkUri).EndsWith($"/docs/for-users/rules/{id}.en.md");
 
-        string page = Path.Combine(RepositoryRoot.FullName, "docs", "rules", id + ".en.md");
+        string page = Path.Combine(RepositoryRoot.FullName, "docs", "for-users", "rules", id + ".en.md");
         Check.WithCustomMessage($"{id} links to {descriptor.HelpLinkUri}, but {page} does not exist.").That(File.Exists(page)).IsTrue();
     }
 
@@ -40,7 +40,7 @@ public sealed class HelpLinkTests {
     [InlineData("en")]
     [InlineData("fr")]
     public void every_rule_is_documented_and_every_page_documents_a_rule(string language) {
-        string[] documented = [.. Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "rules"), $"*.{language}.md")
+        string[] documented = [.. Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "for-users", "rules"), $"*.{language}.md")
                                             .Select(path => Path.GetFileName(path)[..^$".{language}.md".Length])
                                             .Order()];
         string[] declared = [.. new EnumContractAnalyzer().SupportedDiagnostics.Select(d => d.Id).Order()];
@@ -51,7 +51,7 @@ public sealed class HelpLinkTests {
     /// <summary>A rule page in one language and not the other is a half-finished translation.</summary>
     [Fact]
     public void no_rule_page_exists_in_only_one_language() {
-        foreach (string path in Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "rules"), "*.md")) {
+        foreach (string path in Directory.EnumerateFiles(Path.Combine(RepositoryRoot.FullName, "docs", "for-users", "rules"), "*.md")) {
             string name = Path.GetFileName(path);
             Check.WithCustomMessage($"{name} carries no language suffix; rule pages are named EMNxxxx.en.md and EMNxxxx.fr.md.")
                  .That(Languages.Any(language => name.EndsWith($".{language}.md", StringComparison.Ordinal))).IsTrue();
@@ -61,7 +61,7 @@ public sealed class HelpLinkTests {
     private static DirectoryInfo FindRepositoryRoot() {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);
 
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "rules"))) {
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "docs", "for-users", "rules"))) {
             directory = directory.Parent;
         }
 
