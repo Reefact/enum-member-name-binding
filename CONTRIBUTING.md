@@ -38,6 +38,23 @@ only check that would notice a package that compiles and does not work.
 CI runs the build and the tests on two SDKs — the floor from `global.json` and the latest 10.0.x —
 because a disagreement between analyzer versions belongs here rather than in a consumer's build.
 
+## A change arrives with its tests
+
+Major new functionality lands with tests in the automated suite, in the same pull request. That much
+is a policy rather than a check, because nothing can tell a feature from a refactoring — but the
+parts around it are enforced: a change to the public surface fails the build until the committed
+baseline records it, and a documentation sample that stops compiling fails like any other test.
+
+Where the order can be chosen, write the test first. Not as a design method, and not TDD — the claim
+is narrower than either. A regression test written after the fix has never been seen to fail, so
+nothing establishes that it covers the bug rather than passing for some unrelated reason. Watching it
+go red, and then watching the fix turn it green, is the only thing that does — the same argument as
+the style job running the checker's own test before the checker. A fix therefore carries the test
+that would have caught it, written before the fix wherever that is possible.
+
+Wherever it is not — a test that cannot exist until the feature does — say so in the pull request
+rather than dropping the step quietly.
+
 ## Coding style
 
 Most of it lives in `.editorconfig`, which your editor already reads. Three rules it cannot express,
