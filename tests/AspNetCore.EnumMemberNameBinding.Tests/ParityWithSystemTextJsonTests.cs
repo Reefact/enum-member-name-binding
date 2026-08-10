@@ -28,10 +28,18 @@ public sealed class ParityWithSystemTextJsonTests {
         "OutOfStock", "outofstock", "OUT_OF_STOCK", "Out_Of_Stock",
         "0", "1", "999", "-1",
         "unknown", "null",
-        " available", "available ", " available ", "avail able"
+        " available", "available ", " available ", "avail able",
+        // A comma separates values on every enum, not only on a [Flags] one: System.Text.Json splits
+        // before it looks at the type, exactly as Enum.Parse does. The combinations here are the ones
+        // whose result is a declared member; the one whose result is not has a test of its own below.
+        "available,", "available, ", "available,out_of_stock", " available , out_of_stock ",
+        ",available", "available,,discontinued", "available,unknown"
     };
 
-    public static TheoryData<string> PartialInputs => new() { "one", "One", "Two", "two", "TWO", "unknown" };
+    public static TheoryData<string> PartialInputs => new() {
+        "one", "One", "Two", "two", "TWO", "unknown",
+        "one,", "one,Two", "One,two"
+    };
 
     public static TheoryData<string> PermissionInputs => new() {
         "read", "write", "read, write", "read,write", "read, delete", "read, write, delete",
@@ -105,6 +113,33 @@ public sealed class ParityWithSystemTextJsonTests {
 
         Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         Check.That(await ReadBoundValue(response)).IsEqualTo(nameof(ProductStatus.OutOfStock));
+    }
+
+    /// <summary>
+    /// The one input the body accepts and no other channel does: a combination whose result names no
+    /// declared member. It is the single documented hole in the parity above, and it is the
+    /// platform's rather than this package's — ASP.NET Core's <c>EnumTypeModelBinder</c> refuses to
+    /// bind an undefined value to a non-<c>[Flags]</c> enum, whichever converter produced it.
+    /// </summary>
+    /// <remarks>
+    /// The control is what makes that claim a measurement: <c>PlainPriority</c> is an enum this
+    /// package never touches, and <c>Normal,High</c> is refused there for exactly the same reason.
+    /// Should the platform ever drop that check, this test fails and the limitation page is wrong.
+    /// See <see href="https://github.com/Reefact/enum-member-name-binding/blob/main/docs/for-users/limitations.en.md" />.
+    /// </remarks>
+    [Fact]
+    public async Task a_combination_naming_no_member_is_the_one_thing_only_the_body_accepts() {
+        const string Contract = "out_of_stock,discontinued";
+        const string Control  = "Normal,High";
+
+        Check.That(DeserializeWithSystemTextJson<ProductStatus>(Contract)).IsEqualTo((ProductStatus)3);
+
+        using HttpResponseMessage contract = await _api.Client.GetAsync("/status/query?value=" + Uri.EscapeDataString(Contract), TestContext.Current.CancellationToken);
+        using HttpResponseMessage control = await _api.Client.GetAsync("/plain/query?value=" + Uri.EscapeDataString(Control), TestContext.Current.CancellationToken);
+
+        Check.That(contract.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+        Check.WithCustomMessage("an enum this package never touches must be refused for the same reason.")
+             .That(control.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
     }
 
     [Fact]

@@ -18,9 +18,17 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// <list type="bullet">
 ///   <item>a member annotated with <c>[JsonStringEnumMemberName]</c> matches its declared name, and only that name, case-sensitively;</item>
 ///   <item>a member without the attribute matches its C# name, case-insensitively;</item>
-///   <item>a <c>[Flags]</c> enum additionally accepts a comma-separated list of the above.</item>
+///   <item>a comma-separated list of the above is accepted on any enum, and the values are combined bitwise.</item>
 /// </list>
 /// Numeric values are never accepted — the equivalent of <c>allowIntegerValues: false</c>.
+/// <para>
+/// The comma is not reserved to <c>[Flags]</c>, which reads as though it should be. Neither
+/// <c>Enum.Parse</c> nor <c>System.Text.Json</c> looks at the attribute before splitting, so a list
+/// is accepted on an ordinary enum too — and refusing it here would make a registered enum stricter
+/// than the same enum left alone, which is the one thing this package promises never to do. What
+/// <c>[Flags]</c> still decides is whether ASP.NET Core will bind the result: see
+/// <c>docs/for-users/limitations.en.md</c>.
+/// </para>
 /// </remarks>
 internal sealed class EnumContract {
 
@@ -66,7 +74,7 @@ internal sealed class EnumContract {
             IsContract = true;
             string name = attribute.Name;
 
-            string? problem = MalformedNameProblem(field.Name, name, _isFlags);
+            string? problem = MalformedNameProblem(field.Name, name);
 
             // The duplicate test claims the name as it checks it, so it stays with the collection it
             // claims from rather than moving into a function that would have to be handed it.
@@ -101,10 +109,10 @@ internal sealed class EnumContract {
     /// because each assumes the ones before it passed — an empty name has no first character to
     /// inspect.
     /// </summary>
-    private static string? MalformedNameProblem(string memberName, string name, bool isFlags) {
+    private static string? MalformedNameProblem(string memberName, string name) {
         if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
         if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) { return Problem.SurroundingWhitespace(memberName, name); }
-        if (isFlags && name.Contains(',', StringComparison.Ordinal)) { return Problem.CommaInFlagsName(memberName, name); }
+        if (name.Contains(',', StringComparison.Ordinal)) { return Problem.CommaInName(memberName, name); }
 
         return null;
     }
@@ -140,9 +148,9 @@ internal sealed class EnumContract {
             return $"member '{memberName}' declares the name '{name}', which has leading or trailing whitespace.";
         }
 
-        internal static string CommaInFlagsName(string memberName, string name) {
+        internal static string CommaInName(string memberName, string name) {
             return $"member '{memberName}' declares the name '{name}', which contains a comma. " +
-                   "A comma separates values in a [Flags] enum and cannot appear inside a name.";
+                   "A comma separates the values of a combination and cannot appear inside a name.";
         }
 
         internal static string DuplicateName(string memberName, string name) {
@@ -195,11 +203,11 @@ internal sealed class EnumContract {
         return Cache.GetOrAdd(enumType, new EnumContract(enumType));
     }
 
-    /// <summary>Parses a public name into its enum value.</summary>
+    /// <summary>Parses a public name, or a comma-separated list of them, into its enum value.</summary>
     /// <remarks>
     /// Whitespace handling mirrors <c>System.Text.Json</c>, which was characterized rather than
-    /// assumed: the value as a whole is trimmed, each element of a <c>[Flags]</c> list is trimmed,
-    /// and a single trailing comma is tolerated while a leading or repeated one is not.
+    /// assumed: the value as a whole is trimmed, each element of a list is trimmed, and a single
+    /// trailing comma is tolerated while a leading or repeated one is not.
     /// </remarks>
     internal bool TryParse(string value, [MaybeNullWhen(false)] out object result) {
         ArgumentNullException.ThrowIfNull(value);
@@ -212,7 +220,7 @@ internal sealed class EnumContract {
             return false;
         }
 
-        if (_isFlags && trimmed.Contains(',')) { return TryParseFlags(trimmed, out result); }
+        if (trimmed.Contains(',')) { return TryParseList(trimmed, out result); }
 
         return TryParseSingle(trimmed.ToString(), out result);
     }
@@ -272,7 +280,7 @@ internal sealed class EnumContract {
         return false;
     }
 
-    private bool TryParseFlags(ReadOnlySpan<char> value, [MaybeNullWhen(false)] out object result) {
+    private bool TryParseList(ReadOnlySpan<char> value, [MaybeNullWhen(false)] out object result) {
         result = null;
 
         int count = 0;

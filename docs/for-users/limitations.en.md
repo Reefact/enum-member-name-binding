@@ -44,6 +44,26 @@ row worth knowing: an absent value on a **non-nullable** parameter binds the fir
 failing. Neither behaviour is introduced by this package — a test asserts that an enum it never
 touches behaves identically.
 
+## A combination naming no member is refused outside the body
+
+A comma separates values on every enum, so `System.Text.Json` reads
+`"out_of_stock,discontinued"` as `1 | 2` and hands back `(ProductStatus)3`, a value no member
+declares. Every other channel answers 400 to the same input:
+
+```csharp
+// body   {"Value":"out_of_stock,discontinued"}  →  200, (ProductStatus)3
+// query  ?value=out_of_stock,discontinued       →  400
+```
+
+ASP.NET Core's `EnumTypeModelBinder` refuses to bind an undefined value to a non-`[Flags]` enum,
+whichever converter produced it — `[Flags]` enums are exempt, which is why `read,write` binds. This
+is not reachable from here and, more to the point, closing it would be wrong: an enum this package
+never touches is refused the same way, so a contract enum accepting `3` on a query string would be
+*more* permissive than an ordinary one. The parity suite pins both halves, control included.
+
+Combinations that do name a member are accepted, on every channel — see
+[contract rules](contract-rules.en.md#a-comma-separates-values-on-every-enum).
+
 ## Not every name travels on every channel
 
 A slash cannot cross a route segment, and a line break or a character outside printable ASCII cannot

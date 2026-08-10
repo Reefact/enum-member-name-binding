@@ -105,6 +105,23 @@ Ces règles d'espaces et de virgules ne sont pas un choix fait ici — elles ont
 `System.Text.Json` puis reproduites, jusqu'à la virgule finale. Il en va de même pour une énumération
 simple : `?status=%20available%20` est accepté, parce que le corps accepte `" available "`.
 
+## Une virgule sépare les valeurs sur toutes les énumérations
+
+La virgule n'est pas réservée à `[Flags]`. `Enum.Parse` a toujours découpé dessus, et
+`System.Text.Json` découpe avant de regarder le type : une liste est donc acceptée sur une
+énumération ordinaire aussi, et les valeurs sont combinées bit à bit :
+
+| Requête | Résultat |
+|---|---|
+| `GET /products?status=available,` | ✅ `Available` — une virgule finale est tolérée |
+| `GET /products?status=available,out_of_stock` | ✅ `OutOfStock` — `0 \| 1` nomme un membre |
+| `GET /products?status=out_of_stock,discontinued` | ❌ 400 — `1 \| 2` n'en nomme aucun, voir [limitations](limitations.fr.md#une-combinaison-qui-ne-nomme-aucun-membre-est-refusée-hors-du-corps) |
+
+Refuser cette forme rendrait une énumération enregistrée plus stricte que la même énumération laissée
+tranquille : ASP.NET Core accepte tel quel `?priority=Low,Normal` sur une énumération que ce paquet
+ne touche jamais. La dernière ligne est la seule entrée que le corps accepte et qu'aucun autre canal
+n'accepte, et ce refus est celui d'ASP.NET Core, pas celui de ce paquet.
+
 ## Valeurs vides et absentes
 
 | Paramètre | Requête | Résultat |

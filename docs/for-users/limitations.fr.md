@@ -44,6 +44,27 @@ ligne à connaître : une valeur absente sur un paramètre **non nullable** lie 
 d'échouer. Aucun de ces deux comportements n'est introduit par ce paquet — un test vérifie qu'une
 énumération qu'il ne touche jamais se comporte de façon identique.
 
+## Une combinaison qui ne nomme aucun membre est refusée hors du corps
+
+Une virgule sépare les valeurs sur toutes les énumérations : `System.Text.Json` lit donc
+`"out_of_stock,discontinued"` comme `1 | 2` et renvoie `(ProductStatus)3`, une valeur qu'aucun membre
+ne déclare. Tous les autres canaux répondent 400 à la même entrée :
+
+```csharp
+// corps   {"Value":"out_of_stock,discontinued"}  →  200, (ProductStatus)3
+// requête ?value=out_of_stock,discontinued       →  400
+```
+
+L'`EnumTypeModelBinder` d'ASP.NET Core refuse de lier une valeur non déclarée à une énumération sans
+`[Flags]`, quel que soit le convertisseur qui l'a produite — les `[Flags]` en sont dispensées, ce qui
+explique que `read,write` se lie. Ce n'est pas atteignable d'ici et, surtout, le corriger serait une
+erreur : une énumération que ce paquet ne touche jamais est refusée de la même façon, donc une
+énumération sous contrat qui accepterait `3` sur une query string serait *plus* permissive qu'une
+ordinaire. La suite de parité épingle les deux moitiés, témoin compris.
+
+Les combinaisons qui nomment bien un membre sont acceptées, sur tous les canaux — voir
+[règles de contrat](contract-rules.fr.md#une-virgule-sépare-les-valeurs-sur-toutes-les-énumérations).
+
 ## Tous les noms ne voyagent pas sur tous les canaux
 
 Une barre oblique ne peut pas traverser un segment de route, et un saut de ligne ou un caractère hors
