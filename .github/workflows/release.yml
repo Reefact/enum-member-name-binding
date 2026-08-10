@@ -111,6 +111,34 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Version $version (prerelease: $prerelease)"
 
+      # Before anything is built, and long before anything is irreversible: a tag whose changelog
+      # entry was never written stops here rather than after the build, the pack and the smoke test.
+      #
+      # This step replaces `--generate-notes`, which filled the release with the pull-request titles
+      # merged since the previous tag. That is a version-control log wearing a different hat, and it
+      # is the one shape release notes are explicitly not allowed to take: a reader cannot tell from
+      # it whether to upgrade. The summary written for that purpose already exists in CHANGELOG.md,
+      # so it is read out instead — by a script anyone can run locally, with its own test, rather
+      # than by a line of shell that only ever executes here.
+      #
+      # A dry run reports where a real run refuses. Its default version is 0.0.0-dryrun, which no
+      # changelog will ever carry, so failing would break the rehearsal this trigger exists to
+      # provide — while a dry run asked for a real version still says whether that section is ready.
+      - name: Resolve the release notes from the changelog
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+        run: |
+          set -euo pipefail
+          if tools/release-notes/changelog-section.sh "$VERSION" > release-notes.md; then
+            echo "--- release notes for $VERSION ---"
+            cat release-notes.md
+          elif [ "$DRY_RUN" = "true" ]; then
+            echo "::warning::CHANGELOG.md has no usable entry for $VERSION; a real release of this version would stop here"
+          else
+            echo "::error::CHANGELOG.md has no usable entry for $VERSION — write it before tagging, moving what applies out of [Unreleased]"
+            exit 1
+          fi
+
       # The version reaches the shell through the environment, not through ${{ }} — the same rule the
       # step above states for the dispatch input, which this step used to break. Interpolated, a tag
       # named `v1.0.0;id` would have run `id`. The allowlist already makes that string unreachable;
@@ -203,9 +231,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ "$PRERELEASE" = "true" ]; then
-            gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes --prerelease --latest=false
+            gh release create "$GITHUB_REF_NAME" artifacts/* --notes-file release-notes.md --prerelease --latest=false
           else
-            gh release create "$GITHUB_REF_NAME" artifacts/* --generate-notes
+            gh release create "$GITHUB_REF_NAME" artifacts/* --notes-file release-notes.md
           fi
         env:
           GH_TOKEN: ${{ github.token }}
@@ -220,7 +248,7 @@ jobs:
           set -euo pipefail
           gh --version
           help=$(gh release create --help 2>&1)
-          for flag in --generate-notes --prerelease --latest; do
+          for flag in --notes-file --prerelease --latest; do
             printf '%s\n' "$help" | grep -q -- "$flag" \
               || { echo "::error::gh release create does not support $flag on this runner"; exit 1; }
             echo "gh release create supports $flag"
@@ -245,6 +273,17 @@ jobs:
               echo "A real run would pass \`--prerelease --latest=false\`, so it would not become the latest release."
             else
               echo "A real run would pass neither flag, so GitHub would decide whether it becomes the latest release."
+            fi
+            echo
+            if [ -s release-notes.md ]; then
+              echo "The release notes a real run would publish, read out of \`CHANGELOG.md\`:"
+              echo
+              echo '```markdown'
+              cat release-notes.md
+              echo '```'
+            else
+              echo "\`CHANGELOG.md\` carries no usable \`## [$VERSION]\` section, so a real release of"
+              echo "this version would stop before building. Expected on the default dry-run version."
             fi
             echo
             echo "Tag the commit to publish for real."
