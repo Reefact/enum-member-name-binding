@@ -30,12 +30,6 @@ public sealed class NullGuardTests {
         [typeof(Enum)]                                = ProductStatus.Available,
     };
 
-    private static readonly Dictionary<string, string> Unexercisable = new(StringComparer.Ordinal) {
-        ["AddEnumMemberNameBinding"] =
-            "Takes an IMvcBuilder, whose only real implementation comes from a configured service "
-          + "collection; the guard is covered by the extension's own tests instead.",
-    };
-
     public static TheoryData<string> GuardedParameters {
         get {
             TheoryData<string> data = new();
@@ -47,13 +41,30 @@ public sealed class NullGuardTests {
         }
     }
 
+    /// <summary>
+    /// Every non-nullable reference parameter on a public or internal boundary answers a null with
+    /// <see cref="ArgumentNullException" /> naming that parameter.
+    /// </summary>
+    /// <remarks>
+    /// This theory carried an exemption list, and <c>AddEnumMemberNameBinding</c> was the one entry
+    /// in it: the row was generated, returned before building an argument array, asserted nothing and
+    /// reported green. The recorded reason — that an <c>IMvcBuilder</c> can only come from a
+    /// configured service collection — was not true of what the row needs, which is a null. Removing
+    /// the exemption made it pass as written, so the package's one public entry point had gone
+    /// unguarded by anything for as long as the list existed.
+    /// <para>
+    /// CA1062 does hold a second line here, and it is worth being exact about what each covers: the
+    /// analyzer refuses a boundary that validates nothing at all, and this row refuses one that
+    /// validates with the wrong exception. Replacing the guard with an
+    /// <c>InvalidOperationException</c> compiles clean and fails here — which is the mutation that
+    /// was run before deleting the list.
+    /// </para>
+    /// </remarks>
     [Theory]
     [MemberData(nameof(GuardedParameters))]
     public void a_non_nullable_reference_parameter_is_refused_when_null(string identity) {
         (MethodBase member, ParameterInfo parameter) = BoundaryParameters()
             .Single(p => $"{p.Member.DeclaringType!.Name}.{Describe(p.Member)}({p.Parameter.Name})" == identity);
-
-        if (Unexercisable.ContainsKey(member.Name)) { return; }
 
         object?[] arguments = [.. member.GetParameters().Select(p => p.Position == parameter.Position ? null : ValueFor(p))];
 
