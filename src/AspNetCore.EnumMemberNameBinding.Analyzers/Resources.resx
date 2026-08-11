@@ -67,7 +67,7 @@
     <value>Member '{0}' declares the public name '{1}'; on a [Flags] enum a comma separates the values of a combination and cannot appear inside a name</value>
   </data>
   <data name="EMN0004Description" xml:space="preserve">
-    <value>System.Text.Json refuses a comma inside a declared name on a [Flags] enum, where the whole name is never looked up before the value is split. On any other enum it accepts one, and so does this package.</value>
+    <value>System.Text.Json validates declared names when it builds a converter, and refuses a comma inside one on a [Flags] enum: "Flags enums must additionally not contain commas". Such an enum cannot be serialized at all, so this rule turns a run-time failure into a build error. On any other enum the serializer accepts a comma in a name, and so does this package.</value>
   </data>
   <data name="EMN0005Title" xml:space="preserve">
     <value>A public name shadows the C# name of another member</value>
