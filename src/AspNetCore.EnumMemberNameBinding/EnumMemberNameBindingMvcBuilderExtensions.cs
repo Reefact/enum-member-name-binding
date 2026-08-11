@@ -78,7 +78,7 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
 
         // Last, and that is the whole of the atomicity. Everything above only adds descriptors to a
         // collection nothing has read yet, so a throw there leaves the application as it was. This
-        // one writes into the record the model binder provider consults on every request, and no
+        // one writes into the record the model binder provider consults when it builds a binder, and no
         // exception can take it back — so it runs once the steps that can throw have not.
         registrations.Add(contractEnums);
 
@@ -123,7 +123,7 @@ public static class EnumMemberNameBindingMvcBuilderExtensions {
     /// out of the next one's.
     /// <para>
     /// Filling the record was the first thing this did, and it is now the last thing the caller does.
-    /// The record is live — the provider reads it on every request — while everything else here only
+    /// The record is live — the provider reads it whenever ASP.NET Core builds a binder — while everything else here only
     /// adds descriptors to a collection nobody has read yet. So a call that threw part-way used to
     /// leave a running application binding enums it had just been told were not registered, with no
     /// converter to serialize them back: <c>RegistrationRefusalTests</c> holds it.
