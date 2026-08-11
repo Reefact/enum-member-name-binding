@@ -107,7 +107,9 @@ d'abord le test du vérificateur, pour que « rien à signaler » veuille dire q
 vérifié plutôt que retenu. Il reste muet sur deux formes qu'il ne sait pas lire : une suppression qui
 partage ses crochets avec un autre attribut, comme dans `[Fact, SuppressMessage(...)]`, et une
 suppression repliée dont le `)]` de fermeture est suivi d'un membre sur la même ligne. Dans les deux
-cas, savoir quoi joindre suppose d'analyser le C#.
+cas, savoir quoi joindre suppose d'analyser le C#. Un commentaire `//` en fin de ligne n'est ni l'un
+ni l'autre : il court jusqu'au bout de la ligne, rien ne peut s'y cacher derrière et la jonction est
+donc sûre.
 
 ## Branches
 

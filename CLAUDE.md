@@ -96,6 +96,12 @@ a suppression sharing its brackets with another one, as in `[Fact, SuppressMessa
 wrapped suppression whose closing `)]` is followed by a member on the same line. Knowing where one
 attribute ends, or what follows it, means parsing C#, so it stays silent rather than guessing.
 
+A trailing `//` comment is not one of them, and reading it as one cost the rule its teeth: a wrapped
+suppression carrying a note closed on a line that did not *end* in `)]`, so the checker took it for
+the second shape and said nothing — in both modes, with exit 0, which is what a clean tree says. A
+`//` runs to the end of the line and nothing can hide behind it, so the join is safe. A `/*` is still
+unread, because a member can follow its close on the same line.
+
 `--fix` reports what it declines and exits non-zero for it, rather than printing what it rewrote and
 stopping at 0 — a fixer that leaves a violation behind and answers like a clean tree sends a
 developer to commit what the same script, in check mode, is about to refuse.
