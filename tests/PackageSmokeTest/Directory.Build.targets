@@ -1,0 +1,14 @@
+<!--
+  Deliberately empty, and load-bearing, for the same reason as Directory.Build.props beside it —
+  and needed separately, which is the part that was missed.
+
+  MSBuild walks up for Directory.Build.props and again, independently, for Directory.Build.targets.
+  Shadowing the props alone left the second walk to reach the repository's own targets, which adds
+  Microsoft.CodeAnalysis.PublicApiAnalyzers to every project under it. So the fixtures were carrying
+  this repository's public-API analyzer while their props file explained that whatever they need
+  they declare themselves: RS0016 was in InvalidContract's build log, ten times.
+
+  A fixture exists to imitate somebody else's project consuming us from nuget.org. Somebody else's
+  project does not have our analyzers in it.
+-->
+<Project />
