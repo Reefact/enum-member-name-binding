@@ -350,6 +350,10 @@ internal sealed class EnumContract {
         };
     }
 
+    /// <summary>
+    /// A value with no comma in it. The exact spelling of an unannotated member wins here, and only
+    /// here — see <see cref="TryParseListItem" />.
+    /// </summary>
     private bool TryParseSingle(string token, [MaybeNullWhen(false)] out object result) {
         if (_byContractName.TryGetValue(token, out object? contract)) {
             result = contract;
@@ -363,6 +367,37 @@ internal sealed class EnumContract {
             return true;
         }
 
+        return TryParseIgnoringCase(token, out result);
+    }
+
+    /// <summary>
+    /// One token of a comma-separated list, where an unannotated member is matched ignoring case and
+    /// nothing else — the exact spelling is not preferred.
+    /// </summary>
+    /// <remarks>
+    /// The asymmetry is <c>System.Text.Json</c>'s and was characterized rather than reasoned about:
+    /// a value carrying a comma resolves each of its parts through one case-insensitive lookup, while
+    /// a value carrying none prefers an exact match first. A single trailing comma is enough to move
+    /// a value from the second rule to the first — on <c>{ Read = 2, read = 4 }</c> the serializer
+    /// reads <c>"read"</c> as 4 and <c>"read,"</c> as 2.
+    /// <para>
+    /// Reading both paths the same way is what this package did until <c>ReadParityTests</c> was
+    /// written. Preferring the exact spelling everywhere was an improvement on the single value and a
+    /// regression on the list, so the divergence moved rather than closing: <c>"read,one"</c> bound
+    /// 5 where the request body binds 3. Declared names are unaffected — they are ordinal in both.
+    /// </para>
+    /// </remarks>
+    private bool TryParseListItem(string token, [MaybeNullWhen(false)] out object result) {
+        if (_byContractName.TryGetValue(token, out object? contract)) {
+            result = contract;
+
+            return true;
+        }
+
+        return TryParseIgnoringCase(token, out result);
+    }
+
+    private bool TryParseIgnoringCase(string token, [MaybeNullWhen(false)] out object result) {
         if (_byClrNameIgnoringCase.TryGetValue(token, out object? ignoringCase)) {
             result = ignoringCase;
 
@@ -394,7 +429,7 @@ internal sealed class EnumContract {
                 return false;
             }
 
-            if (!TryParseSingle(token.ToString(), out object? part)) { return false; }
+            if (!TryParseListItem(token.ToString(), out object? part)) { return false; }
 
             accumulator |= ToUInt64(part);
         }

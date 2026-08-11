@@ -139,6 +139,14 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Une liste séparée par des virgules résolvait un membre non annoté autrement que le corps de la
+  requête.** `System.Text.Json` ne privilégie l'orthographe exacte d'un nom C# que si la valeur ne
+  porte aucune virgule ; dans une liste, chaque partie passe par une unique recherche insensible à
+  la casse — une simple virgule finale fait donc basculer d'une règle à l'autre : sur
+  `{ Read = 2, read = 4 }`, le sérialiseur lit `"read"` comme 4 et `"read,"` comme 2. Ce paquet
+  appliquait la règle de l'orthographe exacte aux deux chemins : `?value=read,one` liait donc 5 là
+  où le corps liait 3. Le chemin liste s'aligne désormais. Les noms déclarés ne changent pas : ils
+  sont ordinaux des deux côtés.
 - **Un enregistrement en échec pouvait tout de même modifier une application en fonctionnement.** Les
   énumérations sous contrat étaient inscrites dans le registre que le model binder provider consulte à
   chaque requête *avant* que la collection de services ne soit configurée — si bien qu'un appel
