@@ -279,6 +279,14 @@ brûler sans rien perdre.
 
 ### Documentation
 
+- **`EnumContractException` se documentait comme « levée au démarrage, jamais sur une requête ».** Le
+  compagnon OpenAPI résout un contrat au moment d'écrire le document, ce qui sous `MapOpenApi` est une
+  requête — une application utilisant le compagnon seul, sans `AddEnumMemberNameBinding`, démarre donc
+  normalement et répond 500 sur `/openapi/v1.json` pour une énumération malformée. Les analyseurs ne
+  comblent pas cet écart non plus, NuGet ne propageant pas les assets d'analyseur de façon transitive.
+  Le type dit désormais où il est levé, et `openapi.md` nomme la conséquence de la configuration
+  autonome qu'il documentait déjà comme supportée. Le comportement ne change pas : échouer bruyamment
+  sur un contrat malformé est l'intention.
 - **La section trimming rangeait `AddEnumMemberNameBinding` dans le mauvais groupe.** Elle donnait
   l'enregistrement MVC comme portant `[RequiresUnreferencedCode]` seul, alors que le point d'entrée
   porte `[RequiresDynamicCode]` depuis son écriture — il le doit, puisqu'il atteint la construction
