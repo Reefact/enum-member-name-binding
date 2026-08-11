@@ -28,6 +28,13 @@ type**, ce que le compagnon corrige. Et pour une énumération `[Flags]`, il n'�
 valeur : une liste fermée ne peut pas exprimer les combinaisons, alors le compagnon émet à la place
 une expression régulière, à la fois précise et vérifiable par une machine.
 
+Un troisième, moins visible. Un seul composant décrit l'énumération partout où elle apparaît : un
+*usage* nullable doit donc s'exprimer quelque part. Une propriété nullable est émise sous la forme
+d'un `oneOf` entre un schéma null et une référence, ce qui laisse le composant intact ; un élément de
+collection nullable — `List<ProductStatus?>` — n'est pas encapsulé, et ASP.NET Core place à la place
+un null JSON parmi les valeurs du composant lui-même. Le compagnon conserve ce null et type le schéma
+`["null","string"]`. Un schéma qui n'admet aucun null ne gagne ni l'un ni l'autre.
+
 ## Uniquement les énumérations que cette application a enregistrées
 
 Le compagnon décrit une énumération parce que `AddEnumMemberNameBinding` l'a enregistrée, pas

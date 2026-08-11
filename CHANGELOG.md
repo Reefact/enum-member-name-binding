@@ -127,6 +127,14 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **A nullable contract enum lost the `null` from its OpenAPI schema.** One component describes the
+  type wherever it appears, and a nullable collection element — `List<TEnum?>` — is not wrapped the
+  way a nullable property is: ASP.NET Core expresses it by putting a JSON null inside the component's
+  own `enum`. Replacing that list with the declared names dropped the null, and the `string` type
+  stamped over it forbade one outright — so the document refused a value the server accepts and
+  echoes back, measured on a body answering 200 to `["available",null,"sold"]`. The transformer now
+  reads the nullability off the schema it is replacing and keeps both: `"type": ["null","string"]`,
+  and the null beside the names. A schema admitting no null gains neither.
 - **A comma-separated list resolved an unannotated member differently from the request body.**
   `System.Text.Json` prefers the exact spelling of a C# name only when the value carries no comma;
   inside a list every part resolves through one case-insensitive lookup, so a single trailing comma

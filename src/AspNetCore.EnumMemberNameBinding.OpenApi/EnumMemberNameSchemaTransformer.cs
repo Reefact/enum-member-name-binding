@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -52,10 +53,14 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
         IReadOnlyList<string>? names = EnumMemberNames.GetPublicNames(type);
         if (names is null || names.Count == 0) { return Task.CompletedTask; }
 
-        schema.Type = JsonSchemaType.String;
+        bool nullable = AdmitsNull(schema);
+
+        schema.Type = nullable ? JsonSchemaType.String | JsonSchemaType.Null : JsonSchemaType.String;
 
         if (EnumMemberNames.IsFlagsContract(type)) {
             // A combination is an open set, so it cannot be enumerated. A pattern describes it exactly.
+            // A pattern says nothing about a value that is not a string, so the null the type admits
+            // stays admitted.
             schema.Enum = null;
             schema.Pattern = BuildFlagsPattern(names, EnumMemberNames.GetNamesMatchedIgnoringCase(type));
             schema.Description = Append(schema.Description, FlagsCombination(names));
@@ -63,9 +68,36 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
             return Task.CompletedTask;
         }
 
-        schema.Enum = [.. names.Select(static name => (JsonNode)JsonValue.Create(name))];
+        List<JsonNode> values = [.. names.Select(static name => (JsonNode)JsonValue.Create(name))];
+
+        // A JSON null is a null element here — the annotation does not admit one and the list holds
+        // it anyway, which is exactly how the platform put it there before this replaced the list.
+        if (nullable) { values.Add(null!); }
+
+        schema.Enum = values;
 
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Whether the schema ASP.NET Core built is one a <see langword="null" /> is valid against.
+    /// </summary>
+    /// <remarks>
+    /// Read off what is being replaced, because the position that made it nullable is not visible from
+    /// here — the same component describes the enum wherever it appears. A nullable property is
+    /// emitted as <c>oneOf</c> of a null schema and a reference, so the component itself is untouched
+    /// and there is nothing to preserve. A nullable element of a collection is not wrapped, and the
+    /// platform expresses it by putting a null in the component's own <c>enum</c> instead.
+    /// <para>
+    /// That null was dropped along with the rest when the list was replaced, and the type stamped over
+    /// it said <c>string</c>, so the document forbade a value the server accepts and echoes back —
+    /// measured on <c>List&lt;TEnum?&gt;</c>, which answers 200 to <c>["available",null,"sold"]</c>.
+    /// </para>
+    /// </remarks>
+    private static bool AdmitsNull(OpenApiSchema schema) {
+        if (schema.Type is not null && (schema.Type.Value & JsonSchemaType.Null) != 0) { return true; }
+
+        return schema.Enum is not null && schema.Enum.Any(static value => value is null || value.GetValueKind() == JsonValueKind.Null);
     }
 
     /// <summary>

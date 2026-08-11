@@ -50,6 +50,29 @@ public enum PlainLevel {
 
 }
 
+/// <summary>
+/// Reached only through a nullable collection element, which is how the platform comes to put a
+/// <see langword="null" /> inside the component's own <c>enum</c> rather than wrapping the reference.
+/// </summary>
+/// <remarks>
+/// Its own enum, deliberately. The component describes the type wherever it appears, so a nullable
+/// use of <see cref="OrderState" /> would make <em>its</em> schema nullable too and the tests above
+/// would then be measuring this shape instead of the ordinary one.
+/// </remarks>
+public enum Availability {
+
+    [JsonStringEnumMemberName("available")] Available,
+    [JsonStringEnumMemberName("sold")]      Sold
+
+}
+
+/// <summary>A body whose array admits a null element, so the element schema is the nullable one.</summary>
+public sealed class Basket {
+
+    public List<Availability?> Items { get; init; } = [];
+
+}
+
 /// <summary>Names full of characters that mean something to a regular expression engine.</summary>
 [Flags]
 public enum Tricky {
@@ -86,6 +109,9 @@ public sealed class OrdersController : ControllerBase {
     [HttpGet("/mixed")]
     public IActionResult ByMixedScopes([FromQuery] MixedScopes value) => Ok(new { value = value.ToString() });
 
+    [HttpPost("/basket")]
+    public IActionResult Stock([FromBody] Basket basket) => Ok(basket);
+
 }
 
 /// <summary>Boots the API with the OpenAPI companion enabled (or not, for characterization).</summary>
@@ -115,7 +141,7 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
                // Partial contracts are opted into for MixedScopes alone; every other enum here
                // annotates every member, so the switch changes nothing for them.
                .AddEnumMemberNameBinding(options => {
-                    options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>().AddEnum<MixedScopes>();
+                    options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>().AddEnum<MixedScopes>().AddEnum<Availability>();
                     options.AllowPartialContracts = true;
                 });
 

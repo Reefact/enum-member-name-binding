@@ -28,6 +28,13 @@ companion fixes. And for a `[Flags]` enum it deliberately emits no value at all 
 cannot express combinations, so the companion emits a regular expression instead, which is both
 precise and machine-checkable.
 
+A third, less visible. One component describes the enum wherever it appears, so a nullable *use* of
+it has to be expressed somewhere. A nullable property is emitted as a `oneOf` of a null schema and a
+reference, which leaves the component alone; a nullable collection element — `List<ProductStatus?>`
+— is not wrapped, and ASP.NET Core puts a JSON null among the component's own values instead. The
+companion keeps that null and types the schema `["null","string"]`. A schema admitting no null gains
+neither.
+
 ## Only the enums this application registered
 
 The companion describes an enum when `AddEnumMemberNameBinding` registered it, not merely because it
