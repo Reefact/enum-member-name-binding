@@ -84,16 +84,32 @@ public sealed class ContractValidationTests {
     }
 
     /// <summary>
-    /// Both are refused, and the pair is the point: the comma separates values on every enum, so a
-    /// name carrying one cannot be told apart from a combination on any of them.
+    /// Refused on a <c>[Flags]</c> enum, exactly where <c>System.Text.Json</c> refuses it — its own
+    /// message says "Flags enums must <em>additionally</em> not contain commas".
     /// </summary>
-    [Theory]
-    [InlineData(typeof(CommaInFlagsName))]
-    [InlineData(typeof(CommaInOrdinaryName))]
-    public void a_public_name_cannot_contain_a_comma(Type enumType) {
-        EnumContractException exception = Check.ThatCode(() => EnumContract.For(enumType)).Throws<EnumContractException>().Value;
+    [Fact]
+    public void a_public_name_on_a_flags_enum_cannot_contain_a_comma() {
+        EnumContractException exception = Check.ThatCode(() => EnumContract.For(typeof(CommaInFlagsName))).Throws<EnumContractException>().Value;
 
         Check.That(exception.Problems).HasElementThatMatches(p => p.Contains("comma", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// And accepted anywhere else, because the serializer accepts it — the pair is the point.
+    /// </summary>
+    /// <remarks>
+    /// The refusal used to cover both, on the reading that a comma separates values everywhere so a
+    /// name carrying one can never be told apart from a combination. It can: the serializer looks the
+    /// whole value up as a name before splitting, and only reaches the split when no name spells it.
+    /// Refusing the shape here made a registered enum stricter than the same enum left alone —
+    /// see <c>ReadParityTests</c> and <c>FormattingParityTests</c>, which hold the round trip against
+    /// the serializer rather than against this expectation.
+    /// </remarks>
+    [Fact]
+    public void a_public_name_on_an_ordinary_enum_may_contain_a_comma() {
+        EnumContract contract = EnumContract.For(typeof(CommaInOrdinaryName));
+
+        Check.That(contract.PublicNames.ToArray()).ContainsExactly("read,write");
     }
 
     [Fact]

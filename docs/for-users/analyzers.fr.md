@@ -12,7 +12,7 @@ l'application.
 | [`EMN0001`](rules/EMN0001.fr.md) | Erreur | Deux membres déclarent le même nom public |
 | [`EMN0002`](rules/EMN0002.fr.md) | Erreur | Un nom public est vide, ou entouré d'espaces |
 | [`EMN0003`](rules/EMN0003.fr.md) | Erreur | Une énumération sous contrat laisse des membres sans annotation |
-| [`EMN0004`](rules/EMN0004.fr.md) | Erreur | Un nom public contient une virgule |
+| [`EMN0004`](rules/EMN0004.fr.md) | Erreur | Un nom public sur une énumération `[Flags]` contient une virgule |
 | [`EMN0005`](rules/EMN0005.fr.md) | Erreur | Un nom public est aussi le nom C# d'un autre membre |
 | [`EMN0006`](rules/EMN0006.fr.md) | Avertissement | Un nom public ne peut pas voyager sur tous les canaux d'entrée |
 

@@ -125,7 +125,20 @@ public sealed class FormattingParityTests {
 
     }
 
+    /// <summary>
+    /// A declared name carrying a comma, which is legal off <c>[Flags]</c> — so the value has to be
+    /// written back exactly as the serializer writes it, comma and all.
+    /// </summary>
+    public enum CommaInsideAName {
+
+        [JsonStringEnumMemberName("a,b")] Ab = 4,
+        [JsonStringEnumMemberName("a")]   A  = 1,
+        [JsonStringEnumMemberName("b")]   B  = 2
+
+    }
+
     [Theory]
+    [InlineData(typeof(CommaInsideAName))]
     [InlineData(typeof(NumericAliases))]
     [InlineData(typeof(AliasesOutOfOrder))]
     [InlineData(typeof(AliasesWithZeroLast))]

@@ -73,6 +73,22 @@ public sealed class Basket {
 
 }
 
+/// <summary>
+/// A declared name carrying a comma, which <c>System.Text.Json</c> accepts off <c>[Flags]</c> — so
+/// it reaches the closed list this package publishes, and the server has to answer to it.
+/// </summary>
+/// <remarks>
+/// The name is beside the two it looks like a combination of, so the document and the server have to
+/// agree on which of the two readings wins. They do, because both look the whole value up first.
+/// </remarks>
+public enum Topic {
+
+    [JsonStringEnumMemberName("news,world")] NewsWorld = 4,
+    [JsonStringEnumMemberName("news")]       News      = 1,
+    [JsonStringEnumMemberName("world")]      World     = 2
+
+}
+
 /// <summary>Names full of characters that mean something to a regular expression engine.</summary>
 [Flags]
 public enum Tricky {
@@ -112,6 +128,9 @@ public sealed class OrdersController : ControllerBase {
     [HttpPost("/basket")]
     public IActionResult Stock([FromBody] Basket basket) => Ok(basket);
 
+    [HttpGet("/topics")]
+    public IActionResult ByTopic([FromQuery] Topic value) => Ok(new { value = value.ToString() });
+
 }
 
 /// <summary>Boots the API with the OpenAPI companion enabled (or not, for characterization).</summary>
@@ -141,7 +160,8 @@ public abstract class OpenApiTestApiBase(bool withTransformer) : IAsyncLifetime 
                // Partial contracts are opted into for MixedScopes alone; every other enum here
                // annotates every member, so the switch changes nothing for them.
                .AddEnumMemberNameBinding(options => {
-                    options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>().AddEnum<MixedScopes>().AddEnum<Availability>();
+                    options.AddEnum<OrderState>().AddEnum<Scopes>().AddEnum<Tricky>().AddEnum<MixedScopes>()
+                           .AddEnum<Availability>().AddEnum<Topic>();
                     options.AllowPartialContracts = true;
                 });
 

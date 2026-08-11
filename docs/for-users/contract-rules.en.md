@@ -119,6 +119,12 @@ ASP.NET Core accepts `?priority=Low,Normal` on an enum this package never touche
 the one input the body accepts and no other channel does, and the refusal there is ASP.NET Core's
 rather than this package's.
 
+It splits *second*, though. The whole trimmed value is looked up as a name first, so a member whose
+declared name carries a comma beats the combination it looks like: where a `news,world` member
+exists, `?topic=news,world` binds it rather than `news | world`, while `?topic=news, world` — which
+no name spells — is the combination. That order is the serializer's, and it is why a comma inside a
+declared name is forbidden on a `[Flags]` enum alone ([EMN0004](rules/EMN0004.en.md)).
+
 ## Empty and absent values
 
 | Parameter | Request | Result |
