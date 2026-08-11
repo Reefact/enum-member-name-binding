@@ -14,8 +14,10 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// builds clean, which is the gap this fills. Should a later version of the analyzer close it, this
 /// test is what should go.
 /// <para>
-/// Reads the test sources of all three projects rather than this one, since the hazard belongs to
-/// the library and not to a project. See docs/for-maintainers/adr/0001-nfluent-for-test-assertions.en.md.
+/// Reads the test sources of every project under tests/ rather than this one, since the hazard
+/// belongs to the library and not to a project — four of them today, and whatever is added next,
+/// which is why the sentence names the directory rather than a count.
+/// See docs/for-maintainers/adr/0001-nfluent-for-test-assertions.en.md.
 /// </para>
 /// </remarks>
 public sealed class AssertionStyleTests {
