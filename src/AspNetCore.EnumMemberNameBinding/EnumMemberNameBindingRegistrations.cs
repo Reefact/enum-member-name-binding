@@ -18,9 +18,12 @@ namespace AspNetCore.EnumMemberNameBinding;
 internal sealed class EnumMemberNameBindingRegistrations {
 
     /// <summary>
-    /// Written at start-up and read on every request. A concurrent dictionary rather than a set
-    /// behind a lock, because the reads are the hot side and a caller that registers after the first
-    /// request is outside the documented contract anyway — but must still not corrupt anything.
+    /// Written at start-up and read when ASP.NET Core builds a binder — once per parameter, not once
+    /// per request: <c>ModelBinderFactory</c> caches what a provider returns, so five requests to one
+    /// action read this once. Measured, after the comment had said "every request" for long enough
+    /// to be quoted twice elsewhere. A concurrent dictionary rather than a set behind a lock all the
+    /// same: the reads still outnumber the writes, and a caller that registers after the first
+    /// request is outside the documented contract but must not corrupt anything.
     /// </summary>
     private readonly ConcurrentDictionary<Type, bool> _types = new();
 
