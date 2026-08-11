@@ -141,6 +141,17 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Le motif `[Flags]` du document OpenAPI se trompait de classe insensible à la casse, dans les deux
+  sens.** Un membre non annoté garde son nom C#, que le binder reconnaît avec `OrdinalIgnoreCase`, et
+  le motif écrivait cela comme les deux formes de casse du caractère. Ce n'est pas le même ensemble.
+  Trop large sur cinq code points : `ToLowerInvariant` envoie U+212A KELVIN SIGN sur `k`, si bien
+  qu'un membre nommé avec lui annonçait un `k` ordinaire auquel le serveur répond 400 — de même pour
+  U+03F4, U+1E9E, U+2126 et U+212B. Trop étroit sur soixante-dix-neuf autres, où deux caractères sont
+  égaux sans que l'un soit la casse de l'autre, comme U+00B5 MICRO SIGN face à U+03BC GREEK SMALL MU.
+  Les deux découlent d'une seule règle, mesurée sur chaque `char` plutôt que déduite : deux caractères
+  sont égaux au sens d'`OrdinalIgnoreCase` exactement quand `ToUpperInvariant` les envoie au même
+  endroit, la classe est donc ce groupe. Un nom en ASCII ne change pas : `Delete` reste
+  `[Dd][Ee][Ll][Ee][Tt][Ee]`.
 - **Un nom mal cassé se résolvait vers le mauvais membre sur une énumération `[Flags]`.** De deux
   membres non annotés ne différant que par la casse, celui vers lequel se rabat un jeton qui ne
   correspond exactement à aucune des deux orthographes dépend de l'ordre dans lequel le sérialiseur

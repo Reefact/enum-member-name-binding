@@ -129,6 +129,16 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **The OpenAPI `[Flags]` pattern got its case-insensitive class wrong in both directions.** An
+  unannotated member keeps its C# name, which the binder matches with `OrdinalIgnoreCase`, and the
+  pattern wrote that as the character's two case forms. Those are not the same set. Too wide on five
+  code points: `ToLowerInvariant` sends U+212A KELVIN SIGN to `k`, so a member named with it
+  advertised a plain `k` the server answers 400 to — likewise U+03F4, U+1E9E, U+2126 and U+212B. Too
+  narrow on seventy-nine others, where two characters are equal without either being the other's case
+  form, such as U+00B5 MICRO SIGN against U+03BC GREEK SMALL MU. Both fall out of one rule, measured
+  over every `char` rather than reasoned about: two characters are equal under `OrdinalIgnoreCase`
+  exactly when `ToUpperInvariant` sends them to the same place, so the class is that group. An ASCII
+  name is unaffected — `Delete` is still `[Dd][Ee][Ll][Ee][Tt][Ee]`.
 - **A miscased name resolved to the wrong member on a `[Flags]` enum.** Of two unannotated members
   differing only by case, the one a token matching neither spelling exactly falls back to is decided
   by the order the serializer holds its members in — and that order is not the same on both kinds of

@@ -76,7 +76,11 @@ une approximation. La classe d'espaces est écrite en toutes lettres plutôt que
 lu comme de l'ECMA-262, où `\s` inclut U+FEFF et exclut U+0085 — alors que le binder détoure avec
 `char.IsWhiteSpace`, qui fait l'inverse sur les deux. Et un membre laissé sans annotation garde son
 nom C#, que le binder reconnaît sans tenir compte de la casse : il apparaît donc comme
-`[Dd][Ee][Ll][Ee][Tt][Ee]`, là où un nom déclaré apparaît tel quel.
+`[Dd][Ee][Ll][Ee][Tt][Ee]`, là où un nom déclaré apparaît tel quel. Une classe contient tous les
+caractères que le binder tient pour égaux, ce qui pour une lettre ASCII fait ses deux formes et ne se
+limite pas toujours à cela : les deux formes ne sont pas le même ensemble que l'égalité au sens
+d'`OrdinalIgnoreCase`, et les écrire comme si elles l'étaient était faux dans les deux sens sur une
+poignée de code points.
 
 Il est écrit dans le dialecte ECMA-262 avec lequel un `pattern` de JSON Schema est lu : seuls les
 caractères de syntaxe sont échappés. `Regex.Escape` produirait `\ ` et `\#`, qui ne sont pas des
