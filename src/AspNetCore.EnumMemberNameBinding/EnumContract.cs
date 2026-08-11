@@ -291,9 +291,9 @@ internal sealed class EnumContract {
 
         internal static string ShadowsAnotherMember(string memberName, string name, string shadowedMemberName) {
             return $"member '{memberName}' declares the public name '{name}', which is also the C# name " +
-                   $"of member '{shadowedMemberName}'. The value '{name}' resolves to '{memberName}', leaving " +
-                   $"'{shadowedMemberName}' answering to every casing of its name except that one. Rename the public name, or annotate " +
-                   $"'{shadowedMemberName}' as well.";
+                   $"of member '{shadowedMemberName}'. Both answer to '{name}', and which of them it reaches is decided by " +
+                   $"Enum.GetNames order rather than by the attribute, so one of the two is unreachable under that spelling. " +
+                   $"Rename the public name, or annotate '{shadowedMemberName}' as well.";
         }
 
     }
