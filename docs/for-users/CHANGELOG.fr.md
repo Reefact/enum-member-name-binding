@@ -279,6 +279,11 @@ brûler sans rien perdre.
 
 ### Documentation
 
+- **L'index des diagnostics cantonnait encore `EMN0004` aux `[Flags]`.** La règle vaut pour toutes
+  les énumérations — une virgule sépare les valeurs sur chacune d'elles, elle ne peut donc figurer
+  dans un nom nulle part — ce qu'`EMN0004.fr.md` affirme en gras et que deux tests épinglent. Le
+  tableau d'index est le seul endroit que la correction précédente avait manqué, dans les deux
+  langues, d'où l'invisibilité pour le test de traduction appariée.
 - **`EnumContractException` se documentait comme « levée au démarrage, jamais sur une requête ».** Le
   compagnon OpenAPI résout un contrat au moment d'écrire le document, ce qui sous `MapOpenApi` est une
   requête — une application utilisant le compagnon seul, sans `AddEnumMemberNameBinding`, démarre donc

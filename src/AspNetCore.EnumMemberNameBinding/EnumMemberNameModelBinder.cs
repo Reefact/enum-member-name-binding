@@ -59,16 +59,19 @@ internal sealed class EnumMemberNameModelBinder : IModelBinder {
         if (string.IsNullOrWhiteSpace(text)) { return Blank(bindingContext, value); }
         if (_contract.TryParse(text, out object? model)) { return Parsed(bindingContext, value, model); }
 
-        // The exception carries the sentence naming the allowed values, and ASP.NET Core then writes
-        // its own into ModelState. Both are deliberate: what a client reads is the platform's
-        // wording for every parameter of the application, and what a log reads is this one.
-        bindingContext.ModelState.TryAddModelError(bindingContext.ModelName, new FormatException(NotAValidValue(text)), bindingContext.ModelMetadata);
+        // The type is what carries the meaning here, and nothing else does. ModelStateDictionary
+        // converts a FormatException — and an OverflowException — into the
+        // ModelBindingMessageProvider's own sentence and drops the exception, which is the wording a
+        // client reads for every other parameter of the application and therefore the one wanted.
+        //
+        // Any message handed to it is read by nothing: not the client, not
+        // ModelState.Errors[i].Exception, which is null, and not a log, since this binder writes
+        // none — see BindingDiagnosticsTests. One naming the allowed values was passed here for a
+        // while, above a comment saying a log read it. Measured at Trace over every category, no
+        // record carried it.
+        bindingContext.ModelState.TryAddModelError(bindingContext.ModelName, new FormatException(), bindingContext.ModelMetadata);
 
         return Task.CompletedTask;
-    }
-
-    private string NotAValidValue(string text) {
-        return $"'{text}' is not a valid value for {_contract.EnumType.Name}. Allowed values: {_contract.AllowedValues}.";
     }
 
     /// <summary>
