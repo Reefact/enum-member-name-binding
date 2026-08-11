@@ -6,5 +6,8 @@
   TreatWarningsAsErrors, the analysis level, the package metadata — and would stop resembling the
   thing they exist to imitate: somebody else's project, with somebody else's defaults, consuming us
   from nuget.org. Whatever these fixtures need, they declare themselves.
+
+  This file alone did not achieve that: the walk for Directory.Build.targets is a separate one, and
+  it reached the repository's own until the empty targets file beside this one was added. See there.
 -->
 <Project />
