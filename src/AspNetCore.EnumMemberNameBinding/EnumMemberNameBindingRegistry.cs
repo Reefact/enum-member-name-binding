@@ -126,6 +126,18 @@ internal static class EnumMemberNameBindingRegistry {
     /// <c>seen</c> set carries from one into the other, which is what keeps a type named explicitly
     /// from being yielded a second time by the scan.
     /// </summary>
+    /// <remarks>
+    /// An enum nested in a generic type is passed by, and that is not a policy about which contracts
+    /// are worth registering: it is the one enum reflection will not let this look at.
+    /// <c>Assembly.GetTypes()</c> hands it over in its open form — <c>Box`1+Colour</c> — where
+    /// <see cref="Type.IsEnum" /> is true and <see cref="Type.ContainsGenericParameters" /> is true
+    /// as well, and <c>FieldInfo.GetValue</c> on any member of it throws
+    /// <see cref="ArgumentException" /> out of <c>Enum.InternalBoxEnum</c>. That happens in
+    /// <c>EnumContract</c>'s constructor, before the contract is so much as looked at, so an enum
+    /// nobody annotated and nobody wanted registered stopped the application booting with a message
+    /// naming neither the type nor this package. Registering the closed form is still available to
+    /// a caller who wants it, through <c>AddEnum&lt;Box&lt;int&gt;.Colour&gt;()</c>.
+    /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static IEnumerable<Type> Enumerate(EnumMemberNameBindingOptions options) {
         HashSet<Type> seen = [];
@@ -141,7 +153,9 @@ internal static class EnumMemberNameBindingRegistry {
 
         foreach (Assembly assembly in AssembliesToScan(options)) {
             foreach (Type type in GetLoadableTypes(assembly)) {
-                if (!type.IsEnum || !seen.Add(type)) { continue; }
+                // ContainsGenericParameters before IsEnum would read the same and say less: what is
+                // being passed by is an enum, and it is passed by for a reason peculiar to enums.
+                if (!type.IsEnum || type.ContainsGenericParameters || !seen.Add(type)) { continue; }
 
                 if (EnumContract.For(type).IsContract) { yield return type; }
                 else { seen.Remove(type); }

@@ -141,6 +141,16 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Une énumération imbriquée dans un type générique empêchait l'application de démarrer.**
+  `Assembly.GetTypes()` livre une telle énumération sous sa forme ouverte — `Box\`1+Colour` — où
+  `Type.IsEnum` est vrai et `ContainsGenericParameters` l'est aussi, et `FieldInfo.GetValue` sur
+  n'importe lequel de ses membres lève `ArgumentException: Specified type is not supported` depuis
+  `Enum.InternalBoxEnum`. Cela se produit dans le constructeur d'`EnumContract`, avant même que le
+  contrat soit consulté : `public class Box<T> { public enum Colour { Red } }` n'importe où dans
+  l'assembly scannée suffisait donc à faire tomber toute l'application — une énumération que
+  personne n'a annotée, ni enregistrée, ni voulue — avec un message ne nommant ni le type ni ce
+  paquet. Le scan la laisse désormais passer, comme toute énumération qu'il ne peut pas lire. Nommer
+  explicitement la forme fermée — `AddEnum<Box<int>.Colour>()` — l'enregistre toujours.
 - **Le motif `[Flags]` du document OpenAPI se trompait de classe insensible à la casse, dans les deux
   sens.** Un membre non annoté garde son nom C#, que le binder reconnaît avec `OrdinalIgnoreCase`, et
   le motif écrivait cela comme les deux formes de casse du caractère. Ce n'est pas le même ensemble.
