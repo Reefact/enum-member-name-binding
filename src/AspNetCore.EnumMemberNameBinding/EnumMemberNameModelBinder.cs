@@ -17,7 +17,11 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// repeated key yields, when a blank value is null and when it is an error, which of the three
 /// <c>ModelBindingMessageProvider</c> sentences a failure earns, and the refusal to bind an
 /// undefined value. Those are what an application already expects from every other parameter it
-/// binds, and <c>ModelBindingBehaviourTests</c> holds all of them.
+/// binds, and three suites hold them between them: <c>ModelBindingBehaviourTests</c> the repeated
+/// key and the message a failure earns, <c>EmptyValueTests</c> the blank value on a required and a
+/// nullable parameter, and <c>ParityWithSystemTextJsonTests</c> the refusal to bind an undefined
+/// value, control included. This named the first alone and said it held all four, which sent a
+/// reader after the other two to a file that does not mention them.
 ///
 /// Observable binding, and not the whole of ASP.NET Core's internals: the original is handed an
 /// <c>ILoggerFactory</c> and writes the model-binding trace — attempting, found no value, done
