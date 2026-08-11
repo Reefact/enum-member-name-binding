@@ -22,10 +22,12 @@ public sealed partial class ReadmeIsAccurateTests(OpenApiTestApi api) {
         Check.WithCustomMessage($"docs/for-users/{page} no longer shows a pattern; either restore it or drop this test.")
              .That(documented.Success).IsTrue();
 
-        // The page carries the pattern inside a JSON snippet in a markdown table, so backslashes
-        // are doubled and pipes are escaped for the table.
-        string unescaped = documented.Groups["pattern"].Value.Replace(@"\\", @"\", StringComparison.Ordinal)
-                                                             .Replace(@"\|", "|", StringComparison.Ordinal);
+        // The page carries the pattern inside a fenced JSON snippet, so the backslashes are doubled
+        // as JSON requires and nothing else is escaped. This said "in a markdown table, so ... pipes
+        // are escaped for the table"; neither page has ever been a table, the pipes of
+        // (read|write|delete) are bare, and the \| replacement that sentence justified could not
+        // fire on any input the regex above admits.
+        string unescaped = documented.Groups["pattern"].Value.Replace(@"\\", @"\", StringComparison.Ordinal);
 
         Check.That(unescaped).IsEqualTo(produced);
     }
