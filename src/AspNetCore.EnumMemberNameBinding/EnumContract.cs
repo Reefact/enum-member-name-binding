@@ -412,9 +412,22 @@ internal sealed class EnumContract {
     }
 
     /// <summary>
-    /// A value with no comma in it. The exact spelling of an unannotated member wins here, and only
-    /// here — see <see cref="TryParseListItem" />.
+    /// The whole trimmed value, comma or not, tried as one name before anything is split. The exact
+    /// spelling of an unannotated member wins here, and only here — see
+    /// <see cref="TryParseListItem" />.
     /// </summary>
+    /// <remarks>
+    /// This opened "a value with no comma in it", which was true of the caller it was written for
+    /// and is the reverse of the order the caller has now: <see cref="TryParse" /> hands the whole
+    /// value here first and only splits when this misses. That is not a nuance — it is the mechanism
+    /// that makes a comma inside a declared name legal off <c>[Flags]</c>, so on an enum declaring
+    /// <c>a</c>, <c>b</c> and <c>a,b</c> the token <c>"a,b"</c> arrives here intact and resolves to
+    /// the member of that name.
+    /// <para>
+    /// The second sentence stays true either way: no C# member name can contain a comma, so the
+    /// exact-spelling branch below can only ever fire for a token that has none.
+    /// </para>
+    /// </remarks>
     private bool TryParseSingle(string token, [MaybeNullWhen(false)] out object result) {
         if (_byContractName.TryGetValue(token, out object? contract)) {
             result = contract;
