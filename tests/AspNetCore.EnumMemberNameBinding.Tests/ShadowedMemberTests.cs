@@ -101,7 +101,8 @@ public sealed class ShadowedMemberTests {
         string problem = exception.Problems.Single();
         Check.That(problem).Contains("'Red'");
         Check.That(problem).Contains("'Blue'");
-        Check.That(problem).Contains("casing");
+        Check.WithCustomMessage("the message must say what goes wrong, not merely which members collide.")
+             .That(problem).Contains("unreachable");
     }
 
     [Fact]
@@ -201,6 +202,45 @@ public sealed class ShadowedMemberTests {
         string actual = Show(ReadWithSystemTextJson(token, enumType, OracleFor(enumType)));
 
         Check.WithCustomMessage($"'{token}' on {enumType.Name}: {because}.").That(actual).IsEqualTo(expected);
+    }
+
+    /// <summary>
+    /// Which of the two members claims the shared spelling, measured in both declaration orders.
+    /// </summary>
+    /// <remarks>
+    /// Not "the declared name is matched first", which is what both messages said and what only one
+    /// of the two orders does. The serializer walks <see cref="Enum.GetNames(Type)" /> and the first
+    /// member it meets claims the spelling, whether that member's name is the declared one or its own
+    /// C# name — so moving the annotation from the first member to the second reverses which one
+    /// disappears. This package refuses the shape either way, which is why the divergence is in the
+    /// wording and not in what it binds.
+    /// </remarks>
+    [Theory]
+    [InlineData(typeof(AnnotatedFirst), "Blue", "Red (0)", "the annotated member is first in GetNames order, so it claims the spelling")]
+    [InlineData(typeof(AnnotatedFirst), "blue", "Blue (1)", "and the unannotated member keeps every other casing")]
+    [InlineData(typeof(AnnotatedSecond), "Blue", "Blue (0)", "here the unannotated member is first, so it claims the spelling instead")]
+    [InlineData(typeof(AnnotatedSecond), "blue", "Blue (0)", "and the annotated member is the one left unreachable")]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
+    public void which_member_claims_the_shared_spelling_follows_get_names_order(Type enumType, string token, string expected, string because) {
+        string actual = Show(ReadWithSystemTextJson(token, enumType, OracleFor(enumType)));
+
+        Check.WithCustomMessage($"'{token}' on {enumType.Name}: {because}.").That(actual).IsEqualTo(expected);
+    }
+
+    /// <summary>The annotated member declared first, so it holds the lower value.</summary>
+    public enum AnnotatedFirst {
+
+        [JsonStringEnumMemberName("Blue")] Red = 0,
+        Blue = 1
+
+    }
+
+    /// <summary>The same collision with the annotation on the second member, which reverses it.</summary>
+    public enum AnnotatedSecond {
+
+        Blue = 0,
+        [JsonStringEnumMemberName("Blue")] Red = 1
+
     }
 
     private static JsonSerializerOptions OracleFor(Type enumType) {

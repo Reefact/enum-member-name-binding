@@ -234,7 +234,8 @@ public sealed class EnumContractAnalyzerTests {
         string message = diagnostics.First(d => d.Id == "EMN0005").GetMessage();
         Check.That(message).Contains("'Red'");
         Check.That(message).Contains("'Blue'");
-        Check.That(message).Contains("casing");
+        Check.WithCustomMessage("the message must say what goes wrong, not merely which members collide.")
+             .That(message).Contains("unreachable");
     }
 
     /// <summary>
