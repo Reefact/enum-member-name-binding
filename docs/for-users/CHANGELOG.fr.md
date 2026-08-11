@@ -345,6 +345,30 @@ brûler sans rien perdre.
 
 ### Documentation
 
+- **`EMN0005` désignait le mauvais membre quand l'annotation vient en second.** Le message de
+  l'analyseur comme celui d'`EnumContractException` disaient que le nom déclaré est cherché en
+  premier, donc que la valeur résout vers le membre annoté. Mesuré dans les deux sens : sur
+  `{ ["Blue"] Red = 0, Blue = 1 }` la valeur `Blue` lit `Red`, et sur `{ Blue = 0, ["Blue"] Red = 1 }`
+  elle lit `Blue`. Ce qui décide est l'ordre d'`Enum.GetNames` — le premier membre rencontré s'empare
+  de l'orthographe, que son nom soit le nom déclaré ou le sien — si bien que déplacer l'annotation
+  inverse quel membre disparaît. Les messages disent désormais que les deux répondent à
+  l'orthographe et que l'ordre d'`Enum.GetNames` tranche, sans désigner de gagnant.
+- **La description d'`EMN0004` donnait un mécanisme que les tests du dépôt réfutent.** Elle disait
+  « where the whole name is never looked up before the value is split » ; `TryParse` cherche d'abord
+  la valeur détourée entière, sans exception pour `[Flags]`. La raison est celle que donne la page de
+  la règle : le sérialiseur valide les noms déclarés à la construction du convertisseur et refuse
+  purement et simplement une virgule sur une `[Flags]`, l'énumération ne pouvant alors pas être
+  sérialisée du tout.
+- **`EMN0001` se trompait sur les deux moitiés de sa propre justification.** Elle affirmait que
+  `System.Text.Json` rejette un nom public dupliqué — il l'accepte, lit le nom comme le membre
+  premier dans l'ordre d'`Enum.GetNames` et écrit les deux membres sous ce nom, en silence — et
+  décrivait ce paquet comme retenant la première déclaration, là où le contrat est refusé purement et
+  simplement à la compilation et au démarrage. Dans les deux langues.
+- **`contract-rules` conservait une affirmation que sa page sœur avait déjà abandonnée.** Le 400 sur
+  une combinaison non déclarée est le refus de ce paquet, qui reproduit celui d'ASP.NET Core, et
+  c'est l'une des entrées que le corps accepte et qu'un autre canal refuse — pas « la seule ».
+  `limitations` a été corrigée une note de version plus tôt ; les deux pages se contredisaient
+  depuis.
 - **Le message d'`EMN0005` était faux sur la moitié des formes qu'il signale.** La formulation de
   l'analyseur comme celle d'`EnumContractException` disaient le membre masqué « atteignable
   uniquement par une autre casse ». C'est vrai quand le nom déclaré s'écrit comme le nom C# qu'il

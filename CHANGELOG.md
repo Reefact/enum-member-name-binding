@@ -308,6 +308,27 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Documentation
 
+- **`EMN0005` named the wrong member when the annotation comes second.** Both the analyzer's message
+  and `EnumContractException`'s said the declared name is matched first, so the value resolves to the
+  annotated member. Measured both ways round: on `{ ["Blue"] Red = 0, Blue = 1 }` the value `Blue`
+  reads `Red`, and on `{ Blue = 0, ["Blue"] Red = 1 }` it reads `Blue`. What decides is
+  `Enum.GetNames` order — the first member met claims the spelling, whether its name is the declared
+  one or its own — so moving the annotation reverses which member disappears. The messages now say
+  that both answer to the spelling and that `GetNames` order decides, without naming a winner.
+- **`EMN0004`'s description gave a mechanism the repository's own tests disprove.** It read "where
+  the whole name is never looked up before the value is split"; `TryParse` looks the whole trimmed
+  value up first, with no `[Flags]` carve-out. The reason is the one the rule page gives: the
+  serializer validates declared names when it builds the converter and refuses a comma on a `[Flags]`
+  enum outright, so the enum cannot be serialized at all.
+- **`EMN0001` was wrong about both halves of its own rationale.** It said `System.Text.Json` rejects
+  a duplicate public name — it accepts it, reads the name as the member first in `Enum.GetNames`
+  order and writes both members under it, silently — and it described this package as picking the
+  first declaration, where the contract is refused outright at build time and at start-up. Both
+  languages.
+- **`contract-rules` kept a claim its sibling page had already dropped.** The undefined-combination
+  400 is this package's own refusal, reproducing ASP.NET Core's, and it is one of several inputs the
+  body accepts and another channel does not — not "the one". `limitations` was corrected a release
+  note ago; the two pages have been contradicting each other since.
 - **`EMN0005`'s message was false on half the shapes it reports.** Both the analyzer's wording and
   `EnumContractException`'s said the shadowed member was "only reachable through a different casing".
   That holds when the declared name is spelled like the C# name it shadows, and not otherwise: on
