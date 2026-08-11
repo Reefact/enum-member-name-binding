@@ -87,10 +87,20 @@ public sealed class PublicApiContractTests {
     }
 
     /// <summary>
-    /// Both halves of "flags contract" are load-bearing, so both are asserted alone: an enum carrying
-    /// [Flags] and no contract is not one this package describes, and a contract without [Flags]
-    /// accepts no combination.
+    /// Both halves of "flags contract" are load-bearing, so both are asserted alone: an enum
+    /// carrying [Flags] and no contract is not one this package describes, and a contract without
+    /// [Flags] is not one whose values are an open set.
     /// </summary>
+    /// <remarks>
+    /// The second half read "accepts no combination", which is the one thing <c>[Flags]</c> does not
+    /// decide. A comma-separated list is accepted on every enum — <see cref="EnumContract.TryParse" />
+    /// has no <c>[Flags]</c> test on the parse path at all — so on a non-<c>[Flags]</c> contract
+    /// <c>"first,second"</c> resolves to <c>0 | 1</c> exactly as it does with
+    /// <c>System.Text.Json</c>, which splits before it looks at the attribute. What <c>[Flags]</c>
+    /// decides is whether the values an application will bind are an open set rather than the
+    /// declared members alone, which is what <see cref="EnumMemberNames.IsFlagsContract" /> says in
+    /// its own documentation one file away.
+    /// </remarks>
     [Fact]
     public void a_flags_contract_is_both_of_those_things_at_once() {
         Check.That(EnumMemberNames.IsFlagsContract(typeof(Combinable))).IsTrue();
