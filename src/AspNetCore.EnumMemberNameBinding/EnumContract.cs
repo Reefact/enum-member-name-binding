@@ -248,8 +248,13 @@ internal sealed class EnumContract {
     /// </summary>
     /// <remarks>
     /// A declared name is matched before an unannotated member's C# name, and case-sensitively, so
-    /// the shadowed member ends up answering to every casing of its name except its own. The
-    /// comparison is case-insensitive because that is how the C# names are looked up.
+    /// the shadowed member ends up answering to every casing of its name except the declared
+    /// spelling. Except <em>that</em> one, and not "except its own": the two are the same word only
+    /// when the declared name is spelled like the C# name it shadows. On
+    /// <c>[JsonStringEnumMemberName("read")]</c> beside a <c>Read</c> member the shadowed member
+    /// still answers to <c>Read</c> — measured against the serializer — and it is the lower-case
+    /// spelling it loses. The comparison is case-insensitive because that is how the C# names are
+    /// looked up.
     /// </remarks>
     private static void AddShadowingProblems(Dictionary<string, string> declaredBy, List<string> unannotated, List<string> problems) {
         foreach (KeyValuePair<string, string> declared in declaredBy) {
@@ -287,7 +292,7 @@ internal sealed class EnumContract {
         internal static string ShadowsAnotherMember(string memberName, string name, string shadowedMemberName) {
             return $"member '{memberName}' declares the public name '{name}', which is also the C# name " +
                    $"of member '{shadowedMemberName}'. The value '{name}' resolves to '{memberName}', leaving " +
-                   $"'{shadowedMemberName}' reachable only through a different casing. Rename the public name, or annotate " +
+                   $"'{shadowedMemberName}' answering to every casing of its name except that one. Rename the public name, or annotate " +
                    $"'{shadowedMemberName}' as well.";
         }
 

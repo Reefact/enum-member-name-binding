@@ -116,10 +116,12 @@ public sealed class ParityWithSystemTextJsonTests {
     }
 
     /// <summary>
-    /// The one input the body accepts and no other channel does: a combination whose result names no
-    /// declared member. It is the single documented hole in the parity above, and it is the
-    /// platform's rather than this package's — ASP.NET Core's <c>EnumTypeModelBinder</c> refuses to
-    /// bind an undefined value to a non-<c>[Flags]</c> enum, whichever converter produced it.
+    /// An input the body accepts and no other channel does: a combination whose result names no
+    /// declared member. It is a documented hole in the parity above rather than the only one — the
+    /// test below is a second, on a <c>[Flags]</c> enum — and it is the platform's rather than this
+    /// package's: ASP.NET Core refuses to bind an undefined value to a non-<c>[Flags]</c> enum,
+    /// whichever converter produced it, and this package's binder reproduces that refusal because
+    /// its own provider runs first.
     /// </summary>
     /// <remarks>
     /// The control is what makes that claim a measurement: <c>PlainPriority</c> is an enum this
@@ -128,7 +130,7 @@ public sealed class ParityWithSystemTextJsonTests {
     /// See <see href="https://github.com/Reefact/enum-member-name-binding/blob/main/docs/for-users/limitations.en.md" />.
     /// </remarks>
     [Fact]
-    public async Task a_combination_naming_no_member_is_the_one_thing_only_the_body_accepts() {
+    public async Task a_combination_naming_no_member_is_accepted_only_by_the_body() {
         const string Contract = "out_of_stock,discontinued";
         const string Control  = "Normal,High";
 

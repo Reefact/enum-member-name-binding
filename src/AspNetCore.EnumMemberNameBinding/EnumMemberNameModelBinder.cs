@@ -109,9 +109,13 @@ internal sealed class EnumMemberNameModelBinder : IModelBinder {
     /// no member out of a parameter.
     /// </summary>
     /// <remarks>
-    /// Reproduced from <c>EnumTypeModelBinder</c>, and this is the one input where a channel and the
-    /// request body disagree: <c>System.Text.Json</c> reads <c>"out_of_stock,discontinued"</c> as
-    /// <c>1 | 2</c> and hands back a value no member declares, and ASP.NET Core will not bind it.
+    /// Reproduced from <c>EnumTypeModelBinder</c>. This is where a channel and the request body
+    /// disagree: <c>System.Text.Json</c> reads <c>"out_of_stock,discontinued"</c> as <c>1 | 2</c> and
+    /// hands back a value no member declares, and ASP.NET Core will not bind it. Not the <em>only</em>
+    /// place they disagree, which this said and the paragraph below already contradicted — the
+    /// <c>[Flags]</c> half is a second input, refused by a different test, and a declared name
+    /// carrying a character a route or a header cannot transport is a third, which is what
+    /// <c>EMN0006</c> reports.
     /// Reproducing that is the decision rather than an omission — an enum this package never touches
     /// is refused the same way, so letting it through would make a contract enum the more permissive
     /// of the two, and the promise runs the other way. It is written down in

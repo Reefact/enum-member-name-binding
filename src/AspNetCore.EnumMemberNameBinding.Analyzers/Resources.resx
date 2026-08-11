@@ -73,10 +73,10 @@
     <value>A public name shadows the C# name of another member</value>
   </data>
   <data name="EMN0005Message" xml:space="preserve">
-    <value>Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; the value '{1}' resolves to '{0}', so '{2}' is only reachable through a different casing</value>
+    <value>Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; the value '{1}' resolves to '{0}', so '{2}' answers to every casing of its name except that one</value>
   </data>
   <data name="EMN0005Description" xml:space="preserve">
-    <value>A declared public name is matched before an unannotated member's C# name, and case-sensitively. The shadowed member therefore answers to every casing of its name except its own, which no reader of the enum can guess. This matters most when EMN0003 has been turned off to allow partial contracts, where it is the only remaining protection.</value>
+    <value>A declared public name is matched before an unannotated member's C# name, and case-sensitively. The shadowed member therefore answers to every casing of its name except the declared spelling, which no reader of the enum can guess. When the two are spelled alike that is its own name; when they are not, the member keeps its own spelling and loses another. This matters most when EMN0003 has been turned off to allow partial contracts, where it is the only remaining protection.</value>
   </data>
   <data name="EMN0006Title" xml:space="preserve">
     <value>The public name cannot travel on every input channel</value>

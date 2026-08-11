@@ -55,14 +55,18 @@ ne déclare. Tous les autres canaux répondent 400 à la même entrée :
 // requête ?value=out_of_stock,discontinued       →  400
 ```
 
-L'`EnumTypeModelBinder` d'ASP.NET Core refuse de lier une valeur non déclarée, quel que soit le
-convertisseur qui l'a produite, et `[Flags]` n'est pas une dispense : `Enum.IsDefined` ne sait pas
-répondre pour une combinaison, il compare donc le texte de la valeur à son nombre sous-jacent et
-refuse celle qui renvoie le nombre. `read,write` se lie parce que `1 | 2` se décompose en
-`Read, Write`, non parce que l'attribut lèverait le contrôle. Ce n'est pas atteignable d'ici et,
-surtout, le corriger serait une erreur : une énumération que ce paquet ne touche jamais est refusée
-de la même façon, donc une énumération sous contrat qui accepterait `3` sur une query string serait
-*plus* permissive qu'une ordinaire. La suite de parité épingle les deux moitiés, témoin compris.
+ASP.NET Core refuse de lier une valeur non déclarée, quel que soit le convertisseur qui l'a
+produite, et `[Flags]` n'est pas une dispense : `Enum.IsDefined` ne sait pas répondre pour une
+combinaison, le contrôle compare donc le texte de la valeur à son nombre sous-jacent et refuse celle
+qui renvoie le nombre. `read,write` se lie parce que `1 | 2` se décompose en `Read, Write`, non parce
+que l'attribut lèverait le contrôle.
+
+Le refus que vous rencontrez est celui de ce paquet. Son binder est enregistré devant le fournisseur
+qu'ASP.NET Core utilise pour les énumérations : `EnumTypeModelBinder` ne voit donc jamais la valeur —
+le contrôle est reproduit ici, délibérément, et non hérité. C'est le reproduire qui est la décision :
+une énumération que ce paquet ne touche jamais est refusée de la même façon, donc une énumération
+sous contrat qui accepterait `3` sur une query string serait *plus* permissive qu'une ordinaire, et
+la promesse va dans l'autre sens. La suite de parité épingle les deux moitiés, témoin compris.
 
 La moitié `[Flags]` a une conséquence qui mérite d'être nommée. Une énumération dont les membres
 déclarés sont des composites qui se recouvrent peut produire, par OU, une valeur ne se décomposant

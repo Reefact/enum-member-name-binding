@@ -72,7 +72,7 @@ first one to make the trip is one that costs nothing to burn.
   a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
   public name, `EMN0003` incomplete contract, `EMN0004` comma in a public name on a `[Flags]` enum,
   `EMN0005` a public name shadowing another member's C# name — which leaves that member answering to
-  every casing of its name except its own. Those five are errors; `EMN0006` above is the one warning,
+  every casing of its name except the declared spelling. Those five are errors; `EMN0006` above is the one warning,
   because a portability limit depends on the channels an API actually binds from, whereas the other
   five report an ambiguity that is wrong on every channel. An enum that declares no contract is never
   analysed.
@@ -301,6 +301,30 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Documentation
 
+- **`EMN0005`'s message was false on half the shapes it reports.** Both the analyzer's wording and
+  `EnumContractException`'s said the shadowed member was "only reachable through a different casing".
+  That holds when the declared name is spelled like the C# name it shadows, and not otherwise: on
+  `[JsonStringEnumMemberName("blue")]` beside a `Blue` member, `Blue` still answers to `Blue` and it
+  is `blue` it loses. The member loses the *declared* spelling and keeps every other casing, which is
+  true either way. Measured against `System.Text.Json`, since this package refuses both shapes and
+  has no contract to ask — which is also why a message describing a shape nothing can build went
+  unchecked. The rule pages were already right: they state it of their own example, which is the
+  same-casing one, and describe the mirror correctly.
+- **The binder called the undefined-value refusal "the one input where a channel and the body
+  disagree".** The paragraph below it already contradicted that, and so did the test suite two
+  methods apart: the `[Flags]` half is a second input, refused by a different test, and a declared
+  name carrying a character a route or a header cannot transport is a third — which is what
+  `EMN0006` exists to report.
+- **`EMN0001` still said the first-declared alias name is used when writing.** It is the first in
+  `Enum.GetNames` order, which is neither declaration order nor the arithmetic one — the correction
+  that went into the value-to-name map never reached this page, in either language.
+- **The README said ASP.NET Core formats route values *without* the value's own `ToString()`**, and
+  then explained that the link therefore carries the C# name — which is what `ToString()` returns. It
+  formats them *with* it; that is the whole reason the workaround exists.
+- **`limitations` credited the refusal to `EnumTypeModelBinder` and called it "not reachable from
+  here".** This package registers its binder ahead of the provider ASP.NET Core uses for enums, so
+  `EnumTypeModelBinder` never sees the value: the check is reproduced here, deliberately, and the
+  refusal a caller meets is this package's own.
 - **`EnumContractException` documented itself as "raised at startup, never on a request".** The
   OpenAPI companion resolves a contract while it writes the document, which under `MapOpenApi` is a
   request — so an application using the companion on its own, without `AddEnumMemberNameBinding`,
