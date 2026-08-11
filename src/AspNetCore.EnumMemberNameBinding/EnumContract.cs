@@ -3,6 +3,7 @@ using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.Numerics;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -115,7 +116,7 @@ internal sealed class EnumContract {
         _byContractName = byContractName.ToFrozenDictionary(StringComparer.Ordinal);
         _byClrName      = byClrName.ToFrozenDictionary(StringComparer.Ordinal);
         _names          = NamesByValue(enumType, byMember);
-        _byClrNameIgnoringCase = ClrNamesIgnoringCase(enumType, byClrName);
+        _byClrNameIgnoringCase = ClrNamesIgnoringCase(enumType, byClrName, _isFlags);
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
     }
@@ -132,25 +133,55 @@ internal sealed class EnumContract {
     /// member spelled that way, so the query string and the request body disagreed on one word.
     /// <para>
     /// Which member a casing that matches none of them exactly resolves to is not this package's to
-    /// choose either, and it is the same answer as everywhere else here: the serializer walks
-    /// <see cref="Enum.GetNames(Type)" /> and keeps the first it meets, which is neither declaration
-    /// order nor the arithmetic one. Two shapes where the two orders disagree were measured against
-    /// <c>JsonSerializer</c> to establish it, and <c>ShadowedMemberTests</c> holds them.
+    /// choose either, and the answer is not the same on both kinds of enum. The serializer walks its
+    /// members in the order it holds them and keeps the first it meets: on an ordinary enum that is
+    /// <see cref="Enum.GetNames(Type)" /> order, which is neither declaration order nor the
+    /// arithmetic one; on a <c>[Flags]</c> one the members are held with the most bits first, so a
+    /// composite wins over a member it covers. Twelve shapes were measured against
+    /// <c>JsonSerializer</c> to establish it — <c>ShadowedMemberTests</c> holds the ordinary ones and
+    /// <c>ReadParityTests</c> compares the <c>[Flags]</c> ones token by token.
     /// </para>
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
-    private static FrozenDictionary<string, object> ClrNamesIgnoringCase(Type enumType, Dictionary<string, object> byClrName) {
+    private static FrozenDictionary<string, object> ClrNamesIgnoringCase(Type enumType, Dictionary<string, object> byClrName, bool isFlags) {
         Dictionary<string, object> ignoringCase = new(StringComparer.OrdinalIgnoreCase);
 
         // The members carrying an attribute are in GetNames and not in byClrName: their C# name is
         // replaced by the declared one, so it is not a name this enum answers to at all.
-        foreach (string member in Enum.GetNames(enumType)) {
+        foreach (string member in FallbackOrder(enumType, byClrName, isFlags)) {
             if (!byClrName.TryGetValue(member, out object? value)) { continue; }
 
             ignoringCase.TryAdd(member, value);
         }
 
         return ignoringCase.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The members in the order the serializer meets them, which is what decides a case-insensitive
+    /// tie.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="Enum.GetNames(Type)" /> for an ordinary enum, and bit count descending for a
+    /// <c>[Flags]</c> one. <c>OrderByDescending</c> is a stable sort, so members tied on bit count
+    /// keep the <c>GetNames</c> order between them — which is what the serializer does, measured on
+    /// three shapes where the tie is the only thing left to decide, including one declared so that
+    /// declaration order and <c>GetNames</c> order disagree.
+    /// <para>
+    /// The count is taken over the <em>sign-extended</em> <see cref="ulong" /> that
+    /// <see cref="ToUInt64" /> already produces, which is the one thing here worth measuring rather
+    /// than reasoning about: <c>-128</c> on an <c>sbyte</c> enum sets one bit of the byte and
+    /// fifty-seven of the widened value, and the serializer counts fifty-seven — it answers a miscased
+    /// token with that member over one setting two bits, whichever order the two are declared in.
+    /// Counting the byte would have been the tidier reading and the wrong one.
+    /// </para>
+    /// </remarks>
+    [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
+    private static IEnumerable<string> FallbackOrder(Type enumType, Dictionary<string, object> byClrName, bool isFlags) {
+        string[] names = Enum.GetNames(enumType);
+        if (!isFlags) { return names; }
+
+        return names.OrderByDescending(member => byClrName.TryGetValue(member, out object? value) ? BitOperations.PopCount(ToUInt64(value)) : 0);
     }
 
     /// <summary>
