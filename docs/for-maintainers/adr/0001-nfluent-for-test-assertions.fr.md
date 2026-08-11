@@ -4,7 +4,7 @@
 🇬🇧 [English](./0001-nfluent-for-test-assertions.en.md) | 🇫🇷 Français (ce fichier)
 
 **Statut :** accepté — 2026-08-10  
-**Portée :** les trois projets de test. La bibliothèque elle-même ne prend aucune dépendance de test.
+**Portée :** tous les projets de test sous `tests/` — quatre aujourd'hui. La bibliothèque elle-même ne prend aucune dépendance de test.
 
 ## Contexte
 

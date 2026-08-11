@@ -4,7 +4,7 @@
 🇬🇧 English (this file) | 🇫🇷 [Français](./0001-nfluent-for-test-assertions.fr.md)
 
 **Status:** accepted — 2026-08-10  
-**Scope:** the three test projects. The library itself takes no test dependency.
+**Scope:** every test project under `tests/` — four today. The library itself takes no test dependency.
 
 ## Context
 
