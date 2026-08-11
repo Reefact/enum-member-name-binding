@@ -139,6 +139,15 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Une énumération sous contrat nullable perdait le `null` de son schéma OpenAPI.** Un seul
+  composant décrit le type partout où il apparaît, et un élément de collection nullable —
+  `List<TEnum?>` — n'est pas encapsulé comme l'est une propriété nullable : ASP.NET Core l'exprime en
+  plaçant un null JSON dans l'`enum` du composant lui-même. Remplacer cette liste par les noms
+  déclarés supprimait ce null, et le type `string` apposé par-dessus l'interdisait purement et
+  simplement — le document refusait donc une valeur que le serveur accepte et renvoie, mesuré sur un
+  corps qui répond 200 à `["available",null,"sold"]`. Le transformateur lit désormais la nullabilité
+  sur le schéma qu'il remplace et conserve les deux : `"type": ["null","string"]`, et le null à côté
+  des noms. Un schéma qui n'admet aucun null ne gagne ni l'un ni l'autre.
 - **Une liste séparée par des virgules résolvait un membre non annoté autrement que le corps de la
   requête.** `System.Text.Json` ne privilégie l'orthographe exacte d'un nom C# que si la valeur ne
   porte aucune virgule ; dans une liste, chaque partie passe par une unique recherche insensible à
