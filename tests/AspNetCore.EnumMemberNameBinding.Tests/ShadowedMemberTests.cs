@@ -14,8 +14,8 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// <summary>
 /// A declared public name is matched before an unannotated member's C# name, and case-sensitively,
 /// while the C# names themselves are matched case-insensitively. A collision therefore leaves the
-/// shadowed member answering to every casing of its name except its own — which must be refused,
-/// whatever the casing of the declared name.
+/// shadowed member answering to every casing of its name except the declared spelling — which must
+/// be refused, whatever the casing of the declared name.
 /// </summary>
 /// <remarks>
 /// Two <em>unannotated</em> members colliding the same way is the other half, and the answer is the
@@ -172,6 +172,35 @@ public sealed class ShadowedMemberTests {
 
         Check.WithCustomMessage("'Read' and 'read' name two different members, so they cannot read as one value.")
              .That(upper).IsNotEqualTo(lower);
+    }
+
+    /// <summary>
+    /// Which spelling the shadowed member loses, measured against the serializer rather than stated.
+    /// </summary>
+    /// <remarks>
+    /// It loses the declared one, and that is not always its own. Both messages this rule carries —
+    /// the analyzer's and <c>EnumContractException</c>'s — used to say the shadowed member was
+    /// "only reachable through a different casing", which is true of <see cref="ExactCasing" /> and
+    /// false of <see cref="LowerCasing" />: there <c>Blue</c> still answers to <c>Blue</c>, and it is
+    /// <c>blue</c> it loses. Half the shapes the rule reports were told the opposite of what happens.
+    /// <para>
+    /// The oracle has to be <c>System.Text.Json</c>, because this package refuses both shapes outright
+    /// — there is no contract to ask. That is also why the claim went unchecked for so long: a message
+    /// describing a shape nothing can build is a sentence no test was reaching for.
+    /// </para>
+    /// </remarks>
+    [Theory]
+    [InlineData(typeof(ExactCasing), "Blue", "Red (0)", "the declared spelling reaches the annotated member")]
+    [InlineData(typeof(ExactCasing), "blue", "Blue (1)", "every other casing reaches the shadowed one")]
+    [InlineData(typeof(ExactCasing), "BLUE", "Blue (1)", "including the upper one")]
+    [InlineData(typeof(LowerCasing), "blue", "Red (0)", "the declared spelling reaches the annotated member")]
+    [InlineData(typeof(LowerCasing), "Blue", "Blue (1)", "and here that leaves the shadowed member its own name")]
+    [InlineData(typeof(LowerCasing), "BLUE", "Blue (1)", "along with every other casing")]
+    [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
+    public void the_shadowed_member_loses_the_declared_spelling_and_no_other(Type enumType, string token, string expected, string because) {
+        string actual = Show(ReadWithSystemTextJson(token, enumType, OracleFor(enumType)));
+
+        Check.WithCustomMessage($"'{token}' on {enumType.Name}: {because}.").That(actual).IsEqualTo(expected);
     }
 
     private static JsonSerializerOptions OracleFor(Type enumType) {

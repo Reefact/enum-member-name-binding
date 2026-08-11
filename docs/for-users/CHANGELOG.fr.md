@@ -79,11 +79,11 @@ brûler sans rien perdre.
   contrat soit une erreur de compilation plutôt qu'une exception au démarrage : `EMN0001` nom public en
   double, `EMN0002` nom public inutilisable, `EMN0003` contrat incomplet, `EMN0004` virgule dans un
   nom public sur une énumération `[Flags]`, `EMN0005` un nom public masquant le nom C# d'un autre
-  membre — ce qui laisse ce membre répondre à toutes les casses de son nom sauf la sienne. Ces cinq-là
-  sont des erreurs ; `EMN0006` ci-dessus est le seul avertissement, car une limite de portabilité
-  dépend des canaux depuis lesquels une API lie réellement, là où les cinq autres signalent une
-  ambiguïté fausse sur tous les canaux. Une énumération qui ne déclare aucun contrat n'est jamais
-  analysée.
+  membre — ce qui laisse ce membre répondre à toutes les casses de son nom sauf l'orthographe
+  déclarée. Ces cinq-là sont des erreurs ; `EMN0006` ci-dessus est le seul avertissement, car une
+  limite de portabilité dépend des canaux depuis lesquels une API lie réellement, là où les cinq
+  autres signalent une ambiguïté fausse sur tous les canaux. Une énumération qui ne déclare aucun
+  contrat n'est jamais analysée.
 - Une vérification du contenu des deux paquets publiés, exécutée par la CI puis à nouveau par la
   release depuis un unique script partagé. Elle fait échouer le build si le paquet principal ne
   déclare pas sa référence de framework `Microsoft.AspNetCore.App` ou ne livre pas les analyseurs,
@@ -337,6 +337,32 @@ brûler sans rien perdre.
 
 ### Documentation
 
+- **Le message d'`EMN0005` était faux sur la moitié des formes qu'il signale.** La formulation de
+  l'analyseur comme celle d'`EnumContractException` disaient le membre masqué « atteignable
+  uniquement par une autre casse ». C'est vrai quand le nom déclaré s'écrit comme le nom C# qu'il
+  masque, et faux sinon : sur `[JsonStringEnumMemberName("blue")]` à côté d'un membre `Blue`, `Blue`
+  répond toujours à `Blue` et c'est `blue` qu'il perd. Le membre perd l'orthographe **déclarée** et
+  conserve toutes les autres casses, ce qui est vrai dans les deux cas. Mesuré face à
+  `System.Text.Json`, puisque ce paquet refuse les deux formes et n'a aucun contrat à interroger —
+  ce qui explique aussi qu'un message décrivant une forme que rien ne peut construire soit resté
+  invérifié. Les pages de règles, elles, étaient justes : elles l'énoncent de leur propre exemple,
+  celui à casse identique, et décrivent correctement l'image miroir.
+- **Le binder qualifiait le refus d'une valeur non déclarée de « seule entrée où un canal et le corps
+  divergent ».** Le paragraphe juste en dessous le contredisait déjà, et la suite de tests aussi, à
+  deux méthodes d'écart : la moitié `[Flags]` est une deuxième entrée, refusée par un autre test, et
+  un nom déclaré portant un caractère qu'une route ou un en-tête ne sait pas transporter en est une
+  troisième — ce qu'`EMN0006` existe pour signaler.
+- **`EMN0001` affirmait encore que le premier alias déclaré est utilisé en écriture.** C'est le
+  premier dans l'ordre d'`Enum.GetNames`, qui n'est ni l'ordre de déclaration ni l'ordre arithmétique
+  — la correction apportée à la table valeur-vers-nom n'avait atteint cette page dans aucune des deux
+  langues.
+- **Le README disait qu'ASP.NET Core formate les valeurs de route *sans* le `ToString()` de la
+  valeur**, puis expliquait que le lien porte de ce fait le nom C# — qui est précisément ce que
+  `ToString()` renvoie. Il les formate *avec* : c'est toute la raison d'être du contournement.
+- **`limitations` attribuait le refus à `EnumTypeModelBinder` et le disait « non atteignable
+  d'ici ».** Ce paquet enregistre son binder devant le fournisseur qu'ASP.NET Core utilise pour les
+  énumérations : `EnumTypeModelBinder` ne voit donc jamais la valeur, le contrôle est reproduit ici
+  délibérément, et le refus qu'un appelant rencontre est celui de ce paquet.
 - **`EnumContractException` se documentait comme « levée au démarrage, jamais sur une requête ».** Le
   compagnon OpenAPI résout un contrat au moment d'écrire le document, ce qui sous `MapOpenApi` est une
   requête — une application utilisant le compagnon seul, sans `AddEnumMemberNameBinding`, démarre donc

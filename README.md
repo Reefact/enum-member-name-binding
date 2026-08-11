@@ -139,9 +139,10 @@ The two worth knowing before you adopt it:
 - **Minimal API parameters are not supported.** Their binding requires a `static TryParse` or
   `BindAsync` on the bound type, which cannot be added to an `enum` — a platform-level constraint,
   not an implementation gap. Responses *are* covered.
-- **Link generation does not use the public name.** ASP.NET Core formats route values without
-  the value's own `ToString()`, so a link built from the enum value carries the C# name and this very
-  API answers 400 to it. `EnumMemberNames.GetPublicName(value)` is the way round.
+- **Link generation does not use the public name.** ASP.NET Core formats a route value with the
+  value's own `ToString()` and nothing this package installs, so a link built from the enum value
+  carries the C# name and this very API answers 400 to it.
+  `EnumMemberNames.GetPublicName(value)` is the way round.
 
 The full list — empty values, channel portability, trimming and Native AOT, and why registration must
 happen at start-up — is in
