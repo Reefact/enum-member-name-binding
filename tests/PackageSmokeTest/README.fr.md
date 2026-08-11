@@ -19,11 +19,16 @@ Lancez-le avec `tests/PackageSmokeTest/run.sh`. Il est câblé dans les deux wor
 
 ## Pourquoi ce sont des applications et non des tests
 
-`AddEnumMemberNameBinding()` sans options — l'appel que le README met en avant — scanne
-`Assembly.GetEntryAssembly()`. Sous un host de test, c'est `testhost.dll` : aucun test xUnit de ce
-dépôt ne peut donc atteindre ce chemin de code, et les suites existantes passent toutes des types
-explicites à la place. Seul un vrai processus entré par son propre `Main` l'exerce, et c'est pourquoi
-`Consumer` est une application.
+Parce que ce qu'elles éprouvent, c'est le **paquet** : une `PackageReference` vers le `.nupkg`
+packé, les analyseurs qu'il embarque, les assets MSBuild, et un vrai Kestrel répondant à une vraie
+requête. Une `ProjectReference` depuis un projet de test saute les quatre.
+
+Cette section donnait auparavant une autre raison — qu'`AddEnumMemberNameBinding()` sans options
+scanne `Assembly.GetEntryAssembly()`, « sous un host de test c'est `testhost.dll` », donc qu'aucun
+test xUnit ne pouvait l'atteindre. C'est faux : xUnit v3 génère le point d'entrée dans l'assembly de
+test elle-même, si bien que `GetEntryAssembly()` y est l'assembly de test, et
+`EntryAssemblyScanTests.configuring_nothing_scans_the_entry_assembly` appelle la forme sans options
+et vérifie qu'une énumération déclarée dans cette assembly a bien été scannée.
 
 ## Ce qui se trouve ici
 
