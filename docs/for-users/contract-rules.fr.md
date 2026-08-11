@@ -117,10 +117,16 @@ La virgule n'est pas réservée à `[Flags]`. `Enum.Parse` a toujours découpé 
 | `GET /products?status=available,out_of_stock` | ✅ `OutOfStock` — `0 \| 1` nomme un membre |
 | `GET /products?status=out_of_stock,discontinued` | ❌ 400 — `1 \| 2` n'en nomme aucun, voir [limitations](limitations.fr.md#une-combinaison-qui-ne-nomme-aucun-membre-est-refusée-hors-du-corps) |
 
-Refuser cette forme rendrait une énumération enregistrée plus stricte que la même énumération laissée
-tranquille : ASP.NET Core accepte tel quel `?priority=Low,Normal` sur une énumération que ce paquet
-ne touche jamais. La dernière ligne est la seule entrée que le corps accepte et qu'aucun autre canal
-n'accepte, et ce refus est celui d'ASP.NET Core, pas celui de ce paquet.
+Refuser cette forme rendrait une énumération enregistrée plus stricte que la même énumération
+laissée tranquille : ASP.NET Core accepte tel quel `?priority=Low,Normal` sur une énumération que ce
+paquet ne touche jamais. La dernière ligne est l'une des entrées que le corps accepte et qu'un autre
+canal refuse — la forme `[Flags]` décrite dans
+[limitations](limitations.fr.md#une-combinaison-qui-ne-nomme-aucun-membre-est-refusée-hors-du-corps)
+en est une deuxième, et un nom portant un caractère qu'une route ou un en-tête ne sait pas
+transporter une troisième. Ce refus est celui de ce paquet, qui reproduit celui d'ASP.NET Core : son
+binder est enregistré devant le fournisseur qu'ASP.NET Core utilise pour les énumérations, si bien
+qu'`EnumTypeModelBinder` ne voit jamais la valeur. Le reproduire est la décision — une énumération
+que ce paquet ne touche jamais est refusée de la même façon.
 
 Il découpe en *second*, cependant. La valeur détourée est d'abord cherchée comme un nom entier : un
 membre dont le nom déclaré porte une virgule l'emporte donc sur la combinaison à laquelle il

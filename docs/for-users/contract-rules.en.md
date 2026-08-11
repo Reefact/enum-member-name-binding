@@ -116,8 +116,12 @@ combined bitwise:
 
 Refusing the shape would make a registered enum stricter than the same enum left alone: stock
 ASP.NET Core accepts `?priority=Low,Normal` on an enum this package never touches. The last row is
-the one input the body accepts and no other channel does, and the refusal there is ASP.NET Core's
-rather than this package's.
+one of the inputs the body accepts and another channel does not — the `[Flags]` shape in
+[limitations](limitations.en.md#a-combination-naming-no-member-is-refused-outside-the-body) is a
+second, and a name carrying a character a route or a header cannot transport is a third. The refusal
+there is this package's own, reproducing ASP.NET Core's: its binder is registered ahead of the
+provider ASP.NET Core uses for enums, so `EnumTypeModelBinder` never sees the value. Reproducing it
+is the decision — an enum this package never touches is refused the same way.
 
 It splits *second*, though. The whole trimmed value is looked up as a name first, so a member whose
 declared name carries a comma beats the combination it looks like: where a `news,world` member
