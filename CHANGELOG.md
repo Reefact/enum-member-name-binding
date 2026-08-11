@@ -250,6 +250,14 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Documentation
 
+- **`EnumContractException` documented itself as "raised at startup, never on a request".** The
+  OpenAPI companion resolves a contract while it writes the document, which under `MapOpenApi` is a
+  request — so an application using the companion on its own, without `AddEnumMemberNameBinding`,
+  starts normally and answers 500 on `/openapi/v1.json` for a malformed enum. The analyzers do not
+  close that gap either, since NuGet does not flow analyzer assets transitively. The type now says
+  where it is raised, and `openapi.md` names the consequence of the standalone configuration it
+  already documented as supported. The behaviour is unchanged: failing loudly on a malformed
+  contract is the intent.
 - **The trimming section put `AddEnumMemberNameBinding` in the wrong bucket.** It listed the MVC
   registration as carrying `[RequiresUnreferencedCode]` only, while the entry point has carried
   `[RequiresDynamicCode]` too since it was written — it has to, since it reaches the construction of

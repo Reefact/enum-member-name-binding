@@ -42,6 +42,15 @@ described as before. A missing record is not an empty one: what the record rules
 where one exists and the enum is not in it, which is the only case where document and server can be
 known to disagree.
 
+One thing changes place in that configuration. `AddEnumMemberNameBinding` resolves every contract
+at start-up, so a malformed one — two members sharing a public name, say — raises
+`EnumContractException` before the first request. The companion resolves a contract while it writes
+the document instead, which under `MapOpenApi` is a request: the application starts, and
+`/openapi/v1.json` answers 500 with the same message. The analyzers do not close the gap either,
+since NuGet does not flow analyzer assets transitively, so an enum declared in your own assembly is
+analysed and one arriving through a package reference is not. Registering the enums as well moves
+the failure back to start-up.
+
 ## The `[Flags]` pattern
 
 ```json
@@ -80,8 +89,9 @@ the comma-separated combinations the server also accepts —
 [`available,out_of_stock`](contract-rules.en.md#a-comma-separates-values-on-every-enum) binds and is
 not in the list. That is the direction worth being wrong in, and the alternative is not merely
 uglier — it would be incorrect. A pattern is exact for a `[Flags]` enum because a combination of
-declared members is, the one shape above aside, a value the server accepts. On an ordinary enum only the combinations whose
-result names a declared member are accepted: `out_of_stock,discontinued` is `1 | 2`, which names
+declared members is, the one shape above aside, a value the server accepts. On an ordinary enum
+only the combinations whose result names a declared member are accepted:
+`out_of_stock,discontinued` is `1 | 2`, which names
 none, and the server answers 400. A regular expression cannot tell those apart, so it would advertise
 values that fail — over-promising, where the closed list under-promises. The list is also the
 vocabulary a client generates from; a pattern would turn an enumeration into a free-text field in

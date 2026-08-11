@@ -43,6 +43,15 @@ les énumérations sous contrat sont décrites comme avant. Un registre absent n
 vide : ce que le registre écarte, c'est le cas où il existe et où l'énumération n'y figure pas, le
 seul où document et serveur peuvent être connus comme divergents.
 
+Une chose change de place dans cette configuration. `AddEnumMemberNameBinding` résout chaque
+contrat au démarrage : un contrat malformé — deux membres partageant un nom public, par exemple —
+lève donc `EnumContractException` avant la première requête. Le compagnon, lui, résout un contrat
+au moment d'écrire le document, ce qui sous `MapOpenApi` est une requête : l'application démarre,
+et `/openapi/v1.json` répond 500 avec le même message. Les analyseurs ne comblent pas l'écart non
+plus, NuGet ne propageant pas les assets d'analyseur de façon transitive : une énumération déclarée
+dans votre propre assembly est analysée, une énumération arrivant par une référence de paquet ne
+l'est pas. Enregistrer les énumérations en plus ramène l'échec au démarrage.
+
 ## Le motif `[Flags]`
 
 ```json
@@ -83,9 +92,9 @@ n'annonce donc pas les combinaisons séparées par des virgules que le serveur a
 [`available,out_of_stock`](contract-rules.fr.md#une-virgule-sépare-les-valeurs-sur-toutes-les-énumérations)
 se lie et ne figure pas dans la liste. C'est le sens dans lequel il vaut mieux se tromper, et
 l'alternative ne serait pas seulement moins élégante : elle serait fausse. Un motif est exact pour une
-`[Flags]` parce qu'une combinaison de membres déclarés est, la forme ci-dessus mise à part, une valeur
-que le serveur accepte. Sur
-une énumération ordinaire, seules le sont les combinaisons dont le résultat nomme un membre déclaré :
+`[Flags]` parce qu'une combinaison de membres déclarés est, la forme ci-dessus mise à part, une
+valeur que le serveur accepte. Sur une énumération ordinaire, seules le sont les combinaisons dont
+le résultat nomme un membre déclaré :
 `out_of_stock,discontinued` vaut `1 | 2`, qui n'en nomme aucun, et le serveur répond 400. Une
 expression régulière ne peut pas distinguer les deux, elle annoncerait donc des valeurs qui échouent —
 elle sur-promettrait, là où la liste fermée sous-promet. La liste est aussi le vocabulaire à partir
