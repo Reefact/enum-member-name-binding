@@ -9,9 +9,15 @@
 #
 #   source -> pack -> NuGet restore -> consumer compile -> consumer analyzer -> Kestrel -> request
 #
-# It also covers the one call the README leads with and no test can reach:
-# AddEnumMemberNameBinding() with no options scans Assembly.GetEntryAssembly(), which under a test
-# host is testhost.dll. Only a real application entered through its own Main exercises it.
+# What it covers that nothing else does is the package: a PackageReference to the packed .nupkg,
+# the analyzers inside it, the MSBuild assets, and a real Kestrel answering a real request.
+#
+# It used to claim it also covered the zero-option AddEnumMemberNameBinding(), "which no test can
+# reach", on the reading that Assembly.GetEntryAssembly() is testhost.dll under a test host. It is
+# not: xUnit v3 generates the entry point into the test assembly itself, so
+# EntryAssemblyScanTests.configuring_nothing_scans_the_entry_assembly calls the zero-option form and
+# asserts that an enum declared in that assembly was scanned. The reason above is the one that
+# holds without it.
 
 set -euo pipefail
 

@@ -86,10 +86,8 @@ first one to make the trip is one that costs nothing to burn.
   into a local feed, compiles an application that consumes the result by `PackageReference`, and
   drives it over HTTP — covering the ground a `ProjectReference` skips entirely: the framework
   reference, the analyzers' place inside the package, the MSBuild assets, and whether a project with
-  its own defaults can compile against any of it. It is also the only thing that exercises the call
-  the README leads with, since `AddEnumMemberNameBinding()` with no options scans the entry assembly,
-  which under a test host is the test host. A second fixture is meant *not* to compile, so `EMN0003`
-  has to arrive from the analyzer inside the `.nupkg`; the assertion is positive, because "no
+  its own defaults can compile against any of it. A second fixture is meant *not* to compile, so
+  `EMN0003` has to arrive from the analyzer inside the `.nupkg`; the assertion is positive, because "no
   diagnostic appeared" is also what a missing analyzer looks like.
 - A documentation test suite: every C# sample under `docs/` and in the README is compiled against the
   shipped packages, and the analyzers are then run over the result. Documentation is the one thing

@@ -3,10 +3,12 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 
 // This file is a transcription of the README, kept deliberately close to it. The registration below
-// is the zero-option form the front page advertises, which no test in this repository can reach:
-// with no options the library scans Assembly.GetEntryAssembly(), and under a test host that is
-// testhost.dll, not the application. Only a real process entered through its own Main can exercise
-// it — which is why this fixture is an application and not a test.
+// is the zero-option form the front page advertises, exercised here against the packed package
+// rather than against a project reference — which is what this fixture is for.
+//
+// It is not the only place that form is exercised: EntryAssemblyScanTests reaches it too, because
+// xUnit v3 generates the entry point into the test assembly, so Assembly.GetEntryAssembly() there is
+// the test assembly and not a host. This comment said the opposite for as long as it existed.
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

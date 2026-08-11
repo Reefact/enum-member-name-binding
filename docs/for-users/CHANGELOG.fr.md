@@ -94,10 +94,8 @@ brûler sans rien perdre.
   avant publication. Il packe dans un feed local, compile une application qui consomme le résultat par
   `PackageReference`, et la pilote en HTTP — couvrant ce qu'une `ProjectReference` saute entièrement :
   la référence de framework, la place des analyseurs dans le paquet, les assets MSBuild, et la
-  capacité d'un projet ayant ses propres réglages à compiler face à tout cela. C'est aussi la seule
-  chose qui exerce l'appel mis en avant par le README, puisqu'`AddEnumMemberNameBinding()` sans
-  options scanne l'assembly d'entrée, qui sous un host de test est le host de test. Une seconde
-  fixture est censée *ne pas* compiler, pour qu'`EMN0003` doive venir de l'analyseur contenu dans le
+  capacité d'un projet ayant ses propres réglages à compiler face à tout cela. Une seconde fixture
+  est censée *ne pas* compiler, pour qu'`EMN0003` doive venir de l'analyseur contenu dans le
   `.nupkg` ; l'assertion est positive, car « aucun diagnostic n'est apparu » est aussi ce à quoi
   ressemble un analyseur absent.
 - Une suite de tests de documentation : chaque exemple C# sous `docs/` et dans le README est compilé

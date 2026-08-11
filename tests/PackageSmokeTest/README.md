@@ -19,10 +19,16 @@ Run it with `tests/PackageSmokeTest/run.sh`. It is wired into both workflows.
 
 ## Why these are applications and not tests
 
-`AddEnumMemberNameBinding()` with no options — the call the README leads with — scans
-`Assembly.GetEntryAssembly()`. Under a test host that is `testhost.dll`, so no xUnit test in this
-repository can reach that code path, and the existing suites all pass explicit types instead. Only a
-real process entered through its own `Main` exercises it, which is why `Consumer` is an application.
+Because what they exercise is the **package**: a `PackageReference` to the packed `.nupkg`, the
+analyzers shipped inside it, the MSBuild assets, and a real Kestrel answering a real request. A
+`ProjectReference` from a test project skips all four.
+
+This section used to give a different reason — that `AddEnumMemberNameBinding()` with no options
+scans `Assembly.GetEntryAssembly()`, which "under a test host is `testhost.dll`", so no xUnit test
+could reach it. That is not so: xUnit v3 generates the entry point into the test assembly, so
+`GetEntryAssembly()` there is the test assembly, and
+`EntryAssemblyScanTests.configuring_nothing_scans_the_entry_assembly` calls the zero-option form and
+asserts an enum declared in that assembly was scanned.
 
 ## What is here
 
