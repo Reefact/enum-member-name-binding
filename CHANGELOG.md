@@ -129,6 +129,15 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **An enum nested in a generic type stopped the application booting.** `Assembly.GetTypes()` hands
+  such an enum over in its open form — `Box\`1+Colour` — where `Type.IsEnum` is true and
+  `ContainsGenericParameters` is true as well, and `FieldInfo.GetValue` on any member of it throws
+  `ArgumentException: Specified type is not supported` out of `Enum.InternalBoxEnum`. That happens in
+  `EnumContract`'s constructor, before the contract is looked at, so `public class Box<T> { public
+  enum Colour { Red } }` anywhere in the scanned assembly was enough: an enum nobody annotated,
+  nobody registered and nobody wanted took the whole application down, with a message naming neither
+  the type nor this package. The scan now passes it by, as it passes by any enum it cannot read.
+  Naming the closed form explicitly — `AddEnum<Box<int>.Colour>()` — still registers it.
 - **The OpenAPI `[Flags]` pattern got its case-insensitive class wrong in both directions.** An
   unannotated member keeps its C# name, which the binder matches with `OrdinalIgnoreCase`, and the
   pattern wrote that as the character's two case forms. Those are not the same set. Too wide on five

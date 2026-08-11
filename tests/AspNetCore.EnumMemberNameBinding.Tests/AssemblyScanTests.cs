@@ -34,6 +34,92 @@ public sealed class AssemblyScanTests {
     }
 
     /// <summary>
+    /// An enum nested in a generic type, which a scan meets as the open form <c>Box`1+Colour</c>.
+    /// </summary>
+    /// <remarks>
+    /// Declared with no contract, deliberately: the crash this pins happens before the contract is
+    /// looked at, so an enum nobody annotated and nobody wants registered was enough to stop an
+    /// application booting.
+    /// </remarks>
+    public sealed class Box<T> {
+
+        public enum Colour {
+
+            Red
+
+        }
+
+    }
+
+    /// <summary>The same shape carrying a contract, so the scan has something to yield from it.</summary>
+    public sealed class Crate<T> {
+
+        public enum State {
+
+            [JsonStringEnumMemberName("packed")] Packed
+
+        }
+
+    }
+
+    /// <summary>
+    /// An enum nested in a generic type is passed by rather than resolved.
+    /// </summary>
+    /// <remarks>
+    /// <c>Assembly.GetTypes()</c> hands such an enum over in its open form, where
+    /// <c>Type.IsEnum</c> is true and <c>ContainsGenericParameters</c> is true as well. Reading a
+    /// member off it is not something reflection allows: <c>FieldInfo.GetValue</c> answers
+    /// <c>ArgumentException: Specified type is not supported</c>, thrown from
+    /// <c>Enum.InternalBoxEnum</c>, before the contract is so much as looked at.
+    /// <para>
+    /// So an enum nobody annotated, nobody registered and nobody wanted stopped the application
+    /// booting, with an exception naming neither the type nor this package. Measured on a host
+    /// declaring <c>public class Box&lt;T&gt; { public enum Colour { Red } }</c> and calling
+    /// <c>AddEnumMemberNameBinding()</c> with no options at all.
+    /// </para>
+    /// </remarks>
+    [Fact]
+    public void a_scan_passes_by_an_enum_nested_in_a_generic_type() {
+        Type openForm = typeof(Box<>).GetNestedType(nameof(Box<int>.Colour))!;
+        Check.WithCustomMessage("the fixture must hand over the open form, which is the shape a scan meets.")
+             .That(openForm.ContainsGenericParameters).IsTrue();
+
+        EnumMemberNameBindingOptions options = new();
+        options.Assemblies.Add(new StandInAssembly(openForm, typeof(Found)));
+
+        Check.That(EnumMemberNameBindingRegistry.Register(options)).ContainsExactly(typeof(Found));
+    }
+
+    /// <summary>
+    /// And it is passed by whether or not it declares a contract, because nothing can read one off
+    /// it — this is not the scan declining to register it, it is the scan unable to look.
+    /// </summary>
+    [Fact]
+    public void a_contract_nested_in_a_generic_type_is_passed_by_too() {
+        Type openForm = typeof(Crate<>).GetNestedType(nameof(Crate<int>.State))!;
+
+        EnumMemberNameBindingOptions options = new();
+        options.Assemblies.Add(new StandInAssembly(openForm, typeof(Found)));
+
+        Check.That(EnumMemberNameBindingRegistry.Register(options)).ContainsExactly(typeof(Found));
+    }
+
+    /// <summary>
+    /// What the caller keeps: the closed form carries no generic parameter, so naming it explicitly
+    /// registers it exactly as any other contract enum. The scan cannot reach it — no assembly
+    /// declares <c>Crate&lt;int&gt;.State</c> — which is why naming it is the way in.
+    /// </summary>
+    [Fact]
+    public void the_closed_form_of_such_a_contract_can_still_be_named() {
+        Check.That(typeof(Crate<int>.State).ContainsGenericParameters).IsFalse();
+
+        EnumMemberNameBindingOptions options = new();
+        options.AddEnum<Crate<int>.State>();
+
+        Check.That(EnumMemberNameBindingRegistry.Register(options)).ContainsExactly(typeof(Crate<int>.State));
+    }
+
+    /// <summary>
     /// The scan keeps the contract enums and passes everything else by — the enum that declares no
     /// contract as much as the types that are not enums at all.
     /// </summary>
