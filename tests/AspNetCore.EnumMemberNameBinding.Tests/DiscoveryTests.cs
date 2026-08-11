@@ -7,11 +7,13 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// and how many times.
 /// </summary>
 /// <remarks>
-/// None of these scan this test assembly, deliberately. Registration installs a converter
-/// process-wide for every contract enum it finds, and this assembly is full of them — a test that
-/// scanned it would silently register enums other tests require to be untouched, and would do it in
-/// whatever order xUnit happened to choose. The assembly scanned here is the library's own, which
-/// declares no contract at all, so the branch is exercised without the side effect.
+/// None of these scan this test assembly, deliberately, and no longer for the reason this said.
+/// Registration installed a converter process-wide once; it does not, and has not since the model
+/// binder moved onto the host's own container — everything a call configures lives in the
+/// container it was handed. What makes a scan here refuse is the assembly itself: it declares
+/// contracts that are deliberately malformed, for <see cref="ContractValidationTests" />, and a
+/// scan resolves every contract it meets. The assembly scanned instead is the library's own,
+/// which declares no contract at all, so the branch is exercised on something that cannot refuse.
 /// </remarks>
 public sealed class DiscoveryTests {
 
@@ -122,10 +124,10 @@ public sealed class DiscoveryTests {
     /// sits.
     /// </summary>
     /// <remarks>
-    /// The companion of <c>ProcessWideStateTests.a_refused_registration_installs_nothing_at_all</c>,
-    /// which proves the same thing about the process. This one proves it about the return value:
-    /// nothing is reported as registered either, so a caller reading the result cannot conclude that
-    /// the good entries went through.
+    /// This proves it about the return value: nothing is reported as registered either, so a caller
+    /// reading the result cannot conclude that the good entries went through. What it leaves behind
+    /// in the container is <see cref="RegistrationRefusalTests" />'s subject, which also covers the
+    /// refusal that comes from the platform rather than from here.
     /// </remarks>
     [Fact]
     public void a_refused_registration_reports_nothing_as_registered() {

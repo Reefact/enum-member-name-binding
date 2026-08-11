@@ -24,9 +24,13 @@ public sealed class ModelBindingBehaviourTests {
     }
 
     /// <summary>
-    /// Not the converter's own sentence. ASP.NET Core discards the message of a
-    /// <see cref="FormatException" /> raised while converting and writes its own, so the rich
-    /// "allowed values are…" text never reaches the client — only the log.
+    /// Not the binder's own sentence. <c>ModelStateDictionary</c> converts a
+    /// <see cref="FormatException" /> raised while converting into the message provider's own
+    /// wording and drops the exception, which is what every other parameter of the application
+    /// answers with — and the binder passes one carrying no message, because none would survive:
+    /// not here, not in <c>ModelState.Errors[i].Exception</c>, which is null, and not in a log,
+    /// since this binder writes none. It used to carry an "allowed values are…" sentence, and this
+    /// remark used to say a log read it.
     /// </summary>
     [Fact]
     public async Task an_unknown_value_is_reported_in_the_words_aspnet_core_chooses() {

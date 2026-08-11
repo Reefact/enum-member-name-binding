@@ -9,9 +9,9 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// </summary>
 /// <remarks>
 /// The assemblies here are stand-ins rather than real ones, for the reason written at the top of
-/// <see cref="DiscoveryTests" />: registration installs a converter process-wide for every contract
-/// enum the scan finds, so scanning a real assembly full of fixtures would reach well beyond the test
-/// that asked for it. A stand-in hands over exactly the types the test names, and nothing else.
+/// <see cref="DiscoveryTests" />: a scan resolves every contract it meets, and this assembly
+/// declares malformed ones on purpose, so scanning it would refuse before proving anything about
+/// the scan. A stand-in hands over exactly the types the test names, and nothing else.
 /// </remarks>
 public sealed class AssemblyScanTests {
 

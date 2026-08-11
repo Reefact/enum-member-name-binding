@@ -250,6 +250,10 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Documentation
 
+- **The diagnostics index still scoped `EMN0004` to `[Flags]`.** The rule applies to every enum —
+  a comma separates values on all of them, so it cannot appear inside a name anywhere — which
+  `EMN0004.en.md` states in bold and two tests pin. The index table was the one place the earlier
+  correction missed, in both languages, which is why the paired-translation test could not see it.
 - **`EnumContractException` documented itself as "raised at startup, never on a request".** The
   OpenAPI companion resolves a contract while it writes the document, which under `MapOpenApi` is a
   request — so an application using the companion on its own, without `AddEnumMemberNameBinding`,
