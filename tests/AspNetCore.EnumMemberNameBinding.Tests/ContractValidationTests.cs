@@ -119,9 +119,15 @@ public sealed class ContractValidationTests {
         Check.That(EnumContract.For(typeof(ProductStatus)).IsContract).IsTrue();
     }
 
+    /// <summary>
+    /// Declaration order, and not the order <c>Enum.GetNames</c> returns: it is what the OpenAPI
+    /// document lists and what a reader of the enum sees, so the two have to be the same walk.
+    /// </summary>
     [Fact]
-    public void the_allowed_values_are_listed_in_declaration_order() {
-        Check.That(EnumContract.For(typeof(ProductStatus)).AllowedValues).IsEqualTo("available, out_of_stock, discontinued");
+    public void the_public_names_are_listed_in_declaration_order() {
+        IEnumerable<string> names = EnumContract.For(typeof(ProductStatus)).PublicNames;
+
+        Check.That(names).ContainsExactly("available", "out_of_stock", "discontinued");
     }
 
     /// <summary>

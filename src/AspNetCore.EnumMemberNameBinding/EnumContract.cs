@@ -109,7 +109,6 @@ internal sealed class EnumContract {
         _byClrNameIgnoringCase = ClrNamesIgnoringCase(enumType, byClrName);
         PublicNames         = [.. ordered.Select(static o => o.Item2)];
         UnannotatedMembers  = [.. unannotated];
-        AllowedValues       = string.Join(", ", PublicNames);
     }
 
     /// <summary>
@@ -278,9 +277,6 @@ internal sealed class EnumContract {
 
     /// <summary>The C# names of the members that carry no <c>[JsonStringEnumMemberName]</c>.</summary>
     internal ImmutableArray<string> UnannotatedMembers { get; }
-
-    /// <summary>The public names joined for use in error messages.</summary>
-    internal string AllowedValues { get; }
 
     /// <summary>Resolves — and validates — the contract of <paramref name="enumType" />.</summary>
     /// <exception cref="EnumContractException">The declared contract is ambiguous or malformed.</exception>
