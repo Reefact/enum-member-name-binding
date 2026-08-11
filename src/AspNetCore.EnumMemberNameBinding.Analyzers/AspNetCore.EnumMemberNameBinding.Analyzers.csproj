@@ -9,7 +9,7 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <!-- RS2008: release tracking files are ceremony for a five-rule analyzer shipped with its library. -->
+    <!-- RS2008: release tracking files are ceremony for a six-rule analyzer shipped with its library. -->
     <NoWarn>$(NoWarn);RS2008</NoWarn>
   </PropertyGroup>
 
