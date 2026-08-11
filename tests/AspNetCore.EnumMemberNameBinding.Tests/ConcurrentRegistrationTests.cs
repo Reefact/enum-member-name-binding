@@ -120,8 +120,11 @@ public sealed class ConcurrentRegistrationTests {
         RaceOn(index => resolved[index] = EnumContract.For(typeof(ProductStatus)));
 
         // GetOrAdd may build the value more than once under contention; every result must still be
-        // equivalent, and every later caller must observe the one that won.
-        Check.That(resolved).ContainsOnlyElementsThatMatch(contract => contract.AllowedValues == "available, out_of_stock, discontinued");
+        // equivalent, and every later caller must observe the one that won. Equivalence is read off
+        // the public names, in order — the contract's own content, and the thing a second build could
+        // get wrong.
+        Check.That(resolved).ContainsOnlyElementsThatMatch(
+            contract => contract.PublicNames.SequenceEqual(["available", "out_of_stock", "discontinued"]));
         Check.That(EnumContract.For(typeof(ProductStatus))).IsSameReferenceAs(EnumContract.For(typeof(ProductStatus)));
     }
 
