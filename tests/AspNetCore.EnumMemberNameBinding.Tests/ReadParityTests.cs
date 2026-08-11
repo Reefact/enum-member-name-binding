@@ -22,11 +22,11 @@ namespace AspNetCore.EnumMemberNameBinding.Tests;
 /// a regression read as a fix. Adding a fixture below now costs nothing and buys its full cross
 /// product — every casing of every name, every ordered pair, and the punctuation around them.
 /// <para>
-/// One shape is deliberately absent: a <c>[Flags]</c> enum whose two case-only members differ in how
-/// many bits they set. The serializer breaks a case-insensitive tie by <c>Enum.GetNames</c> order on
-/// an ordinary enum and by bit count on a <c>[Flags]</c> one, and this library applies the first rule
-/// to both. That is a separate defect, reported and open; it is named here so the boundary of this
-/// corpus is visible rather than merely unexercised.
+/// That paid a second time. This file once named one shape as deliberately absent — a <c>[Flags]</c>
+/// enum whose two case-only members differ in how many bits they set, where the serializer breaks the
+/// tie by bit count and not by <c>Enum.GetNames</c> order. Closing it cost four declarations and no
+/// test at all: the corpus found the divergence on its own, on tokens nobody would have thought to
+/// write down.
 /// </para>
 /// </remarks>
 public sealed class ReadParityTests {
@@ -143,11 +143,68 @@ public sealed class ReadParityTests {
 
     }
 
+    /// <summary>
+    /// Two unannotated members differing only by case, on a <c>[Flags]</c> enum, setting a different
+    /// number of bits — the shape this file used to name as a defect it did not cover.
+    /// </summary>
+    /// <remarks>
+    /// The serializer holds a <c>[Flags]</c> enum's members with the most bits first and an ordinary
+    /// enum's in <c>Enum.GetNames</c> order, so a token matching neither spelling exactly resolves
+    /// differently on the two. Declared here in both directions, because getting the order right by
+    /// accident is exactly what one direction cannot tell apart.
+    /// </remarks>
+    [Flags]
+    [SuppressMessage(NetAnalyzersRule.CA1708.Category, NetAnalyzersRule.CA1708.Id, Justification = SuppressionJustification.CA1708.TheShapeUnderTest)]
+    public enum FlagsCasePairFewBitsFirst {
+
+        Read = 1,
+        read = 3,
+        Write = 4
+
+    }
+
+    /// <summary>The same, with the composite declared first.</summary>
+    [Flags]
+    [SuppressMessage(NetAnalyzersRule.CA1708.Category, NetAnalyzersRule.CA1708.Id, Justification = SuppressionJustification.CA1708.TheShapeUnderTest)]
+    public enum FlagsCasePairManyBitsFirst {
+
+        Read = 3,
+        read = 1,
+        Write = 4
+
+    }
+
+    /// <summary>
+    /// A negative member on a <c>[Flags]</c> enum, where the bit count is taken over the widened
+    /// value: <c>-128</c> sets one bit of the <c>sbyte</c> and fifty-seven of the <c>ulong</c>, and
+    /// the serializer counts fifty-seven.
+    /// </summary>
+    [Flags]
+    [SuppressMessage(NetAnalyzersRule.CA1708.Category, NetAnalyzersRule.CA1708.Id, Justification = SuppressionJustification.CA1708.TheShapeUnderTest)]
+    public enum FlagsCasePairSigned : sbyte {
+
+        Read = -128,
+        read = 3
+
+    }
+
+    /// <summary>Tied on bit count, so only the <c>GetNames</c> order is left to decide.</summary>
+    [Flags]
+    [SuppressMessage(NetAnalyzersRule.CA1708.Category, NetAnalyzersRule.CA1708.Id, Justification = SuppressionJustification.CA1708.TheShapeUnderTest)]
+    public enum FlagsCasePairTiedOnBits {
+
+        read = 6,
+        Read = 3
+
+    }
+
     public static TheoryData<Type> Shapes => new() {
         typeof(DeclaredBesideACasePair), typeof(FlagsDeclaredBesideACasePair), typeof(CasePairAlone),
         typeof(FullyDeclared), typeof(PartiallyDeclared), typeof(FlagsAtoms),
         typeof(Aliases), typeof(SignedValues), typeof(UnsignedFlags),
-        typeof(CommaInsideAName), typeof(CommaBesideCsharpNames)
+        typeof(CommaInsideAName), typeof(CommaBesideCsharpNames),
+        typeof(FlagsCasePairFewBitsFirst), typeof(FlagsCasePairManyBitsFirst),
+        typeof(FlagsCasePairSigned), typeof(FlagsCasePairTiedOnBits)
     };
 
     [Theory]
@@ -173,20 +230,29 @@ public sealed class ReadParityTests {
     }
 
     /// <summary>
-    /// The corpus is large enough to be worth asserting on: a theory that generated nothing would
-    /// pass in silence, which is the failure mode this whole file exists to avoid.
+    /// The corpus is the whole cross product and not merely a large number of tokens: a theory that
+    /// generated nothing would pass in silence, which is the failure mode this whole file exists to
+    /// avoid.
     /// </summary>
+    /// <remarks>
+    /// Derived from each shape's own vocabulary rather than a flat threshold, because a flat one
+    /// answers the wrong question. Two hundred tokens is not evidence of coverage on an enum with
+    /// eight names, and a two-member enum cannot reach a hundred however completely it is covered —
+    /// which is what a flat 100 said about <see cref="FlagsCasePairSigned" />, a fixture that exists
+    /// precisely because it is minimal.
+    /// </remarks>
     [Theory]
     [MemberData(nameof(Shapes))]
     [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public void the_corpus_covers_every_casing_and_every_pair(Type enumType) {
         List<string> corpus = [.. Corpus(enumType)];
+        int          pairs  = CasedNames(enumType).Length * CasedNames(enumType).Length;
 
-        Check.WithCustomMessage("a corpus this small would pass by not asking anything.")
-             .That(corpus.Count).IsStrictlyGreaterThan(100);
+        Check.WithCustomMessage($"{enumType.Name} has fewer tokens than it has ordered pairs, so the cross product is not there.")
+             .That(corpus.Count).IsStrictlyGreaterThan(pairs);
         Check.That(corpus).ContainsNoDuplicateItem();
         Check.WithCustomMessage("the list path is the one a single value cannot exercise.")
-             .That(corpus.Count(token => token.Contains(',', StringComparison.Ordinal))).IsStrictlyGreaterThan(50);
+             .That(corpus.Count(token => token.Contains(',', StringComparison.Ordinal))).IsGreaterOrEqualThan(pairs);
     }
 
     /// <summary>
@@ -194,8 +260,7 @@ public sealed class ReadParityTests {
     /// pairs, with the punctuation the serializer tolerates around them.
     /// </summary>
     private static HashSet<string> Corpus(Type enumType) {
-        string[] names = [.. Vocabulary(enumType)];
-        string[] cased = [.. names.SelectMany(Casings).Distinct(StringComparer.Ordinal)];
+        string[] cased = CasedNames(enumType);
 
         HashSet<string> corpus = new(StringComparer.Ordinal);
 
@@ -220,6 +285,11 @@ public sealed class ReadParityTests {
         }
 
         return corpus;
+    }
+
+    /// <summary>Every name the enum answers to, in every casing the corpus is built from.</summary>
+    private static string[] CasedNames(Type enumType) {
+        return [.. Vocabulary(enumType).SelectMany(Casings).Distinct(StringComparer.Ordinal)];
     }
 
     /// <summary>The public names and the C# names both, since a partial contract answers to each.</summary>

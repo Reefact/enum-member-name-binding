@@ -129,6 +129,30 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **A miscased name resolved to the wrong member on a `[Flags]` enum.** Of two unannotated members
+  differing only by case, the one a token matching neither spelling exactly falls back to is decided
+  by the order the serializer holds its members in — and that order is not the same on both kinds of
+  enum. An ordinary enum is `Enum.GetNames` order; a `[Flags]` one puts the most bits first, so a
+  composite wins over a member it covers. This package applied the first rule to both, so on
+  `{ Read = 1, read = 3 }` the request body read `"READ"` as 3 while every other channel read it as
+  1. The bit count is taken over the *sign-extended* value, which was measured rather than assumed:
+  `-128` on an `sbyte` enum sets one bit of the byte and fifty-seven of the widened value, and the
+  serializer counts fifty-seven. Twelve shapes were measured to establish the rule; four are now
+  fixtures in the derived parity corpus, which found the divergence on the comma-list path too — a
+  trailing comma moves a token onto the path where the exact spelling no longer wins first.
+- **`EMN0004` refused a contract `System.Text.Json` accepts.** The rule reported a comma inside a
+  declared name on every enum, and the start-up check refused one, on the reading that a comma
+  separates values everywhere so a name carrying one can never be read back. The first half is true
+  and the second does not follow: the serializer looks the trimmed value up **as one name before it
+  splits anything**. Measured — on an enum declaring `a`, `b` and `a,b`, it answers `"a,b"` with the
+  member of that name and `"a, b"` with `a | b`; only on a `[Flags]` enum does it refuse the shape,
+  which its own message spells out as *"Flags enums must **additionally** not contain commas"*. So
+  this package was stricter than the enum left alone, which `EnumContract` itself calls the one thing
+  it promises never to do. `EMN0004` and the start-up check now stop where the serializer stops, and
+  `TryParse` tries the whole value as a name before splitting — a change with no effect on any
+  contract that was legal before, since none of them could contain a comma. The old order did not
+  merely refuse the shape: on the enum above it read `"a,b"` as `a | b`, a different member,
+  silently. Two fixtures in the derived parity corpus now hold it against the serializer.
 - **A nullable contract enum lost the `null` from its OpenAPI schema.** One component describes the
   type wherever it appears, and a nullable collection element — `List<TEnum?>` — is not wrapped the
   way a nullable property is: ASP.NET Core expresses it by putting a JSON null inside the component's

@@ -82,8 +82,8 @@ brûler sans rien perdre.
   membre — ce qui laisse ce membre répondre à toutes les casses de son nom sauf la sienne. Ces cinq-là
   sont des erreurs ; `EMN0006` ci-dessus est le seul avertissement, car une limite de portabilité
   dépend des canaux depuis lesquels une API lie réellement, là où les cinq autres signalent une
-  ambiguïté fausse sur tous les canaux.
-  Une énumération qui ne déclare aucun contrat n'est jamais analysée.
+  ambiguïté fausse sur tous les canaux. Une énumération qui ne déclare aucun contrat n'est jamais
+  analysée.
 - Une vérification du contenu des deux paquets publiés, exécutée par la CI puis à nouveau par la
   release depuis un unique script partagé. Elle fait échouer le build si le paquet principal ne
   déclare pas sa référence de framework `Microsoft.AspNetCore.App` ou ne livre pas les analyseurs,
@@ -141,6 +141,34 @@ brûler sans rien perdre.
 
 ### Corrigé
 
+- **Un nom mal cassé se résolvait vers le mauvais membre sur une énumération `[Flags]`.** De deux
+  membres non annotés ne différant que par la casse, celui vers lequel se rabat un jeton qui ne
+  correspond exactement à aucune des deux orthographes dépend de l'ordre dans lequel le sérialiseur
+  détient ses membres — et cet ordre n'est pas le même sur les deux sortes d'énumération. Une
+  énumération ordinaire suit l'ordre d'`Enum.GetNames` ; une `[Flags]` place d'abord ceux qui posent
+  le plus de bits, de sorte qu'un composite l'emporte sur un membre qu'il recouvre. Ce paquet
+  appliquait la première règle aux deux : sur `{ Read = 1, read = 3 }`, le corps de la requête lisait
+  donc `"READ"` comme 3 là où tous les autres canaux lisaient 1. Le nombre de bits se compte sur la
+  valeur **étendue en signe**, ce qui a été mesuré et non supposé : `-128` sur une énumération
+  `sbyte` pose un bit de l'octet et cinquante-sept de la valeur élargie, et le sérialiseur en compte
+  cinquante-sept. Douze formes ont été mesurées pour établir la règle ; quatre sont désormais des
+  fixtures du corpus de parité dérivé, lequel a aussi trouvé la divergence sur le chemin des listes —
+  une virgule finale suffit à basculer un jeton là où l'orthographe exacte ne l'emporte plus.
+- **`EMN0004` refusait un contrat que `System.Text.Json` accepte.** La règle signalait une virgule
+  dans un nom déclaré sur toutes les énumérations, et le contrôle au démarrage la refusait, sur
+  l'idée qu'une virgule sépare des valeurs partout, donc qu'un nom qui en porte une ne peut jamais
+  être relu. La première moitié est vraie, la seconde n'en découle pas : le sérialiseur cherche la
+  valeur détourée **comme un seul nom avant de découper quoi que ce soit**. Mesuré — sur une
+  énumération déclarant `a`, `b` et `a,b`, il répond `"a,b"` par le membre de ce nom et `"a, b"` par
+  `a | b` ; il ne refuse la forme que sur une `[Flags]`, ce que son propre message énonce :
+  *« Flags enums must **additionally** not contain commas »*. Ce paquet était donc plus strict que
+  l'énumération laissée tranquille, ce qu'`EnumContract` qualifie lui-même de seule chose qu'il
+  promet de ne jamais faire. `EMN0004` et le contrôle au démarrage s'arrêtent désormais là où le
+  sérialiseur s'arrête, et `TryParse` essaie la valeur entière comme nom avant de découper — un
+  changement sans effet sur aucun contrat légal auparavant, puisqu'aucun ne pouvait porter de
+  virgule. L'ancien ordre ne se contentait pas de refuser la forme : sur l'énumération ci-dessus, il
+  lisait `"a,b"` comme `a | b`, un autre membre, silencieusement. Deux fixtures du corpus de parité
+  dérivé le tiennent désormais face au sérialiseur.
 - **Une énumération sous contrat nullable perdait le `null` de son schéma OpenAPI.** Un seul
   composant décrit le type partout où il apparaît, et un élément de collection nullable —
   `List<TEnum?>` — n'est pas encapsulé comme l'est une propriété nullable : ASP.NET Core l'exprime en
