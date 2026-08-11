@@ -127,6 +127,13 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Fixed
 
+- **A comma-separated list resolved an unannotated member differently from the request body.**
+  `System.Text.Json` prefers the exact spelling of a C# name only when the value carries no comma;
+  inside a list every part resolves through one case-insensitive lookup, so a single trailing comma
+  moves a value from one rule to the other — on `{ Read = 2, read = 4 }` the serializer reads
+  `"read"` as 4 and `"read,"` as 2. This package applied the exact-spelling rule to both paths, so
+  `?value=read,one` bound 5 where the body bound 3. The list path now matches. Declared names are
+  unaffected; they are ordinal on both.
 - **A registration that failed could still change a running application.** The contract enums were
   written into the record the model binder provider reads on every request *before* the service
   collection was configured — so a call made after `Build()`, where that collection is read-only,
