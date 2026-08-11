@@ -46,12 +46,42 @@ public sealed class FormattingTests {
 
     }
 
+    /// <summary>
+    /// Two members on one value are written under one name, and which one is not declaration order.
+    /// </summary>
+    /// <remarks>
+    /// This was called <c>an_alias_is_written_with_the_first_declared_name</c> and asserted the
+    /// literal <c>"first"</c> twice. <see cref="EnumContract.Format" /> implements no such rule:
+    /// <c>NamesByValue</c> walks <see cref="Enum.GetNames(Type)" /> and keeps the first name it
+    /// meets there, which sorts by the binary value and, among members sharing one, does not keep
+    /// the order they were written in. The name held here for the rule it does not implement, on
+    /// the one fixture where the two orders coincide — <see cref="Aliased" /> is written in
+    /// ascending order, so declaration order and <c>GetNames</c> order agree and nothing could tell
+    /// them apart.
+    /// <para>
+    /// The expectation is taken from the serializer rather than restated, which is the only reading
+    /// that cannot go stale: <see cref="FormattingParityTests" /> holds the same shape against
+    /// <c>JsonSerializer</c> across seven enums, three of which disagree with declaration order.
+    /// </para>
+    /// </remarks>
     [Fact]
-    public void an_alias_is_written_with_the_first_declared_name() {
+    public void an_alias_is_written_with_the_name_system_text_json_writes() {
         EnumContract contract = EnumContract.For(typeof(Aliased));
 
-        Check.That(contract.Format(Aliased.First)).IsEqualTo("first");
-        Check.That(contract.Format(Aliased.Uno)).IsEqualTo("first");
+        string oracle = JsonSerializer.Deserialize<string>(
+            JsonSerializer.Serialize(Aliased.First, OracleFor(typeof(Aliased))))!;
+
+        Check.That(contract.Format(Aliased.First)).IsEqualTo(oracle);
+        Check.WithCustomMessage("both members share a value, so both are written under the same name.")
+             .That(contract.Format(Aliased.Uno)).IsEqualTo(oracle);
+    }
+
+    private static JsonSerializerOptions OracleFor(Type enumType) {
+        Type converterType = typeof(JsonStringEnumConverter<>).MakeGenericType(enumType);
+
+        return new JsonSerializerOptions {
+            Converters = { (JsonConverter)Activator.CreateInstance(converterType, null, false)! }
+        };
     }
 
     [Fact]
