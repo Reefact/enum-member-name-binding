@@ -188,6 +188,20 @@ class Fixture {
     // its last line is the same question asked at the other end.
     [SuppressMessage("Category", "RULE0010",
         Justification = "Closes with a member after it.")] void ClosesWithAMemberAfterIt() { }
+
+    // Rewritten: wrapped, and closing with nothing but a comment. This one was silently passed over
+    // for being neither — it closes on a line that does not end in `)]`, which the checker read as
+    // "a member follows" and answered with silence. A wrapped suppression could therefore escape the
+    // rule entirely by carrying a note, in both modes at once, and the output said "Nothing to
+    // report." either way. A `//` runs to the end of the line: nothing can be hiding behind it.
+    [SuppressMessage("Category", "RULE0011",
+        Justification = "Wrapped, then a comment.")] // and a note
+    void WrappedThenAComment() { }
+
+    // Left alone: a block comment is not the same promise. A member can follow its close on the same
+    // line, so this stays with the two shapes the checker admits it cannot read.
+    [SuppressMessage("Category", "RULE0012",
+        Justification = "Closes with a block comment, then a member.")] /* note */ void AfterABlockComment() { }
 }
 FIXTURE
 
@@ -221,8 +235,8 @@ FIXTURE
 
 expected="Fixture.cs:3:collapse Fixture.cs:12:unblank Fixture.cs:91:joinvalue \
 Fixture.cs:104:suppression Fixture.cs:108:suppression Fixture.cs:115:suppression \
-Fixture.cs:119:suppression Interpolated.cs:3:collapse Assembly.cs:1:suppression \
-Unterminated.cs:2:unclosed"
+Fixture.cs:119:suppression Fixture.cs:168:suppression Interpolated.cs:3:collapse \
+Assembly.cs:1:suppression Unterminated.cs:2:unclosed"
 
 summarise() {
     "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" 2>&1 || true
@@ -273,8 +287,8 @@ if ! grep -q 'Unterminated.cs:2: a suppression belongs on one line; this one nev
     exit 1
 fi
 
-if [[ "$((before - after))" -ne 9 ]]; then
-    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 9"
+if [[ "$((before - after))" -ne 10 ]]; then
+    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 10"
     exit 1
 fi
 
@@ -328,6 +342,16 @@ if ! grep -q '^            \[SuppressMessage("Category", "RULE0006",$' "$work/Fi
     exit 1
 fi
 
+if ! grep -q '^    \[SuppressMessage("Category", "RULE0011", Justification = "Wrapped, then a comment.")\] // and a note$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix left a wrapped suppression whose closing line carries only a comment"
+    exit 1
+fi
+
+if ! grep -q '^        Justification = "Closes with a block comment, then a member.")\] /\* note \*/ void AfterABlockComment() { }$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix rewrote a suppression closing with a block comment and a member"
+    exit 1
+fi
+
 if ! grep -q '^    \[SuppressMessage("Category", "RULE0009", Justification = "One line, then a comment.")\] // and a note$' "$work/Fixture.cs"; then
     echo "FAIL: --fix rewrote a one-line suppression carrying a trailing comment"
     exit 1
@@ -368,4 +392,4 @@ if ! "$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly
     exit 1
 fi
 
-echo "ok — nine sites reported, one refused and named, rewritten, and clean afterwards."
+echo "ok — ten sites reported, one refused and named, rewritten, and clean afterwards."

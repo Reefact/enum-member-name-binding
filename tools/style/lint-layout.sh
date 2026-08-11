@@ -90,7 +90,9 @@ fi
 # reported and left alone, since a file that unbalanced is not one a line-joiner should be editing.
 # A wrapped suppression whose `)]` arrives with a member after it is neither of those two and
 # produces no record at all: joining up to that line would fold the member onto the attribute, so
-# closesLine tells the two apart and this one is passed over in silence.
+# closesLine tells the two apart and this one is passed over in silence. A trailing `//` comment is
+# not a member and does not buy that silence — reading it as one hid a genuinely wrapped suppression
+# from both modes, which is the one outcome indistinguishable from a clean tree.
 scan() {
     local file="$1"
 
@@ -115,12 +117,18 @@ scan() {
             return line ~ /\)\]/
         }
 
-        # And whether it closes with nothing after it, which is what makes a wrapped site one this
-        # can rewrite: joining up to a line that carries a member as well would fold that member
-        # onto the attribute. The mirror of `[Fact, SuppressMessage(` — where the line the attribute
-        # opens on carries something else — and unreadable for the same reason.
+        # And whether it closes with nothing but a comment after it, which is what makes a wrapped
+        # site one this can rewrite: joining up to a line that carries a member as well would fold
+        # that member onto the attribute. The mirror of `[Fact, SuppressMessage(` — where the line
+        # the attribute opens on carries something else — and unreadable for the same reason.
+        #
+        # A `//` is not something else. It runs to the end of the line, so nothing can be hiding
+        # behind it and the join is safe — where reading it as one made a wrapped suppression
+        # carrying a trailing comment vanish from both modes at once: "Nothing to report." and exit
+        # 0, which is what a clean tree says. A `/*` stays unread, because a member can follow its
+        # close on the same line and telling that apart is parsing C# again.
         function closesLine(line) {
-            return line ~ /\)\][ \t]*$/
+            return line ~ /\)\][ \t]*$/ || line ~ /\)\][ \t]*\/\//
         }
 
         # A raw string literal can hold C# that is not this file s own code — the analyzer fixtures

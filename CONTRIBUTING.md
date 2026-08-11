@@ -99,7 +99,8 @@ like a clean tree — and CI runs it without the flag, running the checker's own
 "nothing to report" means something. This is checked rather than remembered. It stays silent on two
 shapes it cannot read: a suppression sharing its brackets with another attribute, as in
 `[Fact, SuppressMessage(...)]`, and a wrapped one whose closing `)]` carries a member after it.
-Either way, knowing what to join means parsing C#.
+Either way, knowing what to join means parsing C#. A trailing `//` comment is neither — it runs to
+the end of the line, so nothing can hide behind it and the join is safe.
 
 ## Branches
 
