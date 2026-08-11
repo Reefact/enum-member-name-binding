@@ -15,10 +15,25 @@ root="$(git rev-parse --show-toplevel)"
 
 # Only what this commit touches. Running over the whole tree would fail a commit for a file it does
 # not contain, which is how a hook earns the reputation of being in the way.
-staged="$(git diff --cached --name-only --diff-filter=ACM -- '*.cs' | grep -Ev '/(obj|bin)/' || true)"
-[ -n "$staged" ] || exit 0
+#
+# Built one path at a time into "$@" rather than word-split out of a single string. The comment that
+# stood here said no path could contain a space "since the repository has no such file and git would
+# quote it if it did", and both halves were wrong: `git diff --cached --name-only` prints a spaced
+# path unquoted, so the split tore it in two, and it prints a non-ASCII one quoted and escaped —
+# "Caf\303\251.cs" — which the split kept whole and which names nothing on disk. Either way the
+# checker was handed something that is not the file, and answered about a path that does not exist.
+#
+# core.quotePath=false stops the escaping; reading a line at a time stops the tearing. A path
+# containing a newline is still beyond this loop, and beyond git's line-oriented output with it.
+set --
+while IFS= read -r file; do
+    [ -n "$file" ] || continue
+    case "$file" in */obj/*|*/bin/*) continue ;; esac
+    set -- "$@" "$file"
+done <<STAGED
+$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACM -- '*.cs')
+STAGED
 
-# shellcheck disable=SC2086
-# Word splitting is the point: one path per line, none of which can contain a space, since the
-# repository has no such file and git would quote it if it did.
-exec "$root/tools/style/lint-layout.sh" $staged
+[ "$#" -gt 0 ] || exit 0
+
+exec "$root/tools/style/lint-layout.sh" "$@"
