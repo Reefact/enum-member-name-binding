@@ -75,7 +75,10 @@ something close to it. The whitespace class is written out rather than as `\s`, 
 read as ECMA-262, where `\s` includes U+FEFF and excludes U+0085 — while the binder trims with
 `char.IsWhiteSpace`, which is the other way round on both. And a member left unannotated keeps its C#
 name, which the binder matches ignoring case, so it appears as `[Dd][Ee][Ll][Ee][Tt][Ee]`; a declared
-name is matched ordinally and appears as written.
+name is matched ordinally and appears as written. A class holds every character the binder treats as
+equal, which for an ASCII letter is its two forms and is not always only that: the two forms are not
+the same set as `OrdinalIgnoreCase` equality, and writing them as though they were was wrong in both
+directions on a handful of code points.
 
 It is written in the ECMA-262 dialect a JSON Schema `pattern` is read with, so only syntax characters
 are escaped: `Regex.Escape` would produce `\ ` and `\#`, which are not valid identity escapes there

@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
@@ -184,30 +185,82 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
 
     /// <summary>
     /// A name written so that every casing of it matches, which ECMA-262 has no flag for inside a
-    /// pattern: each cased character becomes the two-element class of its own two forms.
+    /// pattern: each character becomes the class of every character the binder treats as equal to it.
     /// </summary>
     /// <remarks>
-    /// A character whose two forms are equal is left outside a class deliberately, and not written as
-    /// <c>[--]</c>: a name may contain a hyphen, and a hyphen inside a class is a range. Only cased
-    /// characters reach the class, and none of the four a class would need escaped — <c>\</c>,
-    /// <c>]</c>, <c>^</c> and <c>-</c> — has an upper form differing from its lower one.
+    /// The two forms of the character are not that class, and writing them as though they were got it
+    /// wrong in both directions at once. Too wide on five code points: <c>ToLowerInvariant</c> maps
+    /// U+212A KELVIN SIGN to <c>k</c>, so a member named with it advertised a plain <c>k</c> that
+    /// <see cref="StringComparer.OrdinalIgnoreCase" /> refuses and the server answers 400 to — and the
+    /// same for U+03F4, U+1E9E, U+2126 and U+212B. Too narrow on seventy-nine others, where two
+    /// characters are equal without either being the other's case: U+00B5 MICRO SIGN and U+03BC GREEK
+    /// SMALL MU, or the title-case <c>Ǆǅǆ</c> family.
+    /// <para>
+    /// Both fall out of one rule, measured over every <see cref="char" /> rather than reasoned about:
+    /// two characters are equal under <c>OrdinalIgnoreCase</c> exactly when
+    /// <see cref="char.ToUpperInvariant(char)" /> sends them to the same place. Grouping by that is
+    /// therefore the class itself, and <c>the_pattern_admits_exactly_what_the_binder_accepts</c>
+    /// holds the two against each other code point by code point.
+    /// </para>
+    /// <para>
+    /// A character alone in its group is left outside a class deliberately, and not written as
+    /// <c>[--]</c>: a name may contain a hyphen, and a hyphen inside a class is a range. That is also
+    /// what keeps a class safe to write unescaped — the four characters a class would need escaped,
+    /// <c>\</c>, <c>]</c>, <c>^</c> and <c>-</c>, are each alone in their group, which a test asserts
+    /// rather than the reader taking on trust.
+    /// </para>
     /// </remarks>
     private static string EscapeIgnoringCase(string name) {
         StringBuilder escaped = new(name.Length * 4);
 
         foreach (char character in name) {
-            char upper = char.ToUpperInvariant(character);
-            char lower = char.ToLowerInvariant(character);
-
-            if (upper == lower) {
-                Escape(escaped, character);
+            if (AnyCasing.Value.TryGetValue(character, out string? group)) {
+                escaped.Append(group);
                 continue;
             }
 
-            escaped.Append('[').Append(upper).Append(lower).Append(']');
+            Escape(escaped, character);
         }
 
         return escaped.ToString();
+    }
+
+    /// <summary>
+    /// Every character that shares its group, mapped to the class naming the whole group. A character
+    /// alone in its group is absent, and is written as a literal instead.
+    /// </summary>
+    /// <remarks>
+    /// Built once, on the first <c>[Flags]</c> contract that has a member left unannotated — an
+    /// application with none never pays for it. The pass is over all sixty-five thousand code points
+    /// because the class of a character is its <em>preimage</em> under
+    /// <see cref="char.ToUpperInvariant(char)" />, which cannot be read off the character alone.
+    /// Ascending order inside each group is what makes the emitted pattern the same on every run.
+    /// </remarks>
+    internal static readonly Lazy<FrozenDictionary<char, string>> AnyCasing = new(BuildAnyCasing);
+
+    private static FrozenDictionary<char, string> BuildAnyCasing() {
+        Dictionary<char, List<char>> byUpper = [];
+
+        for (int code = 0; code <= char.MaxValue; code++) {
+            char character = (char)code;
+
+            if (!byUpper.TryGetValue(char.ToUpperInvariant(character), out List<char>? group)) {
+                byUpper[char.ToUpperInvariant(character)] = group = [];
+            }
+
+            group.Add(character);
+        }
+
+        Dictionary<char, string> classes = [];
+
+        foreach (List<char> group in byUpper.Values) {
+            if (group.Count == 1) { continue; }
+
+            string written = "[" + new string([.. group]) + "]";
+            foreach (char member in group) { classes[member] = written; }
+        }
+
+        return classes.ToFrozenDictionary();
     }
 
     /// <summary>
