@@ -19,6 +19,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
 
     private const string Category      = "ApiContract";
     private const string AttributeName = "System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute";
+    private const string FlagsName     = "System.FlagsAttribute";
     private const string HelpBase      = "https://github.com/Reefact/enum-member-name-binding/blob/main/docs/for-users/rules/";
 
     /// <summary>EMN0001 — two members declare the same public name.</summary>
@@ -30,8 +31,8 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     /// <summary>EMN0003 — the enum declares a contract but some members are not annotated.</summary>
     public static readonly DiagnosticDescriptor IncompleteContract = Describe("EMN0003", DiagnosticSeverity.Error);
 
-    /// <summary>EMN0004 — a public name contains a comma.</summary>
-    public static readonly DiagnosticDescriptor CommaInName = Describe("EMN0004", DiagnosticSeverity.Error);
+    /// <summary>EMN0004 — a public name on a <c>[Flags]</c> enum contains a comma.</summary>
+    public static readonly DiagnosticDescriptor CommaInFlagsName = Describe("EMN0004", DiagnosticSeverity.Error);
 
     /// <summary>EMN0005 — a public name shadows the C# name of another member.</summary>
     public static readonly DiagnosticDescriptor PublicNameShadowsAnotherMember = Describe("EMN0005", DiagnosticSeverity.Error);
@@ -59,7 +60,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
 
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
-        DuplicatePublicName, InvalidPublicName, IncompleteContract, CommaInName,
+        DuplicatePublicName, InvalidPublicName, IncompleteContract, CommaInFlagsName,
         PublicNameShadowsAnotherMember, NameIsNotPortable);
 
     /// <inheritdoc />
@@ -73,17 +74,24 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
             INamedTypeSymbol? attribute = start.Compilation.GetTypeByMetadataName(AttributeName);
             if (attribute is null) { return; }
 
-            start.RegisterSymbolAction(symbol => Analyze(symbol, attribute), SymbolKind.NamedType);
+            // Nullable rather than a second guard: a compilation without System.FlagsAttribute has no
+            // enum carrying it, so "not found" and "not [Flags]" are the same answer here.
+            INamedTypeSymbol? flags = start.Compilation.GetTypeByMetadataName(FlagsName);
+
+            start.RegisterSymbolAction(symbol => Analyze(symbol, attribute, flags), SymbolKind.NamedType);
         });
     }
 
-    private static void Analyze(SymbolAnalysisContext context, INamedTypeSymbol attributeType) {
+    private static void Analyze(SymbolAnalysisContext context, INamedTypeSymbol attributeType, INamedTypeSymbol? flagsType) {
         INamedTypeSymbol type = (INamedTypeSymbol)context.Symbol;
         if (type.TypeKind != TypeKind.Enum) { return; }
 
         List<Member> members = CollectMembers(type, attributeType);
 
         if (members.Count == 0 || members.All(m => m.Attribute is null)) { return; }
+
+        bool isFlags = flagsType is not null
+                    && type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, flagsType));
 
         Dictionary<string, Member> declared = new(System.StringComparer.Ordinal);
 
@@ -96,7 +104,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
 
             Location location = LocationOf(member.Attribute) ?? member.Field.Locations.FirstOrDefault() ?? Location.None;
 
-            Diagnostic? rejection = Reject(member, declared, location);
+            Diagnostic? rejection = Reject(member, declared, location, isFlags);
             if (rejection is not null) {
                 context.ReportDiagnostic(rejection);
                 continue;
@@ -130,7 +138,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
     /// empty name has no first character to inspect, and a name that is not yet claimed cannot be a
     /// duplicate. A member earns at most one of these, which is why the caller stops at the first.
     /// </remarks>
-    private static Diagnostic? Reject(Member member, Dictionary<string, Member> declared, Location location) {
+    private static Diagnostic? Reject(Member member, Dictionary<string, Member> declared, Location location, bool isFlags) {
         string? name  = member.PublicName;
         string  field = member.Field.Name;
 
@@ -140,7 +148,7 @@ public sealed class EnumContractAnalyzer : DiagnosticAnalyzer {
         // annotation and calls it directly.
         if (name is null || name.Length == 0) { return At(InvalidPublicName, location, field, name, "is empty"); }
         if (IsPadded(name)) { return At(InvalidPublicName, location, field, name, "has leading or trailing whitespace"); }
-        if (name.IndexOf(',') >= 0) { return At(CommaInName, location, field, name); }
+        if (isFlags && name.IndexOf(',') >= 0) { return At(CommaInFlagsName, location, field, name); }
         if (declared.TryGetValue(name, out Member owner)) { return At(DuplicatePublicName, location, owner.Field.Name, field, name); }
 
         return null;

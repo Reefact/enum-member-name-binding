@@ -41,7 +41,8 @@ brûler sans rien perdre.
   l'enregistrement pour une application qui configure ses convertisseurs elle-même. Nommer quoi que
   ce soit vaut « ne scanne rien d'autre » : l'assembly d'entrée est un défaut, pas un ajout.
 - Validation au démarrage de chaque contrat enregistré, levant `EnumContractException` pour les noms
-  publics en double, les noms entourés d'espaces et les virgules dans le nom d'un membre.
+  publics en double, les noms entourés d'espaces et — sur une énumération `[Flags]` — les virgules
+  dans le nom d'un membre.
 - L'enregistrement est tout ou rien, sur les deux chemins — une liste explicite et le scan
   d'assembly. Chaque contrat est résolu et validé avant que quoi que ce soit ne soit configuré : une
   liste nommant un contrat correct et un contrat malformé laisserait sinon le correct branché,
@@ -76,11 +77,12 @@ brûler sans rien perdre.
   mesure elle-même est épinglée par des tests.
 - Des analyseurs Roslyn, livrés dans le paquet sous `analyzers/dotnet/cs`, pour qu'une erreur de
   contrat soit une erreur de compilation plutôt qu'une exception au démarrage : `EMN0001` nom public en
-  double, `EMN0002` nom public inutilisable, `EMN0003` contrat incomplet, `EMN0004` virgule dans un nom
-  public, `EMN0005` un nom public masquant le nom C# d'un autre membre — ce qui laisse ce membre
-  répondre à toutes les casses de son nom sauf la sienne. Ces cinq-là sont des erreurs ; `EMN0006`
-  ci-dessus est le seul avertissement, car une limite de portabilité dépend des canaux depuis lesquels
-  une API lie réellement, là où les cinq autres signalent une ambiguïté fausse sur tous les canaux.
+  double, `EMN0002` nom public inutilisable, `EMN0003` contrat incomplet, `EMN0004` virgule dans un
+  nom public sur une énumération `[Flags]`, `EMN0005` un nom public masquant le nom C# d'un autre
+  membre — ce qui laisse ce membre répondre à toutes les casses de son nom sauf la sienne. Ces cinq-là
+  sont des erreurs ; `EMN0006` ci-dessus est le seul avertissement, car une limite de portabilité
+  dépend des canaux depuis lesquels une API lie réellement, là où les cinq autres signalent une
+  ambiguïté fausse sur tous les canaux.
   Une énumération qui ne déclare aucun contrat n'est jamais analysée.
 - Une vérification du contenu des deux paquets publiés, exécutée par la CI puis à nouveau par la
   release depuis un unique script partagé. Elle fait échouer le build si le paquet principal ne
@@ -296,11 +298,6 @@ brûler sans rien perdre.
 
 ### Documentation
 
-- **L'index des diagnostics cantonnait encore `EMN0004` aux `[Flags]`.** La règle vaut pour toutes
-  les énumérations — une virgule sépare les valeurs sur chacune d'elles, elle ne peut donc figurer
-  dans un nom nulle part — ce qu'`EMN0004.fr.md` affirme en gras et que deux tests épinglent. Le
-  tableau d'index est le seul endroit que la correction précédente avait manqué, dans les deux
-  langues, d'où l'invisibilité pour le test de traduction appariée.
 - **`EnumContractException` se documentait comme « levée au démarrage, jamais sur une requête ».** Le
   compagnon OpenAPI résout un contrat au moment d'écrire le document, ce qui sous `MapOpenApi` est une
   requête — une application utilisant le compagnon seul, sans `AddEnumMemberNameBinding`, démarre donc

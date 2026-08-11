@@ -115,10 +115,39 @@ public sealed class ReadParityTests {
 
     }
 
+    /// <summary>
+    /// A declared name carrying a comma, beside the two names it reads as a combination of — the
+    /// shape where looking the whole value up first and splitting first give different answers.
+    /// </summary>
+    /// <remarks>
+    /// Legal off <c>[Flags]</c>, and the corpus is what says so rather than an expectation written
+    /// here: <c>"a,b"</c> is the member of that name, <c>"a, b"</c> is <c>a | b</c> because no name
+    /// spells it with a space, and every casing of both is compared to the serializer. The
+    /// <c>[Flags]</c> counterpart cannot be written down at all — <c>System.Text.Json</c> refuses to
+    /// build a converter for it, which is what <c>EMN0004</c> reports and
+    /// <c>ContractValidationTests</c> pins.
+    /// </remarks>
+    public enum CommaInsideAName {
+
+        [JsonStringEnumMemberName("a,b")] Ab = 4,
+        [JsonStringEnumMemberName("a")]   A  = 1,
+        [JsonStringEnumMemberName("b")]   B  = 2
+
+    }
+
+    /// <summary>The same comma, on an enum whose other members keep their C# names.</summary>
+    public enum CommaBesideCsharpNames {
+
+        [JsonStringEnumMemberName("news,world")] NewsWorld = 1,
+        Sport = 2
+
+    }
+
     public static TheoryData<Type> Shapes => new() {
         typeof(DeclaredBesideACasePair), typeof(FlagsDeclaredBesideACasePair), typeof(CasePairAlone),
         typeof(FullyDeclared), typeof(PartiallyDeclared), typeof(FlagsAtoms),
-        typeof(Aliases), typeof(SignedValues), typeof(UnsignedFlags)
+        typeof(Aliases), typeof(SignedValues), typeof(UnsignedFlags),
+        typeof(CommaInsideAName), typeof(CommaBesideCsharpNames)
     };
 
     [Theory]

@@ -16,6 +16,6 @@ tableau ci-dessous est dans [Analyseurs](../analyzers.fr.md).
 | [EMN0001](EMN0001.fr.md) | Erreur | Deux membres d'énumération déclarent le même nom public |
 | [EMN0002](EMN0002.fr.md) | Erreur | Le nom public est vide ou entouré d'espaces |
 | [EMN0003](EMN0003.fr.md) | Erreur | Le contrat de l'énumération est incomplet |
-| [EMN0004](EMN0004.fr.md) | Erreur | Un nom public contient une virgule |
+| [EMN0004](EMN0004.fr.md) | Erreur | Un nom public sur une énumération `[Flags]` contient une virgule |
 | [EMN0005](EMN0005.fr.md) | Erreur | Un nom public masque le nom C# d'un autre membre |
 | [EMN0006](EMN0006.fr.md) | Avertissement | Le nom public ne peut pas voyager sur tous les canaux d'entrée |

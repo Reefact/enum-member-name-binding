@@ -29,6 +29,15 @@ namespace AspNetCore.EnumMemberNameBinding;
 /// <c>[Flags]</c> still decides is whether ASP.NET Core will bind the result: see
 /// <c>docs/for-users/limitations.en.md</c>.
 /// </para>
+/// <para>
+/// It decides one further thing, which the same reasoning had got backwards: whether a comma may
+/// appear <em>inside</em> a declared name. The serializer refuses that on a <c>[Flags]</c> enum and
+/// accepts it anywhere else, because it looks the whole value up as a name before splitting — so
+/// <c>"news,world"</c> both writes and reads back on an ordinary enum. This package refused it
+/// everywhere, which was the promise above broken by the rule meant to serve it. See
+/// <see cref="TryParse" /> for the order that makes it work, and <c>EMN0004</c> for the build-time
+/// half.
+/// </para>
 /// </remarks>
 internal sealed class EnumContract {
 
@@ -81,7 +90,7 @@ internal sealed class EnumContract {
             IsContract = true;
             string name = attribute.Name;
 
-            string? problem = MalformedNameProblem(field.Name, name);
+            string? problem = MalformedNameProblem(field.Name, name, _isFlags);
 
             // The duplicate test claims the name as it checks it, so it stays with the collection it
             // claims from rather than moving into a function that would have to be handed it.
@@ -187,10 +196,18 @@ internal sealed class EnumContract {
     /// because each assumes the ones before it passed — an empty name has no first character to
     /// inspect.
     /// </summary>
-    private static string? MalformedNameProblem(string memberName, string name) {
+    /// <remarks>
+    /// The comma is the one test that reads <paramref name="isFlags" />, because it is the one the
+    /// serializer scopes that way: it refuses a comma in a declared name on a <c>[Flags]</c> enum and
+    /// accepts it on any other, which its own message says out loud — "Flags enums must
+    /// <em>additionally</em> not contain commas". Refusing it everywhere made a registered enum
+    /// stricter than the same enum left alone, on the strength of a claim about the serializer that
+    /// turned out to be false.
+    /// </remarks>
+    private static string? MalformedNameProblem(string memberName, string name, bool isFlags) {
         if (string.IsNullOrEmpty(name)) { return Problem.EmptyName(memberName); }
         if (char.IsWhiteSpace(name[0]) || char.IsWhiteSpace(name[^1])) { return Problem.SurroundingWhitespace(memberName, name); }
-        if (name.Contains(',', StringComparison.Ordinal)) { return Problem.CommaInName(memberName, name); }
+        if (isFlags && name.Contains(',', StringComparison.Ordinal)) { return Problem.CommaInFlagsName(memberName, name); }
 
         return null;
     }
@@ -226,9 +243,9 @@ internal sealed class EnumContract {
             return $"member '{memberName}' declares the name '{name}', which has leading or trailing whitespace.";
         }
 
-        internal static string CommaInName(string memberName, string name) {
+        internal static string CommaInFlagsName(string memberName, string name) {
             return $"member '{memberName}' declares the name '{name}', which contains a comma. " +
-                   "A comma separates the values of a combination and cannot appear inside a name.";
+                   "On a [Flags] enum a comma separates the values of a combination, so a name containing one cannot be read back.";
         }
 
         internal static string DuplicateName(string memberName, string name) {
@@ -296,6 +313,13 @@ internal sealed class EnumContract {
     /// Whitespace handling mirrors <c>System.Text.Json</c>, which was characterized rather than
     /// assumed: the value as a whole is trimmed, each element of a list is trimmed, and a single
     /// trailing comma is tolerated while a leading or repeated one is not.
+    /// <para>
+    /// So does the order of the two attempts, and it is the whole reason a comma may appear inside a
+    /// declared name off <c>[Flags]</c>: the serializer looks the trimmed value up as one name
+    /// before it splits anything. On an enum declaring <c>a</c>, <c>b</c> and <c>a,b</c> it answers
+    /// <c>"a,b"</c> with the member of that name rather than with <c>a | b</c> — while <c>"a, b"</c>,
+    /// which no name spells, falls through to the split and is the combination. Both were measured.
+    /// </para>
     /// </remarks>
     internal bool TryParse(string value, [MaybeNullWhen(false)] out object result) {
         ArgumentNullException.ThrowIfNull(value);
@@ -308,9 +332,10 @@ internal sealed class EnumContract {
             return false;
         }
 
-        if (trimmed.Contains(',')) { return TryParseList(trimmed, out result); }
+        if (TryParseSingle(trimmed.ToString(), out result)) { return true; }
+        if (!trimmed.Contains(',')) { return false; }
 
-        return TryParseSingle(trimmed.ToString(), out result);
+        return TryParseList(trimmed, out result);
     }
 
     /// <summary>Renders an enum value as its public name, or <see langword="null" /> if it has none.</summary>

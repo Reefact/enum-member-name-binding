@@ -133,15 +133,39 @@ public sealed class EnumContractAnalyzerTests {
     }
 
     /// <summary>
-    /// The rule used to stop at <c>[Flags]</c>, on the reading that a comma only separates values
-    /// there. It separates them everywhere — <c>Enum.Parse</c> and <c>System.Text.Json</c> both split
-    /// before they look at the type — so a name carrying one is unreadable on an ordinary enum too.
+    /// Off <c>[Flags]</c> the name is legal, and the rule has to stay silent about it.
     /// </summary>
+    /// <remarks>
+    /// This rule went the other way once, on the reading that a comma separates values everywhere so
+    /// a name carrying one is unreadable everywhere. The first half is true and the second does not
+    /// follow: <c>System.Text.Json</c> looks the whole value up as a name <em>before</em> it splits,
+    /// so <c>"a,b"</c> reads back as the member of that name — measured in
+    /// <c>ReadParityTests</c> against the serializer, on an enum declaring <c>a</c> and <c>b</c>
+    /// beside it. Reporting it here refused a contract the serializer accepts, which is the one thing
+    /// this package is not allowed to do.
+    /// </remarks>
     [Fact]
-    public async Task EMN0004_reports_a_comma_inside_an_ordinary_name_as_well() {
+    public async Task EMN0004_stays_silent_on_a_comma_inside_an_ordinary_name() {
         IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """
             public enum Status {
                 [JsonStringEnumMemberName("a,b")] Only
+            }
+            """);
+
+        Check.That(diagnostics).IsEmpty();
+    }
+
+    /// <summary>
+    /// The scope is the enum's, not the member's: a name is judged by the attribute the type carries.
+    /// </summary>
+    [Fact]
+    public async Task EMN0004_reports_a_comma_on_a_flags_enum_whose_other_members_are_ordinary() {
+        IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """
+            [Flags]
+            public enum Scopes {
+                [JsonStringEnumMemberName("read")]       Read      = 1,
+                [JsonStringEnumMemberName("write")]      Write     = 2,
+                [JsonStringEnumMemberName("read,write")] ReadWrite = 3
             }
             """);
 
@@ -149,15 +173,20 @@ public sealed class EnumContractAnalyzerTests {
         Check.That(diagnostics.Single().Id).IsEqualTo("EMN0004");
     }
 
+    /// <summary>
+    /// The message names the condition it is scoped to, so a developer reading it on a `[Flags]` enum
+    /// is not told the rule applies to every enum — which is what it used to say, and was false.
+    /// </summary>
     [Fact]
-    public async Task EMN0004_does_not_mention_flags_in_a_message_it_reports_on_any_enum() {
+    public async Task EMN0004_says_it_is_about_flags() {
         IReadOnlyList<Diagnostic> diagnostics = await AnalyzerHarness.AnalyzeAsync(Using + """
-            public enum Status {
-                [JsonStringEnumMemberName("a,b")] Only
+            [Flags]
+            public enum Scopes {
+                [JsonStringEnumMemberName("read,write")] ReadWrite = 1
             }
             """);
 
-        Check.That(diagnostics.Single().GetMessage()).Not.Contains("[Flags]");
+        Check.That(diagnostics.Single().GetMessage()).Contains("[Flags]");
     }
 
     /// <summary>

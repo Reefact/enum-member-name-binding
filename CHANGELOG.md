@@ -39,7 +39,8 @@ first one to make the trip is one that costs nothing to burn.
   registration for an application that configures its converters itself. Naming anything at all is
   taken as "scan nothing else", so the entry assembly is a default rather than an addition.
 - Start-up validation of every registered contract, raising `EnumContractException` for duplicate
-  public names, names with surrounding whitespace, and commas inside a member name.
+  public names, names with surrounding whitespace, and — on a `[Flags]` enum — commas inside a
+  member name.
 - Registration is all or nothing, on both paths — an explicit list and the assembly scan. Every
   contract is resolved and validated before anything at all is configured: a list naming one good
   contract and one malformed one would otherwise leave the good one wired up behind an exception that
@@ -69,11 +70,12 @@ first one to make the trip is one that costs nothing to burn.
   it. The measurement itself is pinned by tests.
 - Roslyn analyzers, shipped inside the package under `analyzers/dotnet/cs`, so a contract mistake is
   a build error rather than a start-up exception: `EMN0001` duplicate public name, `EMN0002` unusable
-  public name, `EMN0003` incomplete contract, `EMN0004` comma in a public name, `EMN0005` a public
-  name shadowing another member's C# name — which leaves that member answering to every casing of its
-  name except its own. Those five are errors; `EMN0006` above is the one warning, because a
-  portability limit depends on the channels an API actually binds from, whereas the other five report
-  an ambiguity that is wrong on every channel. An enum that declares no contract is never analysed.
+  public name, `EMN0003` incomplete contract, `EMN0004` comma in a public name on a `[Flags]` enum,
+  `EMN0005` a public name shadowing another member's C# name — which leaves that member answering to
+  every casing of its name except its own. Those five are errors; `EMN0006` above is the one warning,
+  because a portability limit depends on the channels an API actually binds from, whereas the other
+  five report an ambiguity that is wrong on every channel. An enum that declares no contract is never
+  analysed.
 - A check on what is inside both published packages, run by CI and again by the release from one
   shared script. It fails the build if the main package does not declare its
   `Microsoft.AspNetCore.App` framework reference or does not ship the analyzers, and if the
@@ -265,10 +267,6 @@ first one to make the trip is one that costs nothing to burn.
 
 ### Documentation
 
-- **The diagnostics index still scoped `EMN0004` to `[Flags]`.** The rule applies to every enum —
-  a comma separates values on all of them, so it cannot appear inside a name anywhere — which
-  `EMN0004.en.md` states in bold and two tests pin. The index table was the one place the earlier
-  correction missed, in both languages, which is why the paired-translation test could not see it.
 - **`EnumContractException` documented itself as "raised at startup, never on a request".** The
   OpenAPI companion resolves a contract while it writes the document, which under `MapOpenApi` is a
   request — so an application using the companion on its own, without `AddEnumMemberNameBinding`,

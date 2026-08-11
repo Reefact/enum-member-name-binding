@@ -16,6 +16,6 @@ of the table below is in [Analyzers](../analyzers.en.md).
 | [EMN0001](EMN0001.en.md) | Error | Two enum members declare the same public name |
 | [EMN0002](EMN0002.en.md) | Error | The public name is empty or padded with whitespace |
 | [EMN0003](EMN0003.en.md) | Error | The enum contract is incomplete |
-| [EMN0004](EMN0004.en.md) | Error | A public name contains a comma |
+| [EMN0004](EMN0004.en.md) | Error | A public name on a `[Flags]` enum contains a comma |
 | [EMN0005](EMN0005.en.md) | Error | A public name shadows the C# name of another member |
 | [EMN0006](EMN0006.en.md) | Warning | The public name cannot travel on every input channel |

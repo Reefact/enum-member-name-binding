@@ -176,6 +176,50 @@ public sealed class DocumentMatchesRuntimeTests(OpenApiTestApi api) {
         Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
 
+    /// <summary>
+    /// A declared name carrying a comma is advertised as one value, and the server reads it as one.
+    /// </summary>
+    /// <remarks>
+    /// The shape is only legal off <c>[Flags]</c>, and only because the serializer looks the whole
+    /// value up as a name before splitting — this package refused it outright until that was
+    /// measured. Held here because the closed list is where it becomes visible to a client: the
+    /// document says <c>news,world</c>, and a reader that split on commas would send two values the
+    /// server would answer 400 to. The two constituents are declared beside it, so the reading that
+    /// wins is the one being asserted rather than the only one available.
+    /// </remarks>
+    [Theory]
+    [InlineData("news,world", "NewsWorld")]
+    [InlineData("news", "News")]
+    public async Task a_declared_name_carrying_a_comma_is_advertised_and_bound_as_one_value(string value, string expected) {
+        string[] advertised = [.. api.Schema(nameof(Topic)).GetProperty("enum").EnumerateArray().Select(v => v.GetString()!)];
+        Check.That(advertised).Contains("news,world");
+
+        using HttpResponseMessage response = await api.Client.GetAsync("/topics?value=" + Uri.EscapeDataString(value), TestContext.Current.CancellationToken);
+
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        Check.That(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).Contains(expected);
+    }
+
+    /// <summary>
+    /// The same two words with a space between them are the combination, and the combination names no
+    /// member — so the reading really does turn on the exact spelling rather than on the comma.
+    /// </summary>
+    /// <remarks>
+    /// Refused for the reason every combination naming no member is refused outside the body, which
+    /// predates this shape: <c>news | world</c> is 3 and no member holds 3. See
+    /// <c>docs/for-users/limitations.en.md</c>. The document does not advertise it either, so the
+    /// closed list stays honest.
+    /// </remarks>
+    [Fact]
+    public async Task the_same_words_spelled_as_a_combination_are_not_that_name() {
+        string[] advertised = [.. api.Schema(nameof(Topic)).GetProperty("enum").EnumerateArray().Select(v => v.GetString()!)];
+        Check.That(advertised).Not.Contains("news, world");
+
+        using HttpResponseMessage response = await api.Client.GetAsync("/topics?value=" + Uri.EscapeDataString("news, world"), TestContext.Current.CancellationToken);
+
+        Check.That(response.StatusCode).IsEqualTo(HttpStatusCode.BadRequest);
+    }
+
     [Theory]
     [InlineData("bogus")]
     [InlineData("Read")]

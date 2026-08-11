@@ -122,6 +122,13 @@ tranquille : ASP.NET Core accepte tel quel `?priority=Low,Normal` sur une énum�
 ne touche jamais. La dernière ligne est la seule entrée que le corps accepte et qu'aucun autre canal
 n'accepte, et ce refus est celui d'ASP.NET Core, pas celui de ce paquet.
 
+Il découpe en *second*, cependant. La valeur détourée est d'abord cherchée comme un nom entier : un
+membre dont le nom déclaré porte une virgule l'emporte donc sur la combinaison à laquelle il
+ressemble. Là où un membre `news,world` existe, `?topic=news,world` le lie plutôt que
+`news | world`, tandis que `?topic=news, world` — qu'aucun nom n'écrit ainsi — est la combinaison.
+Cet ordre est celui du sérialiseur, et c'est pourquoi une virgule dans un nom déclaré n'est interdite
+que sur une énumération `[Flags]` ([EMN0004](rules/EMN0004.fr.md)).
+
 ## Valeurs vides et absentes
 
 | Paramètre | Requête | Résultat |
