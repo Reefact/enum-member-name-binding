@@ -128,7 +128,7 @@ first one to make the trip is one that costs nothing to burn.
 ### Fixed
 
 - **An enum nested in a generic type stopped the application booting.** `Assembly.GetTypes()` hands
-  such an enum over in its open form — `Box\`1+Colour` — where `Type.IsEnum` is true and
+  such an enum over in its open form — ``Box`1+Colour`` — where `Type.IsEnum` is true and
   `ContainsGenericParameters` is true as well, and `FieldInfo.GetValue` on any member of it throws
   `ArgumentException: Specified type is not supported` out of `Enum.InternalBoxEnum`. That happens in
   `EnumContract`'s constructor, before the contract is looked at, so `public class Box<T> { public
