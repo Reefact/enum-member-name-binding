@@ -209,6 +209,25 @@ internal sealed class EnumMemberNameSchemaTransformer : IOpenApiSchemaTransforme
     /// <c>\</c>, <c>]</c>, <c>^</c> and <c>-</c>, are each alone in their group, which a test asserts
     /// rather than the reader taking on trust.
     /// </para>
+    /// <para>
+    /// Walking <see cref="char" /> by <see cref="char" /> is narrower than <c>OrdinalIgnoreCase</c>
+    /// and is still exact here, which is worth writing down because the two do not agree in general:
+    /// <c>OrdinalIgnoreCase</c> folds a surrogate pair as one Unicode scalar, so it answers U+10400
+    /// and U+10428 equal where <see cref="char.ToUpperInvariant(char)" /> applied to each code unit
+    /// says they differ — 260 non-BMP scalars are cased that way. None of them can reach this method.
+    /// What arrives here is an unannotated member's <em>C# name</em>, and C# has no identifier
+    /// carrying a supplementary-plane character: Roslyn lexes identifiers a <c>char</c> at a time, so
+    /// a surrogate is category <c>Cs</c> and not an identifier character. All three spellings were
+    /// put to the compiler — the character itself, <c>\U00010400</c>, and the surrogate pair as two
+    /// <c>\uXXXX</c> escapes — and each is CS1056, "unexpected character".
+    /// </para>
+    /// <para>
+    /// A declared name is an ordinary string literal and may hold anything, surrogate pair included —
+    /// but it is matched ordinally and written by <see cref="EscapeForJsonSchema" />, which is the
+    /// same walk on both sides, and it cannot arrive here by the other door either: reaching this
+    /// method means being the C# name of an unannotated member as well, and <c>EMN0005</c> refuses
+    /// that enum before a schema is ever built.
+    /// </para>
     /// </remarks>
     private static string EscapeIgnoringCase(string name) {
         StringBuilder escaped = new(name.Length * 4);
