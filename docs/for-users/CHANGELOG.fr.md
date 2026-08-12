@@ -11,7 +11,19 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
-## [1.0.0-beta.2] - 2026-08-12
+## [1.0.0-beta.3] - 2026-08-12
+
+Les paquets s'appellent `Reefact.AspNetCore.EnumMemberNameBinding` et
+`Reefact.AspNetCore.EnumMemberNameBinding.OpenApi`. Ils s'appelaient
+`AspNetCore.EnumMemberNameBinding` jusqu'à cette version, sous un identifiant que nuget.org
+n'aurait jamais accepté : `AspNetCore.*` est un préfixe réservé, et un push sous ce préfixe est
+refusé. Rien n'a jamais été publié sous les anciens noms, il n'y a donc aucune migration à faire —
+mais deux tags ont été dépensés à l'apprendre, d'où une troisième beta.
+
+Le namespace a suivi l'identifiant, pour la raison que le refus rend évidente : un namespace racine
+`AspNetCore` revendique un nom que cette bibliothèque ne possède pas. Un consommateur écrit
+désormais `using Reefact.AspNetCore.EnumMemberNameBinding;`, et l'assembly, le paquet et le
+namespace disent enfin la même chose.
 
 La surface publique est celle que portera la 1.0.0 : elle a été relue symbole par symbole et
 figée dans une baseline versionnée, cette pré-version n'est donc pas un brouillon d'API. Ce
@@ -111,7 +123,7 @@ qu'ici. Une candidate dirait le contraire.
   volontairement une erreur déclare la règle qu'il illustre, et une autorisation qui ne se déclenche
   plus échoue aussi — une page qui dit « voici à quoi ressemble `EMN0001` », au-dessus d'un code qui
   ne le déclenche plus, a cessé d'être un exemple.
-- `AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont l'unique point d'entrée,
+- `Reefact.AspNetCore.EnumMemberNameBinding.OpenApi`, un paquet compagnon dont l'unique point d'entrée,
   `AddEnumMemberNames()` sur `OpenApiOptions`, installe un transformateur de schéma qui fait décrire
   au document généré ce que le serveur accepte réellement : un type `string` explicite,
   les noms publics déclarés, et — pour les énumérations `[Flags]`, qu'ASP.NET Core documente sans
@@ -475,10 +487,23 @@ qu'ici. Une candidate dirait le contraire.
 - L'enregistrement doit avoir lieu au démarrage : ASP.NET Core met en cache le model binder construit
   pour un type à la première utilisation.
 
+## [1.0.0-beta.2] - 2026-08-12
+
+Taguée et jamais publiée, pour la même raison que la 1.0.0-beta.1 et sous le même nom. Ce que
+celle-ci a changé, c'est que la release l'a dit : le push a de nouveau reçu un 409, et l'étape
+ajoutée juste après a interrogé le flux, n'y a trouvé aucun des deux paquets, et a fait échouer le
+run. La cause a été trouvée dans l'heure, en déposant le même fichier sur l'interface web de
+nuget.org, qui affiche ce que l'API renvoie et que le CLI jette — *the package ID is reserved*.
+
 ## [1.0.0-beta.1] - 2026-08-10
 
 Taguée et jamais publiée. La release a poussé les deux paquets, nuget.org a répondu 409 Conflict à
 chacun, `--skip-duplicate` a rendu ce refus comme un succès, et le run est passé au vert sans rien
 sur le flux. La release GitHub de ce tag garde trace de la tentative ; les paquets qu'elle décrit
-n'ont jamais été installables, et tout ce qu'elle devait porter figure sous 1.0.0-beta.2 ci-dessus —
+n'ont jamais été installables, et tout ce qu'elle devait porter figure sous 1.0.0-beta.3 ci-dessus —
 la première version réellement installable.
+
+Le 409 ne voulait pas dire « tu l'as déjà envoyé », qui est la seule lecture que `--skip-duplicate`
+en fait : c'était nuget.org refusant l'identifiant lui-même, parce que `AspNetCore.*` est un
+préfixe réservé. Rien n'était incorrect dans les paquets, et aucun rerun de ce tag n'aurait pu
+fonctionner.
