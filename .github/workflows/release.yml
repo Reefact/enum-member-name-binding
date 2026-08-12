@@ -275,7 +275,17 @@ jobs:
         if: env.DRY_RUN != 'true'
         run: |
           set -euo pipefail
-          if [ "$PRERELEASE" = "true" ]; then
+
+          # One tag push produced two runs on 2026-08-12, and the concurrency group queued the second
+          # behind the first rather than cancelling it — correctly, since a release must never be
+          # killed midway. The second then failed here, because this was the one step that could not
+          # be run twice. Nothing was damaged and the run was red, which is the worst of both: it
+          # reads as a failed release. Creating the release is the part that cannot repeat; uploading
+          # its assets can, and is what a genuine rerun after a partial failure needs.
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "The release already exists. Uploading assets and leaving its notes as published."
+            gh release upload "$GITHUB_REF_NAME" artifacts/* --clobber
+          elif [ "$PRERELEASE" = "true" ]; then
             gh release create "$GITHUB_REF_NAME" artifacts/* --notes-file release-notes.md --prerelease --latest=false
           else
             gh release create "$GITHUB_REF_NAME" artifacts/* --notes-file release-notes.md
