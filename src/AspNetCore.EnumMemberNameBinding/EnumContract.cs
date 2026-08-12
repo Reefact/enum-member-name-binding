@@ -291,8 +291,8 @@ internal sealed class EnumContract {
 
         internal static string ShadowsAnotherMember(string memberName, string name, string shadowedMemberName) {
             return $"member '{memberName}' declares the public name '{name}', which is also the C# name " +
-                   $"of member '{shadowedMemberName}'. Both answer to '{name}', and which of them it reaches is decided by " +
-                   $"Enum.GetNames order rather than by the attribute, so one of the two is unreachable under that spelling. " +
+                   $"of member '{shadowedMemberName}' ignoring case. The two then answer to overlapping spellings, and which " +
+                   $"member a given spelling reaches cannot be read off the enum. " +
                    $"Rename the public name, or annotate '{shadowedMemberName}' as well.";
         }
 
