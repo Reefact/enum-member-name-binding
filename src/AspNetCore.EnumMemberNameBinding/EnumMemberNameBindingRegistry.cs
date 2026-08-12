@@ -135,8 +135,10 @@ internal static class EnumMemberNameBindingRegistry {
     /// <see cref="ArgumentException" /> out of <c>Enum.InternalBoxEnum</c>. That happens in
     /// <c>EnumContract</c>'s constructor, before the contract is so much as looked at, so an enum
     /// nobody annotated and nobody wanted registered stopped the application booting with a message
-    /// naming neither the type nor this package. Registering the closed form is still available to
-    /// a caller who wants it, through <c>AddEnum&lt;Box&lt;int&gt;.Colour&gt;()</c>.
+    /// naming neither the type nor this package. A closed form is not affected — it carries no generic
+    /// parameter — so a nested enum that does declare a contract is still registrable by naming it,
+    /// through <c>AddEnum&lt;Crate&lt;int&gt;.State&gt;()</c>. <c>Box&lt;T&gt;.Colour</c> above is not,
+    /// and never was: it declares no contract, which <c>RefuseUnlessContractEnum</c> answers for.
     /// </remarks>
     [RequiresUnreferencedCode(TrimmingMessages.Reflection)]
     private static IEnumerable<Type> Enumerate(EnumMemberNameBindingOptions options) {

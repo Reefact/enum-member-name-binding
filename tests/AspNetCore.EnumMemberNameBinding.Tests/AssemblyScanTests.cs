@@ -105,6 +105,31 @@ public sealed class AssemblyScanTests {
     }
 
     /// <summary>
+    /// And what it does not keep: a closed form is registrable because it carries no generic
+    /// parameter, not because it is closed. <see cref="Box{T}.Colour" /> declares no contract, so
+    /// naming <c>Box&lt;int&gt;.Colour</c> is refused for that reason — as it was before the guard,
+    /// and as any bare enum is.
+    /// </summary>
+    /// <remarks>
+    /// Here because three sentences said otherwise. The commit that added the guard offered
+    /// <c>AddEnum&lt;Box&lt;int&gt;.Colour&gt;()</c> as the way to register the enum it had just made
+    /// the scan skip, in both changelogs and in the registry's own remark — an escape hatch that
+    /// throws, on the very declaration the paragraph above it gives. The test beside this one uses
+    /// <see cref="Crate{T}.State" /> precisely because it is annotated, which is what should have
+    /// said so.
+    /// </remarks>
+    [Fact]
+    public void the_closed_form_of_an_enum_declaring_nothing_is_refused_as_any_other_is() {
+        EnumMemberNameBindingOptions options = new();
+        options.AddEnum<Box<int>.Colour>();
+
+        EnumContractException refusal = Check.ThatCode(() => EnumMemberNameBindingRegistry.Register(options))
+                                             .Throws<EnumContractException>().Value;
+
+        Check.That(refusal.Problems).HasElementThatMatches(p => p.Contains("no contract to apply", StringComparison.Ordinal));
+    }
+
+    /// <summary>
     /// What the caller keeps: the closed form carries no generic parameter, so naming it explicitly
     /// registers it exactly as any other contract enum. The scan cannot reach it — no assembly
     /// declares <c>Crate&lt;int&gt;.State</c> — which is why naming it is the way in.
