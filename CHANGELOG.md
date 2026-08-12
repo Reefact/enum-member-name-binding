@@ -11,7 +11,19 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
-## [1.0.0-beta.2] - 2026-08-12
+## [1.0.0-beta.3] - 2026-08-12
+
+The packages are named `Reefact.AspNetCore.EnumMemberNameBinding` and
+`Reefact.AspNetCore.EnumMemberNameBinding.OpenApi`. They were called
+`AspNetCore.EnumMemberNameBinding` until this version, under an identifier nuget.org would never
+have accepted: `AspNetCore.*` is a reserved prefix, and a push under it is refused. Nothing was
+ever published under the old names, so nothing has to be migrated — but two tags were spent
+learning it, which is why this beta is the third.
+
+The namespace moved with the identifier, for the reason the refusal makes plain: a top-level
+`AspNetCore` namespace claims a name this library does not own. `using
+Reefact.AspNetCore.EnumMemberNameBinding;` is what a consumer writes now, and the assembly, the
+package and the namespace finally say the same thing.
 
 The public surface is the one 1.0.0 will carry: it was read symbol by symbol and committed as a
 baseline, so this pre-release is not a draft of the API. What it exercises is the publication
@@ -101,7 +113,7 @@ would say the opposite.
   wrong until a newcomer finds out. A sample that deliberately shows a mistake declares the rule it
   demonstrates, and an allowance that no longer fires fails too — a page saying "this is what
   `EMN0001` looks like", above code that no longer trips it, has stopped being an example.
-- `AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose one entry point,
+- `Reefact.AspNetCore.EnumMemberNameBinding.OpenApi`, a companion package whose one entry point,
   `AddEnumMemberNames()` on `OpenApiOptions`, installs a schema transformer that makes the
   generated document describe what the server accepts: an explicit `string` type, the declared public
   names, and — for `[Flags]` enums, which ASP.NET Core documents with no value at all — a regular
@@ -431,10 +443,22 @@ would say the opposite.
 - Registration must happen at start-up: ASP.NET Core caches the model binder built for a type on
   first use.
 
+## [1.0.0-beta.2] - 2026-08-12
+
+Tagged and never published, for the same reason as 1.0.0-beta.1 and under the same name. What this
+one changed is that the release said so: the push was answered 409 again, and the step added after
+it read the feed, found neither package, and failed the run. The cause was found within the hour,
+by uploading the same file through nuget.org's web interface, which prints what the API returns and
+the CLI discards — *the package ID is reserved*.
+
 ## [1.0.0-beta.1] - 2026-08-10
 
 Tagged and never published. The release pushed both packages, nuget.org answered 409 Conflict on
 each, `--skip-duplicate` reported that as success, and the run went green with nothing on the feed.
 The GitHub release for that tag records the attempt; the packages it describes were never
-installable, and everything it was meant to carry is listed under 1.0.0-beta.2 above — the first
+installable, and everything it was meant to carry is listed under 1.0.0-beta.3 above — the first
 version anyone can actually install.
+
+The 409 was not "you already sent this", which is the only reading `--skip-duplicate` has: it was
+nuget.org refusing the identifier itself, because `AspNetCore.*` is a reserved prefix. Nothing
+about the packages was wrong, and no rerun of that tag could ever have worked.
