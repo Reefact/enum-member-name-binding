@@ -21,8 +21,8 @@ set -euo pipefail
 
 ARTIFACTS="${1:-artifacts}"
 
-MAIN_ID="AspNetCore.EnumMemberNameBinding"
-COMPANION_ID="AspNetCore.EnumMemberNameBinding.OpenApi"
+MAIN_ID="Reefact.AspNetCore.EnumMemberNameBinding"
+COMPANION_ID="Reefact.AspNetCore.EnumMemberNameBinding.OpenApi"
 
 # The floor that keeps consumers off GHSA-v5pm-xwqc-g5wc: Microsoft.AspNetCore.OpenApi 10.0.x
 # resolves Microsoft.OpenApi 2.0.0, which carries it. Raising the floor is only half the job — the

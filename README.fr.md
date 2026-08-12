@@ -1,4 +1,4 @@
-# AspNetCore.EnumMemberNameBinding
+# Reefact.AspNetCore.EnumMemberNameBinding
 
 🌍 **Langues :**  
 🇬🇧 [English](README.md) | 🇫🇷 Français (ce fichier)
@@ -8,7 +8,7 @@
 | **Build** | [![ci](https://github.com/Reefact/enum-member-name-binding/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Reefact/enum-member-name-binding/actions/workflows/ci.yml) |
 | **Qualité** | [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=reefact_enum-member-name-binding&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=reefact_enum-member-name-binding) [![Couverture](https://sonarcloud.io/api/project_badges/measure?project=reefact_enum-member-name-binding&metric=coverage)](https://sonarcloud.io/summary/new_code?id=reefact_enum-member-name-binding) |
 | **Sécurité** | [![codeql](https://github.com/Reefact/enum-member-name-binding/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Reefact/enum-member-name-binding/actions/workflows/codeql.yml) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14000/badge)](https://www.bestpractices.dev/projects/14000) [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/Reefact/enum-member-name-binding/badge)](https://securityscorecards.dev/viewer/?uri=github.com/Reefact/enum-member-name-binding) |
-| **Paquets** | [![NuGet](https://img.shields.io/nuget/vpre/AspNetCore.EnumMemberNameBinding?logo=nuget&label=EnumMemberNameBinding)](https://www.nuget.org/packages/AspNetCore.EnumMemberNameBinding) [![NuGet](https://img.shields.io/nuget/vpre/AspNetCore.EnumMemberNameBinding.OpenApi?logo=nuget&label=EnumMemberNameBinding.OpenApi)](https://www.nuget.org/packages/AspNetCore.EnumMemberNameBinding.OpenApi) ![.NET 10.0](https://img.shields.io/badge/.NET-10.0-512BD4) |
+| **Paquets** | [![NuGet](https://img.shields.io/nuget/vpre/Reefact.AspNetCore.EnumMemberNameBinding?logo=nuget&label=EnumMemberNameBinding)](https://www.nuget.org/packages/Reefact.AspNetCore.EnumMemberNameBinding) [![NuGet](https://img.shields.io/nuget/vpre/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi?logo=nuget&label=EnumMemberNameBinding.OpenApi)](https://www.nuget.org/packages/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi) ![.NET 10.0](https://img.shields.io/badge/.NET-10.0-512BD4) |
 | **Projet** | [![License](https://img.shields.io/github/license/Reefact/enum-member-name-binding)](LICENSE) [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-fe5196?logo=conventionalcommits&logoColor=white)](https://www.conventionalcommits.org) |
 
 ---
@@ -44,7 +44,7 @@ Ce paquet comble cet écart.
 ## Installation
 
 ```
-dotnet add package AspNetCore.EnumMemberNameBinding
+dotnet add package Reefact.AspNetCore.EnumMemberNameBinding
 ```
 
 Requiert ASP.NET Core MVC (contrôleurs), sur une version de .NET prise en charge :

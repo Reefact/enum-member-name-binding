@@ -4,7 +4,7 @@
 🇬🇧 [English](./openapi.en.md) | 🇫🇷 Français (ce fichier)
 
 ```
-dotnet add package AspNetCore.EnumMemberNameBinding.OpenApi
+dotnet add package Reefact.AspNetCore.EnumMemberNameBinding.OpenApi
 ```
 
 ```csharp

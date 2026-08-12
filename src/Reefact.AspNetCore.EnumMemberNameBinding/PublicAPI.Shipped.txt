@@ -1,0 +1,20 @@
+#nullable enable
+Reefact.AspNetCore.EnumMemberNameBinding.EnumContractException
+Reefact.AspNetCore.EnumMemberNameBinding.EnumContractException.EnumType.get -> System.Type!
+Reefact.AspNetCore.EnumMemberNameBinding.EnumContractException.Problems.get -> System.Collections.Generic.IReadOnlyList<string!>!
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.AddEnum<TEnum>() -> Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions!
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.AllowPartialContracts.get -> bool
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.AllowPartialContracts.set -> void
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.Assemblies.get -> System.Collections.Generic.IList<System.Reflection.Assembly!>!
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.ConfigureJsonSerialization.get -> bool
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.ConfigureJsonSerialization.set -> void
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.EnumMemberNameBindingOptions() -> void
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.EnumTypes.get -> System.Collections.Generic.IList<System.Type!>!
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions.ScanAssemblyContaining<T>() -> Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions!
+Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNames
+Microsoft.Extensions.DependencyInjection.EnumMemberNameBindingMvcBuilderExtensions
+static Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNames.GetPublicName(System.Enum! value) -> string?
+static Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNames.GetPublicNames(System.Type! enumType) -> System.Collections.Generic.IReadOnlyList<string!>?
+static Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNames.IsFlagsContract(System.Type! enumType) -> bool
+static Microsoft.Extensions.DependencyInjection.EnumMemberNameBindingMvcBuilderExtensions.AddEnumMemberNameBinding(this Microsoft.Extensions.DependencyInjection.IMvcBuilder! builder, System.Action<Reefact.AspNetCore.EnumMemberNameBinding.EnumMemberNameBindingOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IMvcBuilder!

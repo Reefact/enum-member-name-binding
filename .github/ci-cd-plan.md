@@ -293,8 +293,8 @@ D'où sa place en tête : c'est **le seul des trois items qui peut changer ce qu
 Si la relecture conclut qu'un type doit devenir `internal`, c'est un changement de code, et il
 doit atterrir avant le tag.
 
-Portée : les deux projets `IsPackable` — `AspNetCore.EnumMemberNameBinding` et
-`AspNetCore.EnumMemberNameBinding.OpenApi`. Pas le projet d'analyseurs, dont la surface
+Portée : les deux projets `IsPackable` — `Reefact.AspNetCore.EnumMemberNameBinding` et
+`Reefact.AspNetCore.EnumMemberNameBinding.OpenApi`. Pas le projet d'analyseurs, dont la surface
 publique est un jeu de diagnostics, pas une API.
 
 La surface est petite — de l'ordre de 25 entrées au total :
@@ -368,8 +368,8 @@ le piège du §2.1. Le check requis arrive avec l'étape 1.
 ## 8. Écart de couverture repéré au passage
 
 La vérification du contenu de paquet, dans `ci.yml` comme dans `release.yml`, ne porte que sur
-`AspNetCore.EnumMemberNameBinding.nupkg`. Le second paquet publié,
-`AspNetCore.EnumMemberNameBinding.OpenApi`, n'est vérifié par rien — ni ses dépendances, ni son
+`Reefact.AspNetCore.EnumMemberNameBinding.nupkg`. Le second paquet publié,
+`Reefact.AspNetCore.EnumMemberNameBinding.OpenApi`, n'est vérifié par rien — ni ses dépendances, ni son
 contenu — alors qu'il part sur nuget.org dans le même `dotnet nuget push artifacts/*.nupkg`.
 
 **Vérifié à la main avant la v1** (`dotnet pack -p:Version=1.0.0-check`, inspection des deux
