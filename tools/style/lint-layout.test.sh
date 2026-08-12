@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # The checker guards the codebase, so something has to guard the checker. Not ceremony: it has
-# shipped four bugs already, in both directions and in both modes. It tested for `else\b`, and `\b`
+# shipped five bugs already, in both directions and in both modes. It tested for `else\b`, and `\b`
 # is a backspace in awk rather than a word boundary, so every `if`/`else` in the repository was
 # reported as collapsible. Then it skipped any body containing a brace — meant for nested blocks,
 # and in fact every interpolated string, so five guards were never reported at all. Then it asked
@@ -9,7 +9,9 @@
 # suppression already on one line but carrying a trailing comment read as a wrapped one — and --fix
 # joined it to everything up to the next `)]`, deleting the members in between and folding them
 # behind the comment. And --fix, over a site it declined to rewrite, printed "Nothing to report."
-# and exited 0 while the same file in check mode exited 1.
+# and exited 0 while the same file in check mode exited 1. Then it read the `)]` inside a
+# Justification as the closing bracket, so a wrapped suppression whose first line carried one both
+# opened and closed there and was reported by neither mode.
 #
 # Neither shows in a green build. The shapes a checker must stay silent about, and the ones it must
 # not miss, are both invisible in its output, so they are named here instead.
@@ -202,6 +204,23 @@ class Fixture {
     // line, so this stays with the two shapes the checker admits it cannot read.
     [SuppressMessage("Category", "RULE0012",
         Justification = "Closes with a block comment, then a member.")] /* note */ void AfterABlockComment() { }
+
+    // Rewritten: wrapped, and its opening line carries a `)]` inside the Justification. Read as the
+    // closing bracket, that line both opened and closed the attribute, so the site was neither
+    // reported nor rewritten — the one answer indistinguishable from a clean tree, and the third
+    // time this rule has given it.
+    [SuppressMessage("Category", "RULE0013", Justification = "the analyzer reads GetValues(type)] wrongly",
+        Scope = "member")]
+    void ABracketInsideTheJustification() { }
+
+    // Left alone: already on one line, and the `//` is inside the Justification rather than opening
+    // a comment. This is the case that decides how the strings and the comment are taken off — cut
+    // the line at the `//` and the real `)]` goes with it, which makes a one-line suppression read
+    // as a wrapped one and sends the forward scan over the member below.
+    [SuppressMessage("Category", "RULE0014", Justification = "see https://example.com/rules")]
+    void AUrlInsideTheJustification() { }
+
+    void TheMemberBelowTheUrl() { }
 }
 FIXTURE
 
@@ -235,8 +254,8 @@ FIXTURE
 
 expected="Fixture.cs:3:collapse Fixture.cs:12:unblank Fixture.cs:91:joinvalue \
 Fixture.cs:104:suppression Fixture.cs:108:suppression Fixture.cs:115:suppression \
-Fixture.cs:119:suppression Fixture.cs:168:suppression Interpolated.cs:3:collapse \
-Assembly.cs:1:suppression Unterminated.cs:2:unclosed"
+Fixture.cs:119:suppression Fixture.cs:168:suppression Fixture.cs:181:suppression \
+Interpolated.cs:3:collapse Assembly.cs:1:suppression Unterminated.cs:2:unclosed"
 
 summarise() {
     "$checker" "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly.cs" "$work/Unterminated.cs" 2>&1 || true
@@ -287,8 +306,8 @@ if ! grep -q 'Unterminated.cs:2: a suppression belongs on one line; this one nev
     exit 1
 fi
 
-if [[ "$((before - after))" -ne 10 ]]; then
-    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 10"
+if [[ "$((before - after))" -ne 11 ]]; then
+    echo "FAIL: --fix removed $((before - after)) lines from Fixture.cs, expected 11"
     exit 1
 fi
 
@@ -370,6 +389,23 @@ if ! grep -q '^        Justification = "Closes with a member after it.")\] void 
     exit 1
 fi
 
+# The bracket lives inside the Justification, so the line that opens the attribute does not close
+# it. Read the other way it did both at once, and the site was reported by neither mode.
+if ! grep -q '^    \[SuppressMessage("Category", "RULE0013", Justification = "the analyzer reads GetValues(type)\] wrongly", Scope = "member")\]$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix did not write the suppression whose Justification carries a )] as one line"
+    exit 1
+fi
+
+# The other direction, and the reason the strings come off but the comment does not: cutting this
+# line at the `//` would take its real `)]` with it, and the forward scan would then run from a
+# suppression that is already on one line down to the next `)]` in the file.
+if ! grep -q '^    \[SuppressMessage("Category", "RULE0014", Justification = "see https://example.com/rules")\]$' "$work/Fixture.cs" \
+|| ! grep -q '^    void AUrlInsideTheJustification() { }$' "$work/Fixture.cs" \
+|| ! grep -q '^    void TheMemberBelowTheUrl() { }$' "$work/Fixture.cs"; then
+    echo "FAIL: --fix touched a one-line suppression whose Justification carries a URL"
+    exit 1
+fi
+
 if ! grep -q '^\[assembly: SuppressMessage("Category", "RULE0007", Justification = "Assembly level, and still one line.")\]$' "$work/Assembly.cs"; then
     echo "FAIL: --fix did not write the assembly-level suppression as one line"
     exit 1
@@ -392,4 +428,4 @@ if ! "$checker" --fix "$work/Fixture.cs" "$work/Interpolated.cs" "$work/Assembly
     exit 1
 fi
 
-echo "ok — ten sites reported, one refused and named, rewritten, and clean afterwards."
+echo "ok — eleven sites reported, one refused and named, rewritten, and clean afterwards."
