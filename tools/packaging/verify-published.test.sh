@@ -25,8 +25,10 @@ id_companion="reefact.aspnetcore.enummembernamebinding.openapi"
 version="1.0.0-beta.2"
 
 publish() {
-    mkdir -p "$feed/$1/$version"
-    printf 'not really a package\n' > "$feed/$1/$version/$1.$version.nupkg"
+    local id="$1"
+
+    mkdir -p "$feed/$id/$version"
+    printf 'not really a package\n' > "$feed/$id/$version/$id.$version.nupkg"
 }
 
 export NUGET_FLATCONTAINER="file://$feed"
@@ -34,9 +36,15 @@ export VERIFY_TIMEOUT=1
 export VERIFY_INTERVAL=1
 
 failed=0
+# `expect` in tests/PackageSmokeTest/run.sh takes what/expected/actual and this takes
+# what/actual/expected, which the names are here to make visible: the call reads
+# `check "…" "$status" 1`, so the value under test comes before the one it must equal.
 check() {
-    if [ "$2" = "$3" ]; then return; fi
-    printf 'FAIL: %s — expected exit %s, got %s\n' "$1" "$3" "$2"
+    local what="$1" actual="$2" expected="$3"
+
+    if [[ "$actual" == "$expected" ]]; then return; fi
+
+    printf 'FAIL: %s — expected exit %s, got %s\n' "$what" "$expected" "$actual"
     failed=1
 }
 
@@ -82,6 +90,6 @@ set -e
 check "no arguments" "$status" 2
 check "a version but no package id" "$status_no_ids" 2
 
-if [ "$failed" -ne 0 ]; then exit 1; fi
+if [[ "$failed" -ne 0 ]]; then exit 1; fi
 
 echo "ok — missing, half-missing, present, wrong-version and usage all answered as they must."
