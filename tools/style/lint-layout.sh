@@ -93,6 +93,11 @@ fi
 # closesLine tells the two apart and this one is passed over in silence. A trailing `//` comment is
 # not a member and does not buy that silence — reading it as one hid a genuinely wrapped suppression
 # from both modes, which is the one outcome indistinguishable from a clean tree.
+#
+# Which line closes the attribute is decided with the strings taken off the line first, so a `)]`
+# written inside a Justification is not mistaken for the closing bracket. Read as one, it made the
+# opening line look like a closing line too, and a genuinely wrapped suppression was passed over
+# without a word — the same quiet answer a clean tree gives.
 scan() {
     local file="$1"
 
@@ -108,13 +113,48 @@ scan() {
             return line ~ /^[ \t]*\[[ \t]*((assembly|module)[ \t]*:[ \t]*)?(global[ \t]*::[ \t]*)?([A-Za-z_][A-Za-z0-9_]*[ \t]*\.[ \t]*)*(Unconditional)?SuppressMessage(Attribute)?[ \t]*\(/
         }
 
+        # The line with the interior of its double-quoted strings taken out, which is what the two
+        # bracket tests below have to read. A `)]` inside a Justification closes no attribute, and
+        # counting it as one made a genuinely wrapped suppression vanish from both modes at once —
+        # the site opens and appears to close on the same line, so nothing is reported and nothing is
+        # rewritten, which is what a clean tree looks like.
+        #
+        # Not a C# lexer, and it does not need to be: a raw string never arrives, since the `"""`
+        # fences below skip it, and the doubled quote of a verbatim string closes and reopens, which
+        # ends in the same place. What it deliberately does not do is cut the line at a `//`. That
+        # would read a Justification citing a URL as a comment, take the real `)]` away with it, and
+        # turn a suppression already on one line into a wrapped one — whose forward scan is the thing
+        # that deleted two members the last time it was let loose. So a `)]` written inside a comment
+        # is still read as a close, and joins the shapes below that this admits it cannot read: the
+        # comment would swallow the rest of the joined line, so there is no rewrite to offer anyway.
+        function code(line,   out, i, character, inString) {
+            out      = ""
+            inString = 0
+
+            for (i = 1; i <= length(line); i++) {
+                character = substr(line, i, 1)
+
+                if (inString) {
+                    if (character == "\\") { i++; continue }
+                    if (character == "\"") { inString = 0 }
+                    continue
+                }
+
+                if (character == "\"") { inString = 1; continue }
+
+                out = out character
+            }
+
+            return out
+        }
+
         # Anywhere on the line rather than at its end, because what this answers is whether the
         # brackets of the attribute close here — not whether the line stops there. Anchored, it read a
         # suppression already written on one line but carrying a trailing comment as a wrapped one,
         # and --fix then joined it to everything up to the next `)]`: two members deleted, folded
         # behind the `//` where they no longer compile, and "Rewrote 1 site(s)." with exit 0.
         function closesAttribute(line) {
-            return line ~ /\)\]/
+            return code(line) ~ /\)\]/
         }
 
         # And whether it closes with nothing but a comment after it, which is what makes a wrapped
@@ -128,7 +168,7 @@ scan() {
         # 0, which is what a clean tree says. A `/*` stays unread, because a member can follow its
         # close on the same line and telling that apart is parsing C# again.
         function closesLine(line) {
-            return line ~ /\)\][ \t]*$/ || line ~ /\)\][ \t]*\/\//
+            return code(line) ~ /\)\][ \t]*$/ || code(line) ~ /\)\][ \t]*\/\//
         }
 
         # A raw string literal can hold C# that is not this file s own code — the analyzer fixtures

@@ -102,6 +102,14 @@ the second shape and said nothing — in both modes, with exit 0, which is what 
 `//` runs to the end of the line and nothing can hide behind it, so the join is safe. A `/*` is still
 unread, because a member can follow its close on the same line.
 
+Which line closes the attribute is decided with the strings taken off it first, so a `)]` written
+inside a `Justification` is not the closing bracket — read as one it made the opening line close the
+attribute too, and the site went unreported in both modes. A `)]` inside a `//` comment still counts
+as a close, and that is a decision rather than the same oversight: cutting the line at the `//`
+instead would read a `Justification` citing a URL as a comment and take the real `)]` away with it,
+and there is no rewrite to offer either way, since joining would fold the comment over everything
+after it.
+
 `--fix` reports what it declines and exits non-zero for it, rather than printing what it rewrote and
 stopping at 0 — a fixer that leaves a violation behind and answers like a clean tree sends a
 developer to commit what the same script, in check mode, is about to refuse.
