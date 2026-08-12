@@ -148,7 +148,9 @@ brûler sans rien perdre.
   l'assembly scannée suffisait donc à faire tomber toute l'application — une énumération que
   personne n'a annotée, ni enregistrée, ni voulue — avec un message ne nommant ni le type ni ce
   paquet. Le scan la laisse désormais passer, comme toute énumération qu'il ne peut pas lire. Nommer
-  explicitement la forme fermée — `AddEnum<Box<int>.Colour>()` — l'enregistre toujours.
+  une forme fermée qui déclare un contrat reste enregistrable en la nommant —
+  `AddEnum<Crate<int>.State>()` — puisqu'elle ne porte aucun paramètre générique ; `Box<T>.Colour`
+  ci-dessus n'en déclare aucun, la nommer est donc refusé pour cette raison-là, comme toujours.
 - **Le motif `[Flags]` du document OpenAPI se trompait de classe insensible à la casse, dans les deux
   sens.** Un membre non annoté garde son nom C#, que le binder reconnaît avec `OrdinalIgnoreCase`, et
   le motif écrivait cela comme les deux formes de casse du caractère. Ce n'est pas le même ensemble.

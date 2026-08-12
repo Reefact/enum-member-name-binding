@@ -135,7 +135,9 @@ first one to make the trip is one that costs nothing to burn.
   enum Colour { Red } }` anywhere in the scanned assembly was enough: an enum nobody annotated,
   nobody registered and nobody wanted took the whole application down, with a message naming neither
   the type nor this package. The scan now passes it by, as it passes by any enum it cannot read.
-  Naming the closed form explicitly — `AddEnum<Box<int>.Colour>()` — still registers it.
+  A closed form that declares a contract is still registrable by naming it — `AddEnum<Crate<int>.State>()`
+  — since it carries no generic parameter; `Box<T>.Colour` above declares none, so naming it is
+  refused for that reason instead, as it always was.
 - **The OpenAPI `[Flags]` pattern got its case-insensitive class wrong in both directions.** An
   unannotated member keeps its C# name, which the binder matches with `OrdinalIgnoreCase`, and the
   pattern wrote that as the character's two case forms. Those are not the same set. Too wide on five
