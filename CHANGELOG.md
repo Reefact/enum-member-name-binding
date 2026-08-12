@@ -11,7 +11,7 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
-## [1.0.0-beta.1] - 2026-08-10
+## [1.0.0-beta.2] - 2026-08-12
 
 The public surface is the one 1.0.0 will carry: it was read symbol by symbol and committed as a
 baseline, so this pre-release is not a draft of the API. What it exercises is the publication
@@ -430,3 +430,11 @@ would say the opposite.
   warnings.
 - Registration must happen at start-up: ASP.NET Core caches the model binder built for a type on
   first use.
+
+## [1.0.0-beta.1] - 2026-08-10
+
+Tagged and never published. The release pushed both packages, nuget.org answered 409 Conflict on
+each, `--skip-duplicate` reported that as success, and the run went green with nothing on the feed.
+The GitHub release for that tag records the attempt; the packages it describes were never
+installable, and everything it was meant to carry is listed under 1.0.0-beta.2 above — the first
+version anyone can actually install.

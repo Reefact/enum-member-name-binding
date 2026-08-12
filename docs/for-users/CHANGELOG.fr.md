@@ -11,7 +11,7 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
-## [1.0.0-beta.1] - 2026-08-10
+## [1.0.0-beta.2] - 2026-08-12
 
 La surface publique est celle que portera la 1.0.0 : elle a été relue symbole par symbole et
 figée dans une baseline versionnée, cette pré-version n'est donc pas un brouillon d'API. Ce
@@ -474,3 +474,11 @@ qu'ici. Une candidate dirait le contraire.
   supprimer silencieusement les avertissements.
 - L'enregistrement doit avoir lieu au démarrage : ASP.NET Core met en cache le model binder construit
   pour un type à la première utilisation.
+
+## [1.0.0-beta.1] - 2026-08-10
+
+Taguée et jamais publiée. La release a poussé les deux paquets, nuget.org a répondu 409 Conflict à
+chacun, `--skip-duplicate` a rendu ce refus comme un succès, et le run est passé au vert sans rien
+sur le flux. La release GitHub de ce tag garde trace de la tentative ; les paquets qu'elle décrit
+n'ont jamais été installables, et tout ce qu'elle devait porter figure sous 1.0.0-beta.2 ci-dessus —
+la première version réellement installable.
