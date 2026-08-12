@@ -1,21 +1,21 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/AspNetCore.EnumMemberNameBinding.Analyzers/AspNetCore.EnumMemberNameBinding.Analyzers.csproj" />
-    <Project Path="src/AspNetCore.EnumMemberNameBinding.OpenApi/AspNetCore.EnumMemberNameBinding.OpenApi.csproj" />
-    <Project Path="src/AspNetCore.EnumMemberNameBinding/AspNetCore.EnumMemberNameBinding.csproj" />
+    <Project Path="src/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers.csproj" />
+    <Project Path="src/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi.csproj" />
+    <Project Path="src/Reefact.AspNetCore.EnumMemberNameBinding/Reefact.AspNetCore.EnumMemberNameBinding.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/AspNetCore.EnumMemberNameBinding.Analyzers.Tests/AspNetCore.EnumMemberNameBinding.Analyzers.Tests.csproj" />
-    <Project Path="tests/AspNetCore.EnumMemberNameBinding.Documentation.Tests/AspNetCore.EnumMemberNameBinding.Documentation.Tests.csproj" />
-    <Project Path="tests/AspNetCore.EnumMemberNameBinding.OpenApi.Tests/AspNetCore.EnumMemberNameBinding.OpenApi.Tests.csproj" />
-    <Project Path="tests/AspNetCore.EnumMemberNameBinding.Tests/AspNetCore.EnumMemberNameBinding.Tests.csproj" />
+    <Project Path="tests/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers.Tests/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers.Tests.csproj" />
+    <Project Path="tests/Reefact.AspNetCore.EnumMemberNameBinding.Documentation.Tests/Reefact.AspNetCore.EnumMemberNameBinding.Documentation.Tests.csproj" />
+    <Project Path="tests/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi.Tests/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi.Tests.csproj" />
+    <Project Path="tests/Reefact.AspNetCore.EnumMemberNameBinding.Tests/Reefact.AspNetCore.EnumMemberNameBinding.Tests.csproj" />
   </Folder>
   <Folder Name="/docs/">
     <!-- Documentation only, and never built: the project exists so the pages under docs/ are visible
          beside the code, not so anything comes out of it. The Build element below is what keeps it
          out of every configuration, which is also why it needs no PublicAPI baseline and costs the
          CI nothing. See the csproj for the whole rationale. -->
-    <Project Path="docs/AspNetCore.EnumMemberNameBinding.Documentation.csproj">
+    <Project Path="docs/Reefact.AspNetCore.EnumMemberNameBinding.Documentation.csproj">
       <Build Solution="*|*" Project="false" />
     </Project>
   </Folder>

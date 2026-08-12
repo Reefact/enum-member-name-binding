@@ -106,7 +106,7 @@ def check(label, condition, detail=""):
         if detail:
             print(f"        {detail}")
 
-for package in ("AspNetCore.EnumMemberNameBinding", "AspNetCore.EnumMemberNameBinding.OpenApi"):
+for package in ("Reefact.AspNetCore.EnumMemberNameBinding", "Reefact.AspNetCore.EnumMemberNameBinding.OpenApi"):
     # The trailing [0-9] keeps the base package's glob from also matching the OpenApi one.
     found = glob.glob(os.path.join(feed, f"{package}.[0-9]*.nupkg"))
     if len(found) != 1:
@@ -140,7 +140,7 @@ pass "compiles"
 
 # Proves the package came from the feed this run built. The sentinel version exists nowhere else,
 # so its presence in the run-local package directory is the evidence.
-if [[ -d "$NUGET_PACKAGES/aspnetcore.enummembernamebinding/$VERSION" ]]; then
+if [[ -d "$NUGET_PACKAGES/reefact.aspnetcore.enummembernamebinding/$VERSION" ]]; then
     pass "resolved from the local feed, not a cache or nuget.org"
 else
     fail "resolved from the local feed, not a cache or nuget.org"

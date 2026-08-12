@@ -13,7 +13,7 @@
     them to a DIRECT PackageReference — which is exactly the claim this fixture is here to test.
   -->
   <ItemGroup>
-    <PackageReference Include="AspNetCore.EnumMemberNameBinding" Version="$(SmokePackageVersion)" />
+    <PackageReference Include="Reefact.AspNetCore.EnumMemberNameBinding" Version="$(SmokePackageVersion)" />
   </ItemGroup>
 
   <Target Name="RequireSmokePackageVersion" BeforeTargets="CollectPackageReferences" Condition=" '$(SmokePackageVersion)' == '' ">

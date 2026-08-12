@@ -191,7 +191,7 @@ jobs:
       # Sign a statement that these exact bytes were built by this workflow, from this commit, and
       # store it where anyone can check it:
       #
-      #   gh attestation verify AspNetCore.EnumMemberNameBinding.1.0.0.nupkg \
+      #   gh attestation verify Reefact.AspNetCore.EnumMemberNameBinding.1.0.0.nupkg \
       #     --repo Reefact/enum-member-name-binding
       #
       # Everything above proves the package is correct; this is the only thing that ties it to an
@@ -262,8 +262,8 @@ jobs:
         run: |
           set -euo pipefail
           tools/packaging/verify-published.sh "$VERSION" \
-            AspNetCore.EnumMemberNameBinding \
-            AspNetCore.EnumMemberNameBinding.OpenApi
+            Reefact.AspNetCore.EnumMemberNameBinding \
+            Reefact.AspNetCore.EnumMemberNameBinding.OpenApi
         env:
           VERSION: ${{ steps.version.outputs.value }}
 

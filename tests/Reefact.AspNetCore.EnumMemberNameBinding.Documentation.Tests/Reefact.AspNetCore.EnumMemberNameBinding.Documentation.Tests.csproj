@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- xUnit v3 test projects are executables: the runner is the assembly's own entry point. -->
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Reefact.AspNetCore.EnumMemberNameBinding.Documentation.Tests</RootNamespace>
+    <AssemblyName>Reefact.AspNetCore.EnumMemberNameBinding.Documentation.Tests</AssemblyName>
+    <!-- CA1707/CA1034/CA2007: test-naming and fixture conventions. -->
+    <NoWarn>$(NoWarn);CA1707;CA1034;CA2007</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      The samples are ASP.NET Core code: they name WebApplicationBuilder, ControllerBase,
+      LinkGenerator and HttpContext. The framework reference puts those assemblies in this process's
+      trusted-platform list, which is where the sample compiler reads its references from — so a
+      sample resolves them without this project pinning a reference pack of its own.
+    -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!--
+      The two shipped packages, referenced as a READER of the documentation consumes them: every
+      type a sample names has to resolve from these alone. A sample that compiles here therefore
+      compiles in a consumer's project.
+    -->
+    <ProjectReference Include="../../src/Reefact.AspNetCore.EnumMemberNameBinding/Reefact.AspNetCore.EnumMemberNameBinding.csproj" />
+    <ProjectReference Include="../../src/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi/Reefact.AspNetCore.EnumMemberNameBinding.OpenApi.csproj" />
+    <!--
+      The analyzers as a plain library reference, so the rule contract can INSTANTIATE
+      EnumContractAnalyzer and run it over each compiled sample. Not OutputItemType="Analyzer": they
+      are the subject here, not a build-time check on this project's own source.
+    -->
+    <ProjectReference Include="../../src/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Compiles the samples, and runs the shipped analyzers over them. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" />
+    <!-- Assertions. xUnit still discovers, runs and reports; only the assertion is NFluent.
+         See docs/for-maintainers/adr/0001-nfluent-for-test-assertions.en.md. -->
+    <PackageReference Include="NFluent" Version="3.1.0" />
+    <PackageReference Include="NFluent.Analyzer" Version="0.1.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <!-- Emits the coverage report the Sonar analysis reads. The format lives in
+         coverage.runsettings, so a local run and the analysis produce the same report. -->
+    <PackageReference Include="coverlet.collector" Version="10.0.1" PrivateAssets="all" />
+    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
+  </ItemGroup>
+
+</Project>

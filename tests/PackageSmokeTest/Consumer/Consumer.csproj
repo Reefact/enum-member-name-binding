@@ -22,8 +22,8 @@
 
   <!-- PackageReference, never ProjectReference. That distinction is the whole point of this test. -->
   <ItemGroup>
-    <PackageReference Include="AspNetCore.EnumMemberNameBinding" Version="$(SmokePackageVersion)" />
-    <PackageReference Include="AspNetCore.EnumMemberNameBinding.OpenApi" Version="$(SmokePackageVersion)" />
+    <PackageReference Include="Reefact.AspNetCore.EnumMemberNameBinding" Version="$(SmokePackageVersion)" />
+    <PackageReference Include="Reefact.AspNetCore.EnumMemberNameBinding.OpenApi" Version="$(SmokePackageVersion)" />
   </ItemGroup>
 
   <Target Name="RequireSmokePackageVersion" BeforeTargets="CollectPackageReferences" Condition=" '$(SmokePackageVersion)' == '' ">

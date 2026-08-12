@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Reefact.AspNetCore.EnumMemberNameBinding</PackageId>
+    <IsPackable>true</IsPackable>
+    <RootNamespace>Reefact.AspNetCore.EnumMemberNameBinding</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- The library is not trim- or AOT-safe, but the analyzers are on so that every entry point
+         carrying that constraint is annotated, and consumers are warned accurately. -->
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <Description>Makes ASP.NET Core route, query string, form and header model binding honor the enum member names declared with System.Text.Json's [JsonStringEnumMemberName]. One enum contract, applied consistently on every input channel — not just the request body.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The trimming and AOT rule identifiers used by this project's UnconditionalSuppressMessage
+         attributes. PrivateAssets is load-bearing here: this project is packable, and without it a
+         consumer of the published package would inherit a dependency on a compile-time catalogue. -->
+    <PackageReference Include="DiagnosticCatalog.Trimming" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../icon.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!--
+    The analyzers ship inside this package: a contract mistake should be a build error in the editor,
+    not an exception discovered when the application starts.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="../Reefact.AspNetCore.EnumMemberNameBinding.Analyzers/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <None Include="../Reefact.AspNetCore.EnumMemberNameBinding.Analyzers/bin/$(Configuration)/netstandard2.0/Reefact.AspNetCore.EnumMemberNameBinding.Analyzers.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Reefact.AspNetCore.EnumMemberNameBinding.Tests" />
+    <!--
+      The companion package asks this one which enums the application registered, so that a document
+      never advertises names the binder does not accept. Internal rather than public because the
+      answer is a fact about one application's wiring, not a service a consumer configures — and the
+      public surface of both packages is committed as a baseline that 1.0.0 will carry.
+    -->
+    <InternalsVisibleTo Include="Reefact.AspNetCore.EnumMemberNameBinding.OpenApi" />
+    <InternalsVisibleTo Include="Reefact.AspNetCore.EnumMemberNameBinding.OpenApi.Tests" />
+  </ItemGroup>
+
+</Project>

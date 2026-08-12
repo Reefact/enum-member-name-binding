@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Plural to override the plural in Directory.Build.props; the singular would not win. An
+         analyzer targets netstandard2.0 to load in every host, and follows no .NET release. -->
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <RootNamespace>Reefact.AspNetCore.EnumMemberNameBinding.Analyzers</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- RS2008: release tracking files are ceremony for a six-rule analyzer shipped with its library. -->
+    <NoWarn>$(NoWarn);RS2008</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.11.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>

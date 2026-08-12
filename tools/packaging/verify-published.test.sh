@@ -20,8 +20,8 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 feed="$work/feed"
-id_main="aspnetcore.enummembernamebinding"
-id_companion="aspnetcore.enummembernamebinding.openapi"
+id_main="reefact.aspnetcore.enummembernamebinding"
+id_companion="reefact.aspnetcore.enummembernamebinding.openapi"
 version="1.0.0-beta.2"
 
 publish() {
@@ -42,7 +42,7 @@ check() {
 
 # Nothing published yet: both missing.
 set +e
-"$checker" "$version" AspNetCore.EnumMemberNameBinding AspNetCore.EnumMemberNameBinding.OpenApi >/dev/null 2>&1
+"$checker" "$version" Reefact.AspNetCore.EnumMemberNameBinding Reefact.AspNetCore.EnumMemberNameBinding.OpenApi >/dev/null 2>&1
 status=$?
 set -e
 check "neither package on the feed" "$status" 1
@@ -51,7 +51,7 @@ check "neither package on the feed" "$status" 1
 # check would call a success.
 publish "$id_main"
 set +e
-"$checker" "$version" AspNetCore.EnumMemberNameBinding AspNetCore.EnumMemberNameBinding.OpenApi >/dev/null 2>&1
+"$checker" "$version" Reefact.AspNetCore.EnumMemberNameBinding Reefact.AspNetCore.EnumMemberNameBinding.OpenApi >/dev/null 2>&1
 status=$?
 set -e
 check "only the main package on the feed" "$status" 1
@@ -59,7 +59,7 @@ check "only the main package on the feed" "$status" 1
 # Both there.
 publish "$id_companion"
 set +e
-"$checker" "$version" AspNetCore.EnumMemberNameBinding AspNetCore.EnumMemberNameBinding.OpenApi >/dev/null 2>&1
+"$checker" "$version" Reefact.AspNetCore.EnumMemberNameBinding Reefact.AspNetCore.EnumMemberNameBinding.OpenApi >/dev/null 2>&1
 status=$?
 set -e
 check "both packages on the feed" "$status" 0
@@ -67,7 +67,7 @@ check "both packages on the feed" "$status" 0
 # A different version of an id that is otherwise present — the case an index.json check would pass,
 # since the index answers for the package rather than for the version asked about.
 set +e
-"$checker" "9.9.9-nope" AspNetCore.EnumMemberNameBinding >/dev/null 2>&1
+"$checker" "9.9.9-nope" Reefact.AspNetCore.EnumMemberNameBinding >/dev/null 2>&1
 status=$?
 set -e
 check "a version that was never pushed" "$status" 1
