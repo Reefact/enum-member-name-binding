@@ -154,6 +154,11 @@ jobs:
       - name: The changelog extractor returns what it must and refuses what it must
         run: tools/release-notes/changelog-section.test.sh
 
+      # Runs offline against a file:// tree shaped like the flat container, so "the package is
+      # there" and "it is not" are both answers from the code that will be asked for real.
+      - name: The publication check can tell a package on the feed from one that is not
+        run: tools/packaging/verify-published.test.sh
+
   # The one check `main` requires, and the only reason this job exists.
   #
   # The matrix above reports under names that carry the SDK it ran on — "build (SDK 10.0.100)" and

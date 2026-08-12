@@ -252,6 +252,21 @@ jobs:
             --api-key "$NUGET_API_KEY" \
             --source https://api.nuget.org/v3/index.json
 
+      # The question --skip-duplicate makes it impossible for the step above to answer. A 409 is not
+      # only "you already sent this": v1.0.0-beta.1 was answered 409 on both packages, printed
+      # "already exists at feed", exited 0, and never reached nuget.org. Every step was green and
+      # nothing was published, which is the shape of failure this repository keeps meeting — so the
+      # release now reads the feed rather than the exit code.
+      - name: Verify both packages are really on the feed
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          tools/packaging/verify-published.sh "$VERSION" \
+            AspNetCore.EnumMemberNameBinding \
+            AspNetCore.EnumMemberNameBinding.OpenApi
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
       # --latest=false is not implied by --prerelease: the two are separate fields, and a repository
       # with no stable release yet would otherwise show a preview as its latest. A stable version
       # passes neither flag, so GitHub keeps deciding by date and version — which is what a backport
