@@ -102,7 +102,7 @@ public sealed class ShadowedMemberTests {
         Check.That(problem).Contains("'Red'");
         Check.That(problem).Contains("'Blue'");
         Check.WithCustomMessage("the message must say what goes wrong, not merely which members collide.")
-             .That(problem).Contains("unreachable");
+             .That(problem).Contains("overlapping");
     }
 
     [Fact]
@@ -208,18 +208,35 @@ public sealed class ShadowedMemberTests {
     /// Which of the two members claims the shared spelling, measured in both declaration orders.
     /// </summary>
     /// <remarks>
-    /// Not "the declared name is matched first", which is what both messages said and what only one
-    /// of the two orders does. The serializer walks <see cref="Enum.GetNames(Type)" /> and the first
-    /// member it meets claims the spelling, whether that member's name is the declared one or its own
-    /// C# name — so moving the annotation from the first member to the second reverses which one
-    /// disappears. This package refuses the shape either way, which is why the divergence is in the
-    /// wording and not in what it binds.
+    /// There are two rules, and picking either one alone is how this file's own message came to be
+    /// rewritten twice. When the declared name is spelled <em>exactly</em> like the C# name it
+    /// shadows there is one spelling for two members, and <see cref="Enum.GetNames(Type)" /> order
+    /// decides which of them it reaches — so moving the annotation to the second member reverses it,
+    /// and <see cref="AnnotatedSecond" /> leaves the annotated member unreachable under every casing.
+    /// When the two differ only by case there are two spellings, each reaching its own member, and
+    /// <c>GetNames</c> order decides nothing at all.
+    /// <para>
+    /// The first rewrite said the declared name always wins, which is false of
+    /// <see cref="AnnotatedSecond" />. The second said <c>GetNames</c> order always decides, which is
+    /// false of <see cref="CaseDiffersAnnotatedFirst" /> — generalised from the two fixtures that
+    /// happened to be written first. All four are here now, and the message asserts neither rule.
+    /// This package refuses every one of these shapes, which is why the divergence was in the wording
+    /// and never in what it binds.
+    /// </para>
     /// </remarks>
     [Theory]
-    [InlineData(typeof(AnnotatedFirst), "Blue", "Red (0)", "the annotated member is first in GetNames order, so it claims the spelling")]
-    [InlineData(typeof(AnnotatedFirst), "blue", "Blue (1)", "and the unannotated member keeps every other casing")]
-    [InlineData(typeof(AnnotatedSecond), "Blue", "Blue (0)", "here the unannotated member is first, so it claims the spelling instead")]
-    [InlineData(typeof(AnnotatedSecond), "blue", "Blue (0)", "and the annotated member is the one left unreachable")]
+    [InlineData(typeof(AnnotatedFirst), "Blue", "Red (0)", "one spelling, and the annotated member is first in GetNames order")]
+    [InlineData(typeof(AnnotatedFirst), "blue", "Blue (1)", "so the unannotated member keeps every other casing")]
+    [InlineData(typeof(AnnotatedFirst), "BLUE", "Blue (1)", "including the upper one")]
+    [InlineData(typeof(AnnotatedSecond), "Blue", "Blue (0)", "one spelling, and here the unannotated member is first")]
+    [InlineData(typeof(AnnotatedSecond), "blue", "Blue (0)", "so the annotated member is unreachable altogether")]
+    [InlineData(typeof(AnnotatedSecond), "BLUE", "Blue (0)", "under every casing, not merely under its own")]
+    [InlineData(typeof(CaseDiffersAnnotatedFirst), "blue", "Red (0)", "two spellings, so the declared one reaches the member that declared it")]
+    [InlineData(typeof(CaseDiffersAnnotatedFirst), "Blue", "Blue (1)", "and the C# name reaches its own member, whatever GetNames order says")]
+    [InlineData(typeof(CaseDiffersAnnotatedFirst), "BLUE", "Blue (1)", "only a casing matching neither exactly falls back")]
+    [InlineData(typeof(CaseDiffersAnnotatedSecond), "blue", "Red (1)", "and the same with the annotation on the second member")]
+    [InlineData(typeof(CaseDiffersAnnotatedSecond), "Blue", "Blue (0)", "where GetNames order decides nothing at all")]
+    [InlineData(typeof(CaseDiffersAnnotatedSecond), "BLUE", "Blue (0)", "the fallback going the same way")]
     [SuppressMessage(NetAnalyzersRule.CA1062.Category, NetAnalyzersRule.CA1062.Id, Justification = SuppressionJustification.CA1062.ArgumentSuppliedByTheFramework)]
     public void which_member_claims_the_shared_spelling_follows_get_names_order(Type enumType, string token, string expected, string because) {
         string actual = Show(ReadWithSystemTextJson(token, enumType, OracleFor(enumType)));
@@ -240,6 +257,22 @@ public sealed class ShadowedMemberTests {
 
         Blue = 0,
         [JsonStringEnumMemberName("Blue")] Red = 1
+
+    }
+
+    /// <summary>The collision that is only a collision ignoring case: two spellings, not one.</summary>
+    public enum CaseDiffersAnnotatedFirst {
+
+        [JsonStringEnumMemberName("blue")] Red = 0,
+        Blue = 1
+
+    }
+
+    /// <summary>The same, annotated second, where GetNames order turns out to decide nothing.</summary>
+    public enum CaseDiffersAnnotatedSecond {
+
+        Blue = 0,
+        [JsonStringEnumMemberName("blue")] Red = 1
 
     }
 

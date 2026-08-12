@@ -235,7 +235,7 @@ public sealed class EnumContractAnalyzerTests {
         Check.That(message).Contains("'Red'");
         Check.That(message).Contains("'Blue'");
         Check.WithCustomMessage("the message must say what goes wrong, not merely which members collide.")
-             .That(message).Contains("unreachable");
+             .That(message).Contains("overlapping");
     }
 
     /// <summary>

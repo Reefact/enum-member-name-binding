@@ -73,10 +73,10 @@
     <value>A public name shadows the C# name of another member</value>
   </data>
   <data name="EMN0005Message" xml:space="preserve">
-    <value>Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}'; both answer to '{1}', and which of them it reaches is decided by Enum.GetNames order rather than by the attribute, so one of the two is unreachable under that spelling</value>
+    <value>Member '{0}' declares the public name '{1}', which is also the C# name of member '{2}' ignoring case; the two then answer to overlapping spellings, and which member a given spelling reaches cannot be read off the enum</value>
   </data>
   <data name="EMN0005Description" xml:space="preserve">
-    <value>Two members then answer to one spelling. Which of them reaches it is decided by Enum.GetNames order — the underlying values — so declaring the annotated member second makes the unannotated one win, and no reader of the enum can guess either way. The loser is unreachable under that spelling and reachable under every other casing of it. This matters most when EMN0003 has been turned off to allow partial contracts, where it is the only remaining protection.</value>
+    <value>Two members then answer to overlapping spellings, and the rule is not one a reader can apply. Where the declared name is spelled exactly like the C# name it shadows, Enum.GetNames order decides which member the spelling reaches, and the other can become unreachable altogether. Where the two differ only by case, each exact spelling reaches its own member and only a casing matching neither falls back. This matters most when EMN0003 has been turned off to allow partial contracts, where it is the only remaining protection.</value>
   </data>
   <data name="EMN0006Title" xml:space="preserve">
     <value>The public name cannot travel on every input channel</value>
