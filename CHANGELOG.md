@@ -11,11 +11,17 @@ The package version is independent of the .NET version it targets.
 
 ## [Unreleased]
 
+## [1.0.0-beta.1] - 2026-08-10
+
 The public surface is the one 1.0.0 will carry: it was read symbol by symbol and committed as a
 baseline, so this pre-release is not a draft of the API. What it exercises is the publication
 itself — trusted publishing, the build-provenance attestation, and how the packages actually look
 once nuget.org has received and re-signed them. A version number cannot be taken back, so the
 first one to make the trip is one that costs nothing to burn.
+
+A beta rather than a release candidate, and the difference is a claim rather than a stage: the
+public surface is settled, the behaviour behind it is not yet proven anywhere but here. A candidate
+would say the opposite.
 
 ### Added
 
