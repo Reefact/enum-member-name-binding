@@ -11,12 +11,18 @@ La version du paquet est indépendante de la version de .NET qu'il cible.
 
 ## [Non publié]
 
+## [1.0.0-beta.1] - 2026-08-10
+
 La surface publique est celle que portera la 1.0.0 : elle a été relue symbole par symbole et
 figée dans une baseline versionnée, cette pré-version n'est donc pas un brouillon d'API. Ce
 qu'elle met à l'épreuve, c'est la publication elle-même — le trusted publishing, l'attestation de
 provenance, et l'allure réelle des paquets une fois que nuget.org les a reçus et resignés. Un
 numéro de version ne se reprend pas : le premier à faire le voyage doit être un numéro qu'on peut
 brûler sans rien perdre.
+
+Une bêta et non une release candidate, et la différence est une affirmation plutôt qu'une étape :
+la surface publique est arrêtée, le comportement derrière elle n'est éprouvé nulle part ailleurs
+qu'ici. Une candidate dirait le contraire.
 
 ### Ajouté
 
