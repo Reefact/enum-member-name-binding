@@ -44,7 +44,7 @@
     <!-- Emits the coverage report the Sonar analysis reads. The format lives in
          coverage.runsettings, so a local run and the analysis produce the same report. -->
     <PackageReference Include="coverlet.collector" Version="10.0.1" PrivateAssets="all" />
-    <PackageReference Include="xunit.v3" Version="3.2.2" />
+    <PackageReference Include="xunit.v3" Version="4.0.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" />
   </ItemGroup>
 
