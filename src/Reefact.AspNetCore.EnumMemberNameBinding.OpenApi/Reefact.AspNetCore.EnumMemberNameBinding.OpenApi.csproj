@@ -22,13 +22,13 @@
          attributes. PrivateAssets is load-bearing here: this project is packable, and without it a
          consumer of the published package would inherit a dependency on a compile-time catalogue. -->
     <PackageReference Include="DiagnosticCatalog.Trimming" Version="1.0.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <!--
       Microsoft.AspNetCore.OpenApi 10.0.x resolves Microsoft.OpenApi 2.0.0, which carries a known
       high-severity advisory (GHSA-v5pm-xwqc-g5wc). Raising the floor keeps consumers off it while
       staying inside the 2.x range the ASP.NET Core package is built against.
     -->
-    <PackageReference Include="Microsoft.OpenApi" Version="2.11.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
   </ItemGroup>
 
   <ItemGroup>
