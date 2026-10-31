@@ -267,7 +267,7 @@ internal static partial class DocumentationSampleCompiler {
     private static ImmutableArray<MetadataReference> LoadReferences() {
         // A local rather than a field: References is initialised by this method, and a static field
         // declared below it would still be null by the time it ran.
-        string[] suiteOwnTooling = ["xunit", "NFluent", "Microsoft.CodeAnalysis", "Microsoft.TestPlatform", "Microsoft.VisualStudio.TestPlatform", "testhost", "coverlet"];
+        string[] suiteOwnTooling = ["xunit", "NFluent", "Microsoft.CodeAnalysis", "Microsoft.Testing", "coverlet"];
 
         string assemblies = (string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!;
 
