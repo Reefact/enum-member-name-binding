@@ -18,6 +18,14 @@ on:
   pull_request:
     branches:
       - main
+  schedule:
+    # Monthly, to keep SONAR_TOKEN alive rather than to learn anything new. SonarCloud deletes a
+    # token unused for 60 days, and this repository can go longer than that without a push to main
+    # (Dependabot pull requests run without the secret, so they do not count). That happened once:
+    # the analysis of 2026-08-12 was the last until 2026-10-31, the token was gone by then, and the
+    # next pull request failed at `begin` with "Authentication with the server has failed" for a
+    # reason it had nothing to do with. A run each month keeps the gap well inside the 60 days.
+    - cron: '41 4 3 * *'
   workflow_dispatch:
 
 concurrency:
