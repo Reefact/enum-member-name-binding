@@ -31,4 +31,31 @@
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
   </ItemGroup>
 
+  <!--
+    Every test project reads one coverage configuration: tests/testconfig.json.
+
+    The tests run on Microsoft.Testing.Platform, and coverage comes from its coverlet extension
+    (coverlet.MTP). It is what Sonar reads, so the settings live in a committed file rather than on
+    the workflow's command line: a local run with coverage switched on and the analysis produce the
+    same report, and a coverage number can be reproduced without reading a workflow.
+
+    The platform only looks for testconfig.json beside the project, and copies it out as
+    <assembly>.testconfig.json. Linking the one shared file under that name here, rather than
+    keeping four copies, means the four cannot drift apart.
+
+    What the file says, since JSON gives it no room for comments:
+      - format opencover: SonarQube Cloud reads C# coverage through sonar.cs.opencover.reportsPaths
+        and does not consume coverlet's default Cobertura.
+      - include: only this library's assemblies are measured. The file is authoritative — once it
+        exists coverlet injects none of its default filters — so what counts is named, not implied.
+      - excludeByAttribute: generated code carries no coverage signal worth reporting; nobody
+        chooses to test it, and counting it only moves the percentage.
+
+    Directory.Build.targets rather than .props because IsTestingPlatformApplication is set by the
+    xUnit package, whose props are imported after Directory.Build.props.
+  -->
+  <ItemGroup Condition="'$(IsTestingPlatformApplication)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)tests/testconfig.json" Link="$(AssemblyName).testconfig.json" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+
 </Project>

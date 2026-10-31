@@ -141,7 +141,7 @@ jobs:
           /v:"$VERSION"
           /d:sonar.token="$SONAR_TOKEN"
           /d:sonar.host.url="https://sonarcloud.io"
-          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.xml"
+          /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/**/coverage.opencover.*.xml"
           /d:sonar.qualitygate.wait=true
           /d:sonar.issue.ignore.multicriteria="e1,e2"
           /d:sonar.issue.ignore.multicriteria.e1.ruleKey="shell:S5332"
@@ -168,12 +168,13 @@ jobs:
       - name: Test with coverage
         # --no-build so the tests run against the compilation the scanner just observed; rebuilding
         # here would produce assemblies it never saw.
+        # --coverlet switches coverage on; what it measures and in which format is in
+        # tests/testconfig.json, so a local run reproduces this report (see Directory.Build.targets).
         run: >-
-          dotnet test EnumMemberNameBinding.slnx -c Release --no-build
-          --collect:"XPlat Code Coverage"
-          --settings coverage.runsettings
+          dotnet test --solution EnumMemberNameBinding.slnx -c Release --no-build
+          --coverlet
           --results-directory artifacts/coverage
-          --logger "console;verbosity=normal"
+          --output Detailed
 
       - name: End analysis
         env:

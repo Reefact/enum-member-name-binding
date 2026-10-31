@@ -22,15 +22,10 @@
          See docs/for-maintainers/adr/0001-nfluent-for-test-assertions.en.md. -->
     <PackageReference Include="NFluent" Version="3.1.0" />
     <PackageReference Include="NFluent.Analyzer" Version="0.1.0" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-    <!-- Emits the coverage report the Sonar analysis reads. The format lives in
-         coverage.runsettings, so a local run and the analysis produce the same report. -->
-    <PackageReference Include="coverlet.collector" Version="10.0.1" PrivateAssets="all" />
-    <!-- xUnit 4 under its VSTest flavour. Plain xunit.v3 4.x turns on Microsoft.Testing.Platform, which
-         the .NET 10 SDK refuses to run through the VSTest `dotnet test` the workflows use, and which
-         coverlet.collector — the source of the coverage Sonar reads — does not plug into. -->
-    <PackageReference Include="xunit.v3.mtp-off" Version="4.0.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <!-- Emits the coverage report the Sonar analysis reads. Its settings live in tests/testconfig.json,
+         shared by every test project, so a local run and the analysis produce the same report. -->
+    <PackageReference Include="coverlet.MTP" Version="10.1.0" PrivateAssets="all" />
+    <PackageReference Include="xunit.v3" Version="4.0.2" />
   </ItemGroup>
 
 </Project>
