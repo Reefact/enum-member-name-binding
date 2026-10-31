@@ -24,7 +24,16 @@ on:
     # (Dependabot pull requests run without the secret, so they do not count). That happened once:
     # the analysis of 2026-08-12 was the last until 2026-10-31, the token was gone by then, and the
     # next pull request failed at `begin` with "Authentication with the server has failed" for a
-    # reason it had nothing to do with. A run each month keeps the gap well inside the 60 days.
+    # reason it had nothing to do with.
+    #
+    # This widens the margin; it is not a guarantee. In a public repository GitHub disables a
+    # scheduled trigger once the repository has seen no activity for 60 days, and a scheduled run
+    # does not count as activity. A repository quiet from day 0 still gets its monthly runs until
+    # about day 60, so the token now lapses somewhere between day 90 and day 120 instead of day 60
+    # — later, not never. Past that the symptom is the same failure at `begin`: re-enable this
+    # workflow (Actions → sonar → Enable workflow), store a new SONAR_TOKEN, and re-run. Keeping
+    # the trigger enabled automatically would take a job holding `actions: write`, which this
+    # workflow otherwise does without.
     - cron: '41 4 3 * *'
   workflow_dispatch:
 
