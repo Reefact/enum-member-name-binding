@@ -32,7 +32,7 @@
     <!-- Emits the coverage report the Sonar analysis reads. Its settings live in tests/testconfig.json,
          shared by every test project, so a local run and the analysis produce the same report. -->
     <PackageReference Include="coverlet.MTP" Version="10.1.0" PrivateAssets="all" />
-    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="xunit.v3" Version="4.0.3" />
   </ItemGroup>
 
 </Project>
